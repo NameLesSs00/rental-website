@@ -1,0 +1,695 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useCreateProperty } from "@/lib/hooks/useProperties";
+import { useCategories } from "@/lib/hooks/useCategory";
+import { usePropertyCategories } from "@/lib/hooks/usePropertyCategory";
+import { usePropertyCategoryItems } from "@/lib/hooks/usePropertyCategoryItem";
+import { useLandmarks } from "@/lib/hooks/useAttributeGroupItem";
+import { PropertyRequest, PropertyType, PropertyStatus, BedType } from "@/lib/types/property";
+import { sortLandmarks } from "@/lib/utils/landmarks";
+import axiosInstance from "@/lib/api/axiosInstance";
+import TranslationFields from "@/components/admin/TranslationFields";
+import {
+  emptyTranslation,
+  hasRequiredBaseTranslation,
+  trimTranslation,
+  type TranslationInput,
+} from "@/lib/i18n/adminTranslations";
+
+const defaultPayload: PropertyRequest = {
+  categoryId: "",
+  code: "",
+  name: emptyTranslation(),
+  description: emptyTranslation(),
+  bedroomNo: 1,
+  bathroomNo: 1,
+  roomNo: 1,
+  capacity: 2,
+  size: 50,
+  basePrice: 100,
+  propertyType: PropertyType.Apartment,
+  propertyStatus: PropertyStatus.Clean,
+  isAvailable: true,
+  isFeatured: false,
+  hasSeaView: false,
+  hasPoolView: false,
+  hasGardenView: false,
+  hasMountainView: false,
+  hasCityView: false,
+  latitude: 0,
+  longitude: 0,
+  rulesCancellation: "",
+  notes: "",
+  address: {
+    country: emptyTranslation(),
+    city: emptyTranslation(),
+    area: emptyTranslation(),
+    zipCode: "",
+    street: emptyTranslation(),
+  },
+  listingDetails: {
+    lateCheckIn: "",
+    outdoorFacility: emptyTranslation(),
+    originalService: "",
+    cancellation: emptyTranslation(),
+    extraPeopleFee: 0,
+    extraPeople: "",
+    privatebathroom: false,
+    checkInHour: "14:00:00",
+    checkOutHour: "12:00:00",
+    familyFriendly: false,
+    privateEntrance: false,
+  },
+  sleepingArrangements: [
+    {
+      name: "Master Bedroom",
+      displayOrder: 1,
+      beds: [{ bedType: BedType.Double, quantity: 1 }],
+    },
+  ],
+  propertyCategoryItemIds: [],
+  attributeGroupItemIds: [],
+};
+
+const hiddenListingDefaults = {
+  extraPeople: "",
+  extraPeopleFee: 0,
+};
+
+export default function PropertyCreateContent() {
+  const router = useRouter();
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState<PropertyRequest>(defaultPayload);
+
+  const { data: locationCategories = [] } = useCategories();
+  const { data: includeCategories = [] } = usePropertyCategories();
+  const { data: items = [] } = usePropertyCategoryItems();
+  const { data: landmarkItems = [], isLoading: landmarksLoading } = useLandmarks();
+  const { mutate: createProperty, isPending } = useCreateProperty();
+  const sortedLandmarkItems = sortLandmarks(landmarkItems);
+
+  const updateForm = (updates: Partial<PropertyRequest>) => {
+    setFormData((prev) => ({ ...prev, ...updates }));
+  };
+
+  const updateAddress = (updates: Partial<typeof defaultPayload.address>) => {
+    setFormData((prev) => ({ ...prev, address: { ...prev.address!, ...updates } }));
+  };
+
+  const updateListing = (updates: Partial<typeof defaultPayload.listingDetails>) => {
+    setFormData((prev) => ({ ...prev, listingDetails: { ...prev.listingDetails!, ...updates } }));
+  };
+
+  const layoutPreset =
+    formData.propertyType === PropertyType.Studio
+      ? "studio"
+      : formData.propertyType === PropertyType.oneBedroom
+        ? "one-bedroom"
+        : formData.propertyType === PropertyType.twoBedroom
+          ? "two-bedroom"
+          : "";
+
+  const updateLayoutPreset = (preset: string) => {
+    if (preset === "studio") {
+      updateForm({ propertyType: PropertyType.Studio, bedroomNo: 1 });
+      return;
+    }
+
+    if (preset === "one-bedroom") {
+      updateForm({ propertyType: PropertyType.oneBedroom, bedroomNo: 1 });
+      return;
+    }
+
+    if (preset === "two-bedroom") {
+      updateForm({ propertyType: PropertyType.twoBedroom, bedroomNo: 2 });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (step === 1 && (!hasRequiredBaseTranslation(formData.name as TranslationInput) || !hasRequiredBaseTranslation(formData.description as TranslationInput))) {
+      return;
+    }
+    if (step < 5) {
+      setStep(step + 1);
+      return;
+    }
+
+    createProperty({
+      ...formData,
+      name: trimTranslation(formData.name as TranslationInput),
+      description: trimTranslation(formData.description as TranslationInput),
+      address: {
+        ...formData.address!,
+        country: trimTranslation(formData.address!.country as TranslationInput),
+        city: trimTranslation(formData.address!.city as TranslationInput),
+        area: trimTranslation(formData.address!.area as TranslationInput),
+        street: trimTranslation(formData.address!.street as TranslationInput),
+      },
+      isFeatured: Boolean(formData.isFeatured),
+      listingDetails: {
+        ...formData.listingDetails!,
+        outdoorFacility: trimTranslation(formData.listingDetails!.outdoorFacility as TranslationInput),
+        cancellation: trimTranslation(formData.listingDetails!.cancellation as TranslationInput),
+        ...hiddenListingDefaults,
+      },
+    }, {
+      onSuccess: async (data) => {
+        if (data.data?.id) {
+          const newId = data.data.id;
+          // If admin left isFeatured unchecked, ensure backend doesn't default it to true
+          if (!formData.isFeatured) {
+            try {
+              await axiosInstance.put(`/api/properties/${newId}/featured`, false, {
+                headers: { "Content-Type": "application/json" },
+              });
+            } catch (err) {
+              console.warn("Could not enforce isFeatured false", err);
+            }
+          }
+          router.push(`/admin/properties/${newId}?created=true`);
+        } else {
+          router.push("/admin/properties");
+        }
+      },
+    });
+  };
+
+  return (
+    <div className="mx-auto max-w-4xl min-w-0">
+      <header className="mb-8">
+        <Link href="/admin/properties" className="mb-4 inline-flex items-center gap-2 text-[13px] font-medium text-[#667c74] hover:text-[#183c2f]">
+          <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Back to Properties
+        </Link>
+        <h1 className="text-[26px] font-semibold leading-tight text-[#183c2f] lg:text-[32px]">
+          Add New Property
+        </h1>
+        <p className="mt-1 text-[14px] text-[#667c74]">
+          Step {step} of 5 — Fill out the details below to create a new property listing.
+        </p>
+      </header>
+
+      {/* Progress Bar */}
+      <div className="mb-8 flex gap-2">
+        {[1, 2, 3, 4, 5].map((s) => (
+          <div key={s} className={`h-2 flex-1 rounded-full ${s <= step ? "bg-[#2e6f57]" : "bg-[#dfe8e4]"}`} />
+        ))}
+      </div>
+
+      <form onSubmit={handleSubmit} className="rounded-2xl border border-[#dfe8e4] bg-white p-6 shadow-[0_8px_24px_rgba(31,77,61,0.05)] sm:p-8">
+        
+        {/* Step 1: Basic Info */}
+        {step === 1 && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 className="text-[18px] font-semibold text-[#183c2f]">1. Basic Information</h2>
+            
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Property Code *</label>
+                <input required type="text" value={formData.code} onChange={e => updateForm({ code: e.target.value })} placeholder="e.g. PRO-123" className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]" />
+              </div>
+            </div>
+
+            <TranslationFields
+              label="Property Name"
+              value={formData.name as TranslationInput}
+              onChange={(value) => updateForm({ name: value })}
+              required
+              disabled={isPending}
+            />
+
+            <TranslationFields
+              label="Description"
+              value={formData.description as TranslationInput}
+              onChange={(value) => updateForm({ description: value })}
+              required
+              textarea
+              rows={4}
+              disabled={isPending}
+            />
+
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Rental Layout Preset</label>
+                <select value={layoutPreset} onChange={e => updateLayoutPreset(e.target.value)} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]">
+                  <option value="">Custom</option>
+                  <option value="studio">Studio</option>
+                  <option value="one-bedroom">1 Bedroom</option>
+                  <option value="two-bedroom">2 Bedroom</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Property Type</label>
+                <select value={formData.propertyType} onChange={e => updateForm({ propertyType: Number(e.target.value) })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]">
+                  <option value={1}>Apartment</option>
+                  <option value={2}>Villa</option>
+                  <option value={3}>Studio</option>
+                  <option value={4}>Chalet</option>
+                  <option value={5}>TwinHouse</option>
+                  <option value={6}>TownHouse</option>
+                  <option value={7}>Duplex</option>
+                  <option value={8}>Penthouse</option>
+                  <option value={9}>Cabin</option>
+                  <option value={10}>Hotel</option>
+                  <option value={11}>2 Bedroom</option>
+                  <option value={12}>1 Bedroom</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">View Category *</label>
+                <select required value={formData.categoryId} onChange={e => updateForm({ categoryId: e.target.value })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]">
+                  <option value="" disabled>Select View Category</option>
+                  {locationCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Base Price / Night (Banner)</label>
+                <input type="number" min={0} value={formData.basePrice} onChange={e => updateForm({ basePrice: Number(e.target.value) })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Property Status</label>
+                <select value={formData.propertyStatus} onChange={e => updateForm({ propertyStatus: Number(e.target.value) })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]">
+                  <option value={1}>Clean</option>
+                  <option value={2}>Dirty</option>
+                  <option value={3}>Maintenance</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-3 pt-6">
+                <input type="checkbox" checked={formData.isAvailable} onChange={e => updateForm({ isAvailable: e.target.checked })} className="size-5 rounded border-gray-300 text-[#2e6f57] focus:ring-[#2e6f57]" />
+                <span className="text-[14px] font-medium text-[#183c2f]">Available</span>
+              </div>
+              <div className="flex items-start gap-3 pt-6">
+                <input
+                  type="checkbox"
+                  id="featured-checkbox"
+                  checked={formData.isFeatured}
+                  onChange={(e) => updateForm({ isFeatured: e.target.checked })}
+                  className="mt-0.5 size-5 rounded border-gray-300 text-[#2e6f57] focus:ring-[#2e6f57]"
+                />
+                <div>
+                  <label htmlFor="featured-checkbox" className="block cursor-pointer text-[14px] font-medium text-[#183c2f]">
+                    Featured Property
+                  </label>
+                  <span className="block text-[11px] text-[#667c74]">
+                    Off by default. Check this only if you want this property highlighted in Hot Deals on the homepage and prioritized at the top of listings.
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-6 sm:grid-cols-5">
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Bedrooms</label>
+                <input type="number" min={0} value={formData.bedroomNo} onChange={e => updateForm({ bedroomNo: Number(e.target.value) })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Bathrooms</label>
+                <input type="number" min={0} value={formData.bathroomNo} onChange={e => updateForm({ bathroomNo: Number(e.target.value) })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Rooms</label>
+                <input type="number" min={0} value={formData.roomNo} onChange={e => updateForm({ roomNo: Number(e.target.value) })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Capacity</label>
+                <input type="number" min={1} value={formData.capacity} onChange={e => updateForm({ capacity: Number(e.target.value) })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Size (m²)</label>
+                <input type="number" min={1} value={formData.size} onChange={e => updateForm({ size: Number(e.target.value) })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Location & Views */}
+        {step === 2 && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 className="text-[18px] font-semibold text-[#183c2f]">2. Location & Views</h2>
+            
+            <div className="grid grid-cols-1 gap-6">
+              <TranslationFields
+                label="Country"
+                value={formData.address?.country as TranslationInput}
+                onChange={(value) => updateAddress({ country: value })}
+                disabled={isPending}
+              />
+              <TranslationFields
+                label="City"
+                value={formData.address?.city as TranslationInput}
+                onChange={(value) => updateAddress({ city: value })}
+                disabled={isPending}
+              />
+              <TranslationFields
+                label="Area / District"
+                value={formData.address?.area as TranslationInput}
+                onChange={(value) => updateAddress({ area: value })}
+                disabled={isPending}
+              />
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Zip Code</label>
+                <input type="text" value={formData.address?.zipCode} onChange={e => updateAddress({ zipCode: e.target.value })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]" />
+              </div>
+              <TranslationFields
+                label="Street"
+                value={formData.address?.street as TranslationInput}
+                onChange={(value) => updateAddress({ street: value })}
+                disabled={isPending}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Latitude</label>
+                <input type="number" step="any" value={formData.latitude} onChange={e => updateForm({ latitude: Number(e.target.value) })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Longitude</label>
+                <input type="number" step="any" value={formData.longitude} onChange={e => updateForm({ longitude: Number(e.target.value) })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6 sm:grid-cols-4 pt-4 border-t border-[#dfe8e4]">
+              <label className="flex items-center gap-3">
+                <input type="checkbox" checked={formData.hasSeaView} onChange={e => updateForm({ hasSeaView: e.target.checked })} className="size-4 rounded border-gray-300 text-[#2e6f57] focus:ring-[#2e6f57]" />
+                <span className="text-[14px] font-medium text-[#183c2f]">Sea View</span>
+              </label>
+              <label className="flex items-center gap-3">
+                <input type="checkbox" checked={formData.hasPoolView} onChange={e => updateForm({ hasPoolView: e.target.checked })} className="size-4 rounded border-gray-300 text-[#2e6f57] focus:ring-[#2e6f57]" />
+                <span className="text-[14px] font-medium text-[#183c2f]">Pool View</span>
+              </label>
+              <label className="flex items-center gap-3">
+                <input type="checkbox" checked={formData.hasGardenView} onChange={e => updateForm({ hasGardenView: e.target.checked })} className="size-4 rounded border-gray-300 text-[#2e6f57] focus:ring-[#2e6f57]" />
+                <span className="text-[14px] font-medium text-[#183c2f]">Garden View</span>
+              </label>
+              <label className="flex items-center gap-3">
+                <input type="checkbox" checked={formData.hasMountainView} onChange={e => updateForm({ hasMountainView: e.target.checked })} className="size-4 rounded border-gray-300 text-[#2e6f57] focus:ring-[#2e6f57]" />
+                <span className="text-[14px] font-medium text-[#183c2f]">Mountain View</span>
+              </label>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Includes Categories */}
+        {step === 3 && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 className="text-[18px] font-semibold text-[#183c2f]">3. Features & Amenities</h2>
+            <p className="text-[13px] text-[#667c74]">Select the items that are included in this property.</p>
+            
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {includeCategories.map((cat) => {
+                const catItems = items.filter(i => i.propertyCategoryId === cat.id);
+                if (catItems.length === 0) return null;
+                
+                return (
+                  <div key={cat.id} className="rounded-xl border border-[#dfe8e4] bg-[#f5f7f6] p-4">
+                    <h3 className="mb-3 text-[14px] font-semibold text-[#183c2f]">{cat.name}</h3>
+                    <div className="flex flex-col gap-2">
+                      {catItems.map(item => (
+                        <label key={item.id} className="flex items-center gap-2">
+                          <input 
+                            type="checkbox" 
+                            checked={formData.propertyCategoryItemIds?.includes(item.id)}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setFormData(prev => ({
+                                ...prev,
+                                propertyCategoryItemIds: checked 
+                                  ? [...(prev.propertyCategoryItemIds || []), item.id]
+                                  : (prev.propertyCategoryItemIds || []).filter(id => id !== item.id)
+                              }));
+                            }}
+                            className="size-4 rounded border-gray-300 text-[#2e6f57] focus:ring-[#2e6f57]" 
+                          />
+                          <span className="text-[13px] text-[#667c74]">{item.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="rounded-xl border border-[#dfe8e4] bg-white p-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-[14px] font-semibold text-[#183c2f]">Info Area</h3>
+                  <p className="mt-1 text-[12px] text-[#667c74]">Select nearby places to show on the rental page.</p>
+                </div>
+                <span className="rounded-full bg-[#f5f7f6] px-3 py-1 text-[12px] font-medium text-[#667c74]">
+                  {formData.attributeGroupItemIds?.length || 0} Selected
+                </span>
+              </div>
+
+              {landmarksLoading ? (
+                <div className="rounded-lg bg-[#f5f7f6] px-4 py-3 text-[13px] text-[#8a9a94]">
+                  Loading info areas...
+                </div>
+              ) : sortedLandmarkItems.length === 0 ? (
+                <div className="rounded-lg bg-[#f5f7f6] px-4 py-3 text-[13px] text-[#8a9a94]">
+                  No info areas have been created yet.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {sortedLandmarkItems.map((landmark) => (
+                    <label
+                      key={landmark.id}
+                      className="flex cursor-pointer items-center gap-3 rounded-lg border border-[#dfe8e4] bg-[#f5f7f6] px-3 py-2.5 transition hover:border-[#2e6f57]/40"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.attributeGroupItemIds?.includes(landmark.id)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setFormData((prev) => ({
+                            ...prev,
+                            attributeGroupItemIds: checked
+                              ? [...(prev.attributeGroupItemIds || []), landmark.id]
+                              : (prev.attributeGroupItemIds || []).filter((id) => id !== landmark.id),
+                          }));
+                        }}
+                        className="size-4 rounded border-gray-300 text-[#2e6f57] focus:ring-[#2e6f57]"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13px] font-medium text-[#183c2f]">{landmark.key}</span>
+                        <span className="block text-[12px] text-[#667c74]">{landmark.value}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Listing Details */}
+        {step === 4 && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 className="text-[18px] font-semibold text-[#183c2f]">4. Listing Details</h2>
+            
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Check-In Hour</label>
+                <input type="time" step="1" value={formData.listingDetails?.checkInHour} onChange={e => updateListing({ checkInHour: e.target.value })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Check-Out Hour</label>
+                <input type="time" step="1" value={formData.listingDetails?.checkOutHour} onChange={e => updateListing({ checkOutHour: e.target.value })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Late Check-In Policy</label>
+                <input type="text" value={formData.listingDetails?.lateCheckIn} onChange={e => updateListing({ lateCheckIn: e.target.value })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]" />
+              </div>
+              <div className="sm:col-span-2">
+                <TranslationFields
+                  label="Cancellation Policy"
+                  value={formData.listingDetails?.cancellation as TranslationInput}
+                  onChange={(value) => updateListing({ cancellation: value })}
+                  disabled={isPending}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <TranslationFields
+                  label="Outdoor Facility"
+                  value={formData.listingDetails?.outdoorFacility as TranslationInput}
+                  onChange={(value) => updateListing({ outdoorFacility: value })}
+                  disabled={isPending}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Original Service</label>
+                <input type="text" value={formData.listingDetails?.originalService} onChange={e => updateListing({ originalService: e.target.value })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Cancellation Rules</label>
+                <textarea rows={3} value={formData.rulesCancellation} onChange={e => updateForm({ rulesCancellation: e.target.value })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Notes</label>
+                <textarea rows={3} value={formData.notes} onChange={e => updateForm({ notes: e.target.value })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]" />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-6 rounded-xl border border-[#dfe8e4] bg-[#f5f7f6] p-4">
+              <label className="flex items-center gap-3">
+                <input type="checkbox" checked={formData.listingDetails?.familyFriendly} onChange={e => updateListing({ familyFriendly: e.target.checked })} className="size-4 rounded border-gray-300 text-[#2e6f57] focus:ring-[#2e6f57]" />
+                <span className="text-[14px] font-medium text-[#183c2f]">Family Friendly</span>
+              </label>
+              <label className="flex items-center gap-3">
+                <input type="checkbox" checked={formData.listingDetails?.privatebathroom} onChange={e => updateListing({ privatebathroom: e.target.checked })} className="size-4 rounded border-gray-300 text-[#2e6f57] focus:ring-[#2e6f57]" />
+                <span className="text-[14px] font-medium text-[#183c2f]">Private Bathroom</span>
+              </label>
+              <label className="flex items-center gap-3">
+                <input type="checkbox" checked={formData.listingDetails?.privateEntrance} onChange={e => updateListing({ privateEntrance: e.target.checked })} className="size-4 rounded border-gray-300 text-[#2e6f57] focus:ring-[#2e6f57]" />
+                <span className="text-[14px] font-medium text-[#183c2f]">Private Entrance</span>
+              </label>
+            </div>
+          </div>
+        )}
+
+        {/* Step 5: Sleeping Arrangements */}
+        {step === 5 && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h2 className="text-[18px] font-semibold text-[#183c2f]">5. Sleeping Arrangements</h2>
+            
+            <div className="space-y-4">
+              {formData.sleepingArrangements?.map((room, roomIndex) => (
+                <div key={roomIndex} className="rounded-xl border border-[#dfe8e4] p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <input 
+                      type="text" 
+                      value={room.name} 
+                      onChange={e => {
+                        const newRooms = [...formData.sleepingArrangements!];
+                        newRooms[roomIndex].name = e.target.value;
+                        setFormData({ ...formData, sleepingArrangements: newRooms });
+                      }}
+                      className="font-semibold text-[#183c2f] outline-none border-b border-transparent focus:border-[#2e6f57] bg-transparent"
+                    />
+                    {formData.sleepingArrangements!.length > 1 && (
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const newRooms = formData.sleepingArrangements!.filter((_, i) => i !== roomIndex);
+                          setFormData({ ...formData, sleepingArrangements: newRooms });
+                        }}
+                        className="text-red-500 text-[13px] hover:underline"
+                      >
+                        Remove Room
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {room.beds.map((bed, bedIndex) => (
+                      <div key={bedIndex} className="flex items-center gap-4">
+                        <select
+                          value={bed.bedType}
+                          onChange={e => {
+                            const newRooms = [...formData.sleepingArrangements!];
+                            newRooms[roomIndex].beds[bedIndex].bedType = Number(e.target.value);
+                            setFormData({ ...formData, sleepingArrangements: newRooms });
+                          }}
+                          className="flex-1 rounded-lg border border-[#dfe8e4] px-3 py-2 text-[13px] outline-none focus:border-[#2e6f57]"
+                        >
+                          <option value={0}>Single</option>
+                          <option value={1}>Twin</option>
+                          <option value={2}>Double</option>
+                          <option value={3}>Queen</option>
+                          <option value={4}>King</option>
+                          <option value={5}>Sofa Bed</option>
+                          <option value={6}>Bunk Bed</option>
+                          <option value={7}>Baby Crib</option>
+                          <option value={8}>Futon</option>
+                        </select>
+                        <input
+                          type="number"
+                          min={1}
+                          value={bed.quantity}
+                          onChange={e => {
+                            const newRooms = [...formData.sleepingArrangements!];
+                            newRooms[roomIndex].beds[bedIndex].quantity = Number(e.target.value);
+                            setFormData({ ...formData, sleepingArrangements: newRooms });
+                          }}
+                          className="w-24 rounded-lg border border-[#dfe8e4] px-3 py-2 text-[13px] outline-none focus:border-[#2e6f57]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newRooms = [...formData.sleepingArrangements!];
+                            newRooms[roomIndex].beds = newRooms[roomIndex].beds.filter((_, i) => i !== bedIndex);
+                            setFormData({ ...formData, sleepingArrangements: newRooms });
+                          }}
+                          className="text-[#8a9a94] hover:text-red-500"
+                        >
+                          <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      </div>
+                    ))}
+                    
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newRooms = [...formData.sleepingArrangements!];
+                        newRooms[roomIndex].beds.push({ bedType: BedType.Single, quantity: 1 });
+                        setFormData({ ...formData, sleepingArrangements: newRooms });
+                      }}
+                      className="text-[13px] font-medium text-[#2e6f57] hover:underline"
+                    >
+                      + Add Bed
+                    </button>
+                  </div>
+                </div>
+              ))}
+              
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData({
+                    ...formData,
+                    sleepingArrangements: [
+                      ...formData.sleepingArrangements!,
+                      { name: `Room ${formData.sleepingArrangements!.length + 1}`, displayOrder: formData.sleepingArrangements!.length + 1, beds: [{ bedType: BedType.Double, quantity: 1 }] }
+                    ]
+                  });
+                }}
+                className="w-full rounded-xl border border-dashed border-[#dfe8e4] py-4 text-[14px] font-medium text-[#667c74] transition hover:bg-[#f5f7f6]"
+              >
+                + Add Room
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-8 flex items-center justify-between border-t border-[#dfe8e4] pt-6">
+          {step > 1 ? (
+            <button type="button" onClick={() => setStep(step - 1)} className="rounded-full px-5 py-2.5 text-[14px] font-medium text-[#667c74] transition hover:bg-[#f5f7f6]">
+              Back
+            </button>
+          ) : (
+            <div /> // placeholder for spacing
+          )}
+          
+          <button type="submit" disabled={isPending} className="inline-flex min-w-[120px] items-center justify-center gap-2 rounded-full bg-[#2e6f57] px-6 py-2.5 text-[14px] font-medium text-white transition hover:bg-[#255f49] disabled:opacity-70">
+            {isPending ? (
+               <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            ) : step < 5 ? (
+              "Next Step"
+            ) : (
+              "Create Property"
+            )}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}

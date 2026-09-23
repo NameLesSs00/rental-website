@@ -1,0 +1,127 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { PropertyType } from "@/lib/types/property";
+import { buildRentPropertyTypeHref } from "@/lib/utils/propertyUtils";
+import { useI18n } from "./I18nProvider";
+
+const baseCategories = [
+  {
+    labelKey: "home.categories.studio",
+    href: buildRentPropertyTypeHref(PropertyType.Studio),
+    image: "/homepage/vacation/resort-courtyard.jpeg",
+    position: "object-center",
+  },
+  {
+    labelKey: "home.categories.oneBedroom",
+    href: buildRentPropertyTypeHref(PropertyType.oneBedroom),
+    image: "/homepage/vacation/resort-pool-night-portrait.jpeg",
+    position: "object-center",
+  },
+  {
+    labelKey: "home.categories.twoBedroom",
+    href: buildRentPropertyTypeHref(PropertyType.twoBedroom),
+    image: "/homepage/vacation/resort-night-view.jpeg",
+    position: "object-center",
+  },
+];
+
+export default function CategoriesSection() {
+  const { t } = useI18n();
+
+  return (
+    <section className="relative z-20 -mt-6 overflow-hidden bg-transparent px-0 font-[var(--font-poppins)] sm:-mt-8 xl:-mt-[108px]">
+      <div className="relative w-full px-0 pb-8 pt-10 sm:pb-10 sm:pt-14 lg:pb-8 lg:pt-[72px]">
+        <svg
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full"
+          preserveAspectRatio="none"
+          viewBox="0 0 1440 900"
+        >
+          <path
+            fill="#ffffff"
+            d="M0 170H74C105 170 116 143 123 119L145 39C152 15 174 0 199 0H1241C1266 0 1288 15 1295 39L1317 119C1324 143 1335 170 1366 170H1440V900H0V170Z"
+          />
+        </svg>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.6 }}
+          className="relative z-10 mx-auto max-w-6xl text-center"
+        >
+          <p className="text-[14px] font-medium uppercase leading-[1.5] tracking-[0.36em] text-[#d59e52] sm:text-[16px] lg:text-[18px]">
+            {t("home.categories.eyebrow")}
+          </p>
+          <h2 className="mt-[22px] px-6 text-[25px] font-medium leading-[1.25] text-[#2e6f57] sm:text-[32px] lg:mt-[21px] lg:text-[36px] lg:leading-[1.5]">
+            {t("home.categories.title")}
+          </h2>
+          <div className="mx-auto mt-[13px] h-[7px] w-[170px] rounded-[3px] bg-[#cfb072] lg:mt-[21px]" />
+        </motion.div>
+
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+          variants={{
+            hidden: { opacity: 0 },
+            visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
+          }}
+          className="relative z-10 mt-[47px] flex w-full snap-x snap-mandatory gap-[15px] overflow-x-auto px-[13px] pb-6 [-ms-overflow-style:none] [scrollbar-width:none] sm:mt-16 sm:gap-[35px] sm:px-10 lg:mt-[78px] lg:flex-wrap lg:justify-center lg:gap-6 lg:overflow-visible lg:px-20 lg:pb-0 xl:gap-8 [&::-webkit-scrollbar]:hidden"
+        >
+          {baseCategories.map((category) => (
+            <CategoryCard
+              key={category.labelKey}
+              category={category}
+              className="aspect-[250/355] w-[min(250px,calc(100vw-80px))] shrink-0 snap-center sm:w-[250px] lg:w-[250px] lg:snap-align-none xl:w-[260px]"
+            />
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+function CategoryCard({
+  category,
+  className,
+}: {
+  category: { labelKey: string; image: string; position: string; href: string };
+  className: string;
+}) {
+  const { t, href } = useI18n();
+  const name = t(category.labelKey);
+
+  return (
+    <motion.article
+      variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }}
+      className={`group relative shrink-0 overflow-hidden rounded-2xl bg-[#f6f5f5] transition focus-within:ring-4 focus-within:ring-[#cfb072]/40 ${className}`}
+    >
+      <Link
+        href={href(category.href)}
+        aria-label={t("home.categories.viewListings", { name })}
+        className="absolute inset-0 z-20"
+      />
+      <Image
+        src={category.image}
+        alt={t("home.categories.categoryAlt", { name })}
+        fill
+        sizes="(min-width: 1280px) 305px, (min-width: 1024px) 22vw, 340px"
+        className={`object-cover transition-transform duration-500 group-hover:scale-110 ${category.position}`}
+      />
+      <div
+        className="absolute inset-0 transition-opacity duration-500 group-hover:opacity-90"
+        style={{
+          background:
+            "linear-gradient(178.9deg, rgba(217, 217, 217, 0) 56.96%, rgba(111, 131, 124, 0.437939) 70.29%, rgba(24, 60, 47, 0.8) 99.39%)",
+        }}
+      />
+      <div className="absolute inset-x-0 bottom-9 text-center lg:bottom-7">
+        <h3 className="text-[28px] font-medium leading-none tracking-[-0.02em] text-white transition-transform duration-500 group-hover:-translate-y-1">{name}</h3>
+      </div>
+    </motion.article>
+  );
+}

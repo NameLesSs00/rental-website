@@ -1,0 +1,201 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import axiosInstance from "@/lib/api/axiosInstance";
+
+// ── Types ────────────────────────────────────────────────────────────────────
+
+export interface CreatePaypalOrderRequest {
+  bookingId: string;
+}
+
+export interface CreatePaypalOrderResponse {
+  orderId: string;
+  approvalUrl: string;
+}
+
+export interface CapturePaymentData {
+  bookingId?: string;
+  bookingExtensionId?: string | null;
+  bookingNumber: string;
+  bookingType?: string;
+  bookingCategory?: string;
+  type?: string | number;
+  paymentType?: string | number;
+  paymentTypeName?: string;
+  paymentStatus: number;
+  paymentStatusName: string;
+  amount: number;
+  currency: string;
+  transactionId: string;
+  message: string;
+  propertyName?: string;
+  checkIn?: string;
+  checkOut?: string;
+  guests?: number;
+  pickupDate?: string;
+  pickupTime?: string;
+  passengers?: number;
+  buyingId?: string;
+  propertyBuyingName?: string;
+}
+
+export interface PaymentApiResponse<T = CapturePaymentData> {
+  data: T | null;
+  isSuccess: boolean;
+  message: string | null;
+  errors: string[];
+  type: number;
+}
+
+export interface BookingPayment {
+  id: string;
+  bookingId: string;
+  bookingExtensionId: string | null;
+  amount: number;
+  currency: string;
+  provider: number;
+  providerName: string;
+  paymentType: number;
+  paymentTypeName: string;
+  payPalOrderId: string | null;
+  payPalCaptureId: string | null;
+  transactionId: string | null;
+  payerEmail: string | null;
+  status: number;
+  statusName: string;
+  failureReason: string | null;
+  createdAtUtc: string;
+  paidAt: string | null;
+  refundedAt: string | null;
+}
+
+// ── Hooks ────────────────────────────────────────────────────────────────────
+
+/**
+ * Step 1b: After booking is created, create a PayPal order.
+ * Returns { orderId, approvalUrl } — redirect user to approvalUrl.
+ */
+export function useCreatePaypalOrder() {
+  return useMutation({
+    mutationFn: async (payload: CreatePaypalOrderRequest) => {
+      const { data } = await axiosInstance.post<{ orderId: string; approvalUrl: string }>(
+        "/api/payments/paypal/create-order",
+        payload
+      );
+      return data;
+    },
+  });
+}
+
+export function useBookingPayments(bookingId: string) {
+  return useQuery({
+    queryKey: ["payments", "booking", bookingId],
+    queryFn: async () => {
+      try {
+        const { data } = await axiosInstance.get<PaymentApiResponse<BookingPayment[]>>(
+          `/api/payments/booking/${bookingId}`
+        );
+        return data.data || [];
+      } catch (error) {
+        const apiError = error as {
+          response?: { status?: number; data?: PaymentApiResponse<BookingPayment[]> };
+        };
+
+        if (
+          apiError.response?.status === 404 &&
+          apiError.response.data?.message?.toLowerCase().includes("no payments found")
+        ) {
+          return [];
+        }
+
+        throw error;
+      }
+    },
+    enabled: !!bookingId,
+    staleTime: 30 * 1000,
+  });
+}
+
+/**
+ * Step 2: After PayPal redirects to /payment/success?token=ORDER_ID,
+ * call this with the token to capture the payment.
+ */
+export function useCapturePaypalPayment() {
+  return useMutation({
+    mutationFn: async (orderId: string) => {
+      const { data } = await axiosInstance.post<PaymentApiResponse>(
+        "/api/payments/paypal/capture",
+        "",
+        {
+          params: { orderId },
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        }
+      );
+      return data;
+    },
+  });
+}
+
+/**
+ * Fallback: If capture fails or user cancels, call this to notify the backend.
+ */
+export function useCancelPayment() {
+  return useMutation({
+    mutationFn: async (orderId: string) => {
+      const { data } = await axiosInstance.post("/api/payments/cancel", { orderId });
+      return data;
+    },
+  });
+}
+
+/**
+ * Edit an admin payment.
+ */
+export function useUpdateAdminPayment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ paymentId, payload }: { paymentId: string; payload: { bookingId: string; payAmount: number; paidAmount: number } }) => {
+      const { data } = await axiosInstance.put<PaymentApiResponse>(
+        `/api/admin/payments/${paymentId}`,
+        payload
+      );
+      return data;
+    },
+    onSuccess: (_data, { payload }) => {
+      queryClient.invalidateQueries({ queryKey: ["payments", "booking", payload.bookingId] });
+      queryClient.invalidateQueries({ queryKey: ["bookings", "admin", "property", payload.bookingId] });
+      queryClient.invalidateQueries({ queryKey: ["bookings", "admin", "property"] });
+    },
+  });
+}
+
+export interface PaymentHistoryItem {
+  id: string;
+  paymentId: string;
+  bookingId: string;
+  previousAmount: number;
+  newAmount: number;
+  previousStatus: number;
+  previousStatusName: string;
+  newStatus: number;
+  newStatusName: string;
+  changedBy: string;
+  changedAt: string;
+}
+
+/**
+ * Get payment modification history for a specific payment.
+ */
+export function usePaymentHistory(paymentId: string) {
+  return useQuery({
+    queryKey: ["payments", "history", paymentId],
+    queryFn: async () => {
+      const { data } = await axiosInstance.get<PaymentApiResponse<PaymentHistoryItem[]>>(
+        `/api/payments/${paymentId}/history`
+      );
+      return data.data || [];
+    },
+    enabled: !!paymentId,
+    staleTime: 30 * 1000,
+  });
+}

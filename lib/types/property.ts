@@ -1,0 +1,317 @@
+export enum PropertyStatus {
+  Clean = 1,
+  Dirty = 2,
+  Maintenance = 3,
+}
+
+export enum PropertyType {
+  Apartment = 1,
+  Villa = 2,
+  Studio = 3,
+  Chalet = 4,
+  TwinHouse = 5,
+  TownHouse = 6,
+  Duplex = 7,
+  Penthouse = 8,
+  Cabin = 9,
+  Hotel = 10,
+  twoBedroom = 11,
+  oneBedroom = 12,
+}
+
+export enum BedType {
+  Single = 0,
+  Twin = 1,
+  Double = 2,
+  Queen = 3,
+  King = 4,
+  SofaBed = 5,
+  BunkBed = 6,
+  BabyCrib = 7,
+  Futon = 8,
+}
+
+export interface PropertyAddress {
+  id?: string;
+  propertyId?: string;
+  country: string;
+  state?: string;
+  city: string;
+  area: string;
+  zipCode: string;
+  street: string;
+}
+
+export interface PropertyListingDetails {
+  id?: string;
+  propertyId?: string;
+  listingStatus?: number;
+  listingStatusName?: string;
+  lateCheckIn: string;
+  outdoorFacility: string;
+  originalService: string;
+  cancellation: string;
+  extraPeopleFee: number;
+  privatebathroom: boolean; // From POST payload it's lowercase b, sometimes privateBathroom
+  checkInHour?: string;
+  checkOutHour?: string;
+  familyFriendly: boolean;
+  privateEntrance: boolean;
+  extraPeople: string;
+}
+
+export interface PropertyBed {
+  id?: string;
+  bedType: BedType;
+  bedTypeName?: string;
+  quantity: number;
+}
+
+export interface PropertySleepingArrangement {
+  id?: string;
+  name: string;
+  displayOrder: number;
+  beds: PropertyBed[];
+}
+
+export interface PropertyImage {
+  id: string;
+  propertyId: string;
+  imageUrl: string;
+  displayOrder: number;
+  isCover: boolean;
+}
+
+export interface DailyPrice {
+  date: string;
+  price: number;
+}
+
+export interface PropertyDailyPricesData {
+  propertyId: string;
+  prices: DailyPrice[];
+}
+
+export interface BulkDailyPricesRequest {
+  startDate: string;
+  durationInMonths: number | null;
+  endDate: string | null;
+  price: number;
+}
+
+export interface DailyPriceCheckRequest {
+  checkIn: string;
+  checkOut: string;
+}
+
+export interface DailyPriceCheckData {
+  isPriceAvailable: boolean;
+  totalPrice: number;
+  dailyPrices: DailyPrice[];
+  missingDates: string[];
+}
+
+export interface PropertyBookingCalendarItem {
+  bookingId?: string;
+  bookingNumber?: string;
+  status?: number;
+  statusName?: string;
+  from: string;
+  to: string;
+  isBookable?: boolean;
+}
+
+export interface PropertyAvailabilityData {
+  propertyId?: string;
+  propertyNumber?: string;
+  propertyName?: string;
+  bookingCalendar?: PropertyBookingCalendarItem[];
+  [key: string]: unknown;
+}
+
+export interface PropertyAvailabilityRequest {
+  propertyId: string;
+  startDate: string;
+  endDate: string;
+}
+
+export interface PropertyDailyPricesRequest {
+  propertyId: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface PropertyCategoryGroup {
+  categoryName: string;
+  items: string[];
+}
+
+export interface PropertyCategoryValueItem {
+  id: string;
+  propertyCategoryId: string;
+  name: string;
+  icon: string | null;
+  displayOrder: number;
+  isActive: boolean;
+  isDefault: boolean;
+}
+
+export interface PropertyCategoryValueDto {
+  id: string;
+  propertyId: string;
+  propertyCategoryItemId: string;
+  propertyCategoryItem: PropertyCategoryValueItem | null;
+}
+
+export interface PropertyAttributeGroupItem {
+  id: string;
+  attributeGroupId?: string;
+  key: string;
+  value: string;
+  displayOrder: number;
+}
+
+export interface PropertyAttributeGroup {
+  id: string;
+  name: string;
+  displayOrder: number;
+  items: PropertyAttributeGroupItem[];
+}
+
+// Full Property Object (GET /api/properties/{id})
+export interface Property {
+  id: string;
+  propertyNumber: string;
+  code: string;
+  name: string;
+  description: string;
+  bedroomNo: number;
+  bathroomNo: number;
+  roomNo: number;
+  capacity: number;
+  size: number;
+  basePrice: number;
+  propertyType: PropertyType;
+  propertyTypeName: string;
+  propertyStatus: PropertyStatus;
+  propertyStatusName: string;
+  isAvailable: boolean;
+  isFeatured: boolean;
+  hasSeaView: boolean;
+  hasPoolView: boolean;
+  hasGardenView: boolean;
+  hasMountainView: boolean;
+  hasCityView: boolean;
+  latitude: number;
+  longitude: number;
+  rulesCancellation: string;
+  notes: string;
+  createdAtUtc: string;
+  updatedAtUtc: string | null;
+  category?: {
+    id: string;
+    name: string;
+    imageUrl: string;
+  };
+  address: PropertyAddress;
+  listingDetails: PropertyListingDetails;
+  images: PropertyImage[];
+  prices: DailyPrice[];
+  sleepingArrangements: PropertySleepingArrangement[];
+  categories: PropertyCategoryGroup[];
+  propertyCategoryValueDtos?: PropertyCategoryValueDto[];
+  attributeGroups?: PropertyAttributeGroup[];
+  attributeGroupItems?: PropertyAttributeGroupItem[];
+  attributeGroupItemIds?: string[];
+  attributes?: PropertyAttributeGroupItem[];
+  landmarks?: PropertyAttributeGroupItem[];
+  landMarks?: PropertyAttributeGroupItem[];
+}
+
+// Property ListItem (GET /api/properties)
+export interface PropertyListItem {
+  id: string;
+  propertyNumber: string;
+  code: string;
+  name: string;
+  bedroomNo: number;
+  bathroomNo: number;
+  capacity: number;
+  basePrice: number;
+  propertyType: PropertyType;
+  propertyTypeName: string;
+  isAvailable: boolean;
+  isFeatured: boolean;
+  coverImageUrl: string | null;
+  city: string | null;
+  country: string | null;
+  createdAtUtc: string;
+}
+
+export interface PropertyAddressRequest extends Omit<PropertyAddress, "country" | "city" | "area" | "street"> {
+  country: TranslationInput;
+  city: TranslationInput;
+  area: TranslationInput;
+  street: TranslationInput;
+}
+
+export interface PropertyListingDetailsRequest extends Omit<PropertyListingDetails, "outdoorFacility" | "cancellation"> {
+  outdoorFacility: TranslationInput;
+  cancellation: TranslationInput;
+}
+
+// Request Payload (POST /api/properties or PUT /api/properties/{id})
+export interface PropertyRequest {
+  categoryId: string;
+  code: string;
+  name: TranslationInput;
+  description: TranslationInput;
+  bedroomNo: number;
+  bathroomNo: number;
+  roomNo: number;
+  capacity: number;
+  size: number;
+  basePrice: number;
+  propertyType: PropertyType;
+  propertyStatus: PropertyStatus;
+  isAvailable: boolean;
+  isFeatured: boolean;
+  hasSeaView: boolean;
+  hasPoolView: boolean;
+  hasGardenView: boolean;
+  hasMountainView: boolean;
+  hasCityView: boolean;
+  latitude: number;
+  longitude: number;
+  rulesCancellation: string;
+  notes: string;
+  address?: PropertyAddressRequest;
+  listingDetails?: PropertyListingDetailsRequest;
+  sleepingArrangements?: PropertySleepingArrangement[];
+  propertyCategoryItemIds?: string[];
+  attributeGroupItemIds?: string[];
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  pageNumber: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+}
+
+export interface PropertyApiResponse<T> {
+  data: T | null;
+  isSuccess: boolean;
+  message: string | null;
+  errors: string[];
+  type: number;
+}
+
+export interface PropertyTypeCount {
+  name: string;
+  count: number;
+}
+import type { TranslationInput } from "@/lib/i18n/adminTranslations";
