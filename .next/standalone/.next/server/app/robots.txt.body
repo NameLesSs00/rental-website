@@ -1,0 +1,14 @@
+User-Agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /billing/
+Disallow: /en/payment/
+Disallow: /fr/payment/
+Disallow: /de/payment/
+Disallow: /ru/payment/
+Disallow: /en/booking-confirmation
+Disallow: /fr/booking-confirmation
+Disallow: /de/booking-confirmation
+Disallow: /ru/booking-confirmation
+
+Sitemap: https://hurghadavacationhomes.com/sitemap.xml

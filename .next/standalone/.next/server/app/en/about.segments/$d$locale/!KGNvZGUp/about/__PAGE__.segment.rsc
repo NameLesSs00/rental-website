@@ -1,0 +1,22 @@
+1:"$Sreact.fragment"
+2:I[29063,["/_next/static/chunks/0wvcuq9_j3nds.js","/_next/static/chunks/0quy22s_kd0om.js","/_next/static/chunks/26fd61glb5mha.js","/_next/static/chunks/0e1-0fdxsnd8a.js","/_next/static/chunks/1mvzhyl2n3ym3.js","/_next/static/chunks/2mp9a_xbyn9vz.js"],"default"]
+3:I[897367,["/_next/static/chunks/0wvcuq9_j3nds.js","/_next/static/chunks/0quy22s_kd0om.js"],"OutletBoundary"]
+4:"$Sreact.suspense"
+8:I[897367,["/_next/static/chunks/0wvcuq9_j3nds.js","/_next/static/chunks/0quy22s_kd0om.js"],"ViewportBoundary"]
+9:I[897367,["/_next/static/chunks/0wvcuq9_j3nds.js","/_next/static/chunks/0quy22s_kd0om.js"],"MetadataBoundary"]
+a:I[27201,["/_next/static/chunks/0wvcuq9_j3nds.js","/_next/static/chunks/0quy22s_kd0om.js"],"IconMark"]
+c:I[339756,["/_next/static/chunks/0wvcuq9_j3nds.js","/_next/static/chunks/0quy22s_kd0om.js"],"default"]
+d:I[837457,["/_next/static/chunks/0wvcuq9_j3nds.js","/_next/static/chunks/0quy22s_kd0om.js"],"default"]
+7:X
+f:X
+f:C
+0:{"buildId":"wFyigh721XUavbWRxFkjp","data":[{"rsc":["$","$1","c",{"children":[["$","$L2",null,{}],[["$","script","script-0",{"src":"/_next/static/chunks/2mp9a_xbyn9vz.js","async":true}]],["$","$L3",null,{"children":["$","$4",null,{"name":"Next.MetadataOutlet","children":"$@5"}]}]]}],"isPartial":"$@6","staleTime":"$7","varyParams":null},{"rsc":["$","$1","h",{"children":[null,["$","$L8",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L9",null,{"children":["$","$4",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"About Hurghada Vacation Homes | Hurghada Vacation Homes"}],["$","meta","1",{"name":"description","content":"Learn how Hurghada Vacation Homes connects travelers with handpicked holiday apartments, chalets, and private airport transfers in Hurghada."}],["$","meta","2",{"name":"application-name","content":"Hurghada Vacation Homes"}],["$","meta","3",{"name":"author","content":"Hurghada Vacation Homes"}],["$","meta","4",{"name":"creator","content":"Hurghada Vacation Homes"}],["$","meta","5",{"name":"publisher","content":"Hurghada Vacation Homes"}],["$","meta","6",{"name":"robots","content":"index, follow"}],["$","meta","7",{"name":"googlebot","content":"index, follow, max-video-preview:-1, max-image-preview:large, max-snippet:-1"}],["$","link","8",{"rel":"canonical","href":"https://hurghadavacationhomes.com/en/about"}],["$","meta","9",{"property":"og:title","content":"About Hurghada Vacation Homes | Vacation Homes & Holiday Rentals"}],["$","meta","10",{"property":"og:description","content":"Trusted local hosts for verified vacation homes, beachside chalets, and private transfers in Hurghada."}],["$","meta","11",{"property":"og:url","content":"https://hurghadavacationhomes.com/en/about"}],["$","meta","12",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","13",{"name":"twitter:title","content":"Hurghada Vacation Homes | Vacation Homes & Holiday Rentals in Hurghada"}],["$","meta","14",{"name":"twitter:description","content":"Discover and book verified vacation homes, holiday apartments, beach chalets, studios, and private airport transfers in Hurghada with local host support."}],["$","meta","15",{"name":"twitter:image","content":"https://hurghadavacationhomes.com/logo-green.png"}],["$","link","16",{"rel":"icon","href":"/favicon.ico?favicon.00nyjvy6w759s.ico","sizes":"64x64","type":"image/x-icon"}],["$","$La","17",{}]]}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"isPartial":"$@b","staleTime":"$7","varyParams":null},{"rsc":["$","$1","c",{"children":[null,["$","$Lc",null,{"parallelRouterKey":"children","template":["$","$Ld",null,{}]}]]}],"isPartial":"$@e","staleTime":"$7","varyParams":"$f"},{"rsc":["$","$1","c",{"children":[null,["$","$Lc",null,{"parallelRouterKey":"children","template":["$","$Ld",null,{}]}]]}],"isPartial":"$@10","staleTime":"$7","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@11","rootVaryParams":null,"needsRuntimeRequest":"$@12"}
+5:null
+12:true
+7:300
+7:C
+11:0
+b:"$undefined"
+e:"$undefined"
+10:"$undefined"
+6:"$undefined"
