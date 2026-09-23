@@ -72,21 +72,21 @@ const dropdownItemMotion: Variants = {
   },
 };
 const mobileMenuMotion: Variants = {
-  hidden: { opacity: 0, y: -8 },
+  hidden: { opacity: 0, y: "-100%" },
   visible: {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.22,
+      duration: 0.4,
       ease: smoothEase,
       staggerChildren: 0.04,
-      delayChildren: 0.04,
+      delayChildren: 0.1,
     },
   },
   exit: {
     opacity: 0,
-    y: -8,
-    transition: { duration: 0.16, ease: smoothEase },
+    y: "-100%",
+    transition: { duration: 0.3, ease: smoothEase },
   },
 };
 
@@ -107,13 +107,25 @@ export default function Header() {
     { href: "/blogs", label: t("nav.items.blogs") },
   ];
 
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
+
   return (
-    <motion.header
-      variants={headerMotion}
-      initial={initialState}
-      animate="visible"
-      className="sticky top-0 z-[60] w-full bg-white font-[var(--font-poppins)] shadow-[0_2px_2px_rgba(0,0,0,0.15)] lg:shadow-none"
-    >
+    <>
+      <motion.header
+        variants={headerMotion}
+        initial={initialState}
+        animate="visible"
+        className="sticky top-0 z-[60] w-full bg-white font-[var(--font-poppins)] shadow-[0_2px_2px_rgba(0,0,0,0.15)] lg:shadow-none"
+      >
       <motion.div
         variants={headerInnerMotion}
         className="mx-auto flex h-14 w-full max-w-[1280px] items-center justify-between px-5 sm:px-10 lg:grid lg:h-[104px] lg:grid-cols-[1fr_auto_1fr] lg:px-6 xl:px-0"
@@ -262,6 +274,7 @@ export default function Header() {
           </span>
         </motion.button>
       </motion.div>
+    </motion.header>
 
       <AnimatePresence>
         {menuOpen && (
@@ -270,9 +283,32 @@ export default function Header() {
             initial={initialState}
             animate="visible"
             exit="exit"
-            className="absolute left-0 top-full w-full border-t border-[#1F4D3D]/10 bg-white shadow-[0_20px_40px_rgba(31,77,61,0.12)] lg:hidden"
+            className="fixed inset-0 z-[100] flex flex-col bg-white lg:hidden"
           >
-            <nav className="mx-auto grid max-w-[1280px] gap-1 px-6 py-5 sm:px-10" onClick={closeMenu}>
+            <div className="flex h-14 shrink-0 items-center justify-between border-b border-[#1F4D3D]/10 px-5 sm:px-10">
+              <Link href={href("/")} className="flex items-center" onClick={closeMenu}>
+                <Image
+                  src="/logo-green.png"
+                  alt="Logo"
+                  width={140}
+                  height={80}
+                  priority
+                  unoptimized
+                  className="h-14 w-auto object-contain"
+                />
+              </Link>
+              <button
+                type="button"
+                aria-label="Close menu"
+                onClick={closeMenu}
+                className="flex h-8 w-8 items-center justify-end text-[#1F4D3D] transition hover:text-[#2f7b61]"
+              >
+                <svg className="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <nav className="mx-auto grid w-full max-w-[1280px] flex-1 content-start gap-1 overflow-y-auto px-6 py-5 sm:px-10" onClick={closeMenu}>
               {navItems.map((item) => {
                 if (item.subItems) {
                   return (
@@ -337,7 +373,7 @@ export default function Header() {
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.header>
+    </>
   );
 }
 

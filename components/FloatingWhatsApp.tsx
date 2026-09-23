@@ -9,9 +9,6 @@ export default function FloatingWhatsApp() {
       aria-label={`Chat on WhatsApp at ${siteConfig.displayPhone}`}
       className="fixed bottom-7 right-7 z-[70] inline-flex items-center gap-[15px] transition hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-[#25d366]/25"
     >
-      <span className="inline-flex h-[50px] items-center justify-center whitespace-nowrap rounded-[10px] bg-white px-[18px] text-[14px] font-bold leading-none text-[#05385b] shadow-[0_8px_24px_rgba(17,35,52,0.16)]">
-        {siteConfig.displayPhone}
-      </span>
       <span className="grid size-16 place-items-center rounded-full bg-[#25d366] shadow-[0_10px_28px_rgba(37,211,102,0.28)]">
         <svg
           className="size-[38px]"
