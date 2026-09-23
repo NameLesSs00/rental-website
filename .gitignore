@@ -13,8 +13,12 @@
 # testing
 /coverage
 
-# next.js
-/.next/
+# next.js — ignore build cache but commit standalone output for MonsterASP deployment
+/.next/*
+!/.next/standalone/
+!/.next/standalone/**
+!/.next/static/
+!/.next/static/**
 /out/
 
 # production
