@@ -6,9 +6,10 @@ import PropertyImageGallery from "./PropertyImageGallery";
 import ScrollAnimation from "./ScrollAnimation";
 import ContactForm from "./ContactForm";
 import { usePublicPropertyBuyingById } from "@/lib/hooks/usePropertyBuying";
+import { usePropertyBuyingCategories } from "@/lib/hooks/usePropertyBuyingCategory";
 import { API_BASE_URL } from "@/lib/api/config";
 import type { PropertyBuying, PropertyBuyingSection } from "@/lib/types/propertyBuying";
-import { formatUsd } from "@/lib/utils/currency";
+import { formatCurrency } from "@/lib/utils/currency";
 
 
 type QuickFact = {
@@ -20,12 +21,13 @@ type DetailRow = [string, string];
 
 export default function SingleBuyPropertyPageContent({ id }: { id: string }) {
   const { data: property, isLoading } = usePublicPropertyBuyingById(id);
+  const { data: categories = [] } = usePropertyBuyingCategories();
 
   if (isLoading) return <div className="p-20 text-center">Loading Property...</div>;
   if (!property) return <div className="p-20 text-center">Property not found</div>;
 
-  const galleryImages = (property.images || []).sort((a,b)=>a.displayOrder - b.displayOrder).map((img, i) => ({ src: `${API_BASE_URL}/${img.imageUrl}`, alt: property.title, className: i === 0 ? "col-span-2 row-span-2" : (i === 3 ? "col-span-2" : "") }));
-  if (galleryImages.length === 0) galleryImages.push({ src: "/rent/property-card.png", alt: "Placeholder", className: "col-span-2 row-span-2" });
+  const galleryImages = (property.images || []).sort((a,b)=>a.displayOrder - b.displayOrder).map((img) => ({ src: `${API_BASE_URL}/${img.imageUrl}`, alt: property.title }));
+  if (galleryImages.length === 0) galleryImages.push({ src: "/rent/property-card.png", alt: "Placeholder" });
   
   const quickFacts = [
     { label: `${property.area || 0} m²`, icon: "/homepage/properties/icons/size.svg" },
@@ -34,7 +36,7 @@ export default function SingleBuyPropertyPageContent({ id }: { id: string }) {
   ];
 
   const priceDetails: DetailRow[] = [
-    ["Price:", formatUsd(property.price)],
+    ["Price:", formatCurrency(property.price, property.currency)],
     ["Status:", property.status === 1 ? "Available" : property.status === 2 ? "Reserved" : "Sold"],
   ];
 
@@ -68,13 +70,16 @@ export default function SingleBuyPropertyPageContent({ id }: { id: string }) {
           </ScrollAnimation>
           
           <ScrollAnimation delay={0.1}>
-            <AmenitiesSection sections={property.sections || []} />
+            <AmenitiesSection 
+              categoryValues={property.categoryValues || []} 
+              categories={categories}
+            />
           </ScrollAnimation>
         </div>
       </section>
       
       {/* Contact Form Section */}
-      <section className="bg-[#f7f9f8] px-5 py-12 sm:px-8 lg:px-20 lg:py-20">
+      <section className="bg-white px-5 py-12 sm:px-8 lg:px-20 lg:py-20">
         <div className="mx-auto max-w-[800px]">
           <div className="mb-10 text-center">
             <h2 className="text-[28px] font-semibold text-[#183c2f] sm:text-[32px]">Interested in this Property?</h2>
@@ -94,12 +99,12 @@ function PropertyHeader({ property }: { property: PropertyBuying }) {
         <span className="relative grid size-5 place-items-center lg:size-6">
           <Image src="/single-property/icon-home.svg" alt="" fill sizes="24px" className="object-contain" />
         </span>
-        <span>Home&gt;Buy Properties &gt;</span>
+        <span>Home &gt; Buy Properties &gt;</span>
         <span className="text-[#292d32]">Property Details</span>
       </nav>
 
       <div className="mt-4 lg:mt-6">
-        <h1 className="text-[16px] font-semibold leading-6 text-[#183c2f] lg:text-[36px] lg:font-medium lg:leading-[49px]">
+        <h1 className="text-[16px] font-semibold leading-6 text-[#183c2f] lg:text-[28px] lg:font-medium lg:leading-[38px]">
           {property.title}
         </h1>
         <p className="mt-2 flex items-center gap-1 text-[12px] leading-6 text-[#b3b3b3] lg:text-[16px]">
@@ -113,7 +118,7 @@ function PropertyHeader({ property }: { property: PropertyBuying }) {
 
 function QuickFacts({ facts }: { facts: QuickFact[] }) {
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 text-[12px] leading-4 text-[#656566] lg:text-[14px]">
+    <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-[12px] leading-4 text-[#656566] lg:text-[14px]">
       {facts.map((fact) => (
         <span key={fact.label} className="inline-flex items-center gap-2">
           <Image src={fact.icon} alt="" width={16} height={16} className="size-4" />
@@ -163,7 +168,37 @@ function InfoCard({ title, icon, rows }: { title: string; icon: string; rows: De
   );
 }
 
-function AmenitiesSection({ sections }: { sections: PropertyBuyingSection[] }) {
+function AmenitiesSection({ categoryValues, categories }: { categoryValues: any[], categories: any[] }) {
+  const sectionsMap = new Map<string, PropertyBuyingSection>();
+
+  for (const cv of categoryValues) {
+    const item = cv.propertyBuyingCategoryItem;
+    if (!item) continue;
+
+    const catId = item.propertyBuyingCategoryId;
+    if (!sectionsMap.has(catId)) {
+      const category = categories.find((c) => c.id === catId);
+      sectionsMap.set(catId, {
+        categoryId: catId,
+        categoryName: category?.name || "Features",
+        categoryIcon: category?.icon || null,
+        displayOrder: category?.displayOrder || 0,
+        items: [],
+      });
+    }
+
+    sectionsMap.get(catId)!.items.push({
+      itemId: item.id,
+      name: item.name,
+      icon: item.icon,
+      displayOrder: item.displayOrder || 0,
+    });
+  }
+
+  const sections = Array.from(sectionsMap.values()).sort((a, b) => a.displayOrder - b.displayOrder);
+
+  if (sections.length === 0) return null;
+
   return (
     <section className="mt-7 rounded-lg border border-[#dfe8e4] bg-white p-[25px] shadow-[0_4px_10px_rgba(175,132,255,0.03)]">
       <div className="flex items-center gap-2">

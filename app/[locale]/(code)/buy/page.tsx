@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import BuyPropertiesPageContent from "@/components/BuyPropertiesPageContent";
 
 export const metadata: Metadata = {
-  title: "Properties",
-  description: "Hurghada Vacation Homes",
-  robots: { index: false, follow: false },
+  title: "Properties for Sale | Hurghada Vacation Homes",
+  description: "Browse properties for sale in Hurghada. Find your dream home with Hurghada Vacation Homes.",
+  alternates: { canonical: "/buy" },
 };
 
 export default function BuyPage() {
-  notFound();
+  return <BuyPropertiesPageContent />;
 }

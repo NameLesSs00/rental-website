@@ -8,6 +8,11 @@ import {
   PaginatedPropertyBuyingResponse,
   PropertyBuyingApiResponse,
 } from "../types/propertyBuying";
+import {
+  adminTranslationLocales,
+  buildTranslationFromRecords,
+  type LocaleRecord,
+} from "@/lib/i18n/adminTranslations";
 
 // GET /api/property-buyings
 export function usePropertyBuyings(params: {
@@ -38,6 +43,12 @@ export function usePublicBuyProperties(params: {
       const { data } = await api.get<PropertyBuyingApiResponse<PaginatedPropertyBuyingResponse<PropertyBuyingListItem>>>("/api/public/property-buyings", { params });
       return data.data;
     },
+    // Don't retry on 4xx — bad request won't fix itself on retry
+    retry: (failureCount, error: any) => {
+      const status = error?.response?.status;
+      if (status >= 400 && status < 500) return false;
+      return failureCount < 2;
+    },
   });
 }
 
@@ -54,14 +65,44 @@ export function usePublicPropertyBuyingById(id: string) {
 }
 
 // GET /api/property-buyings/{id}
-export function usePropertyBuyingById(id: string) {
+export function usePropertyBuyingById(id: string, locale?: string) {
   return useQuery({
-    queryKey: ["propertyBuying", id],
+    queryKey: ["propertyBuying", id, locale],
     queryFn: async () => {
-      const { data } = await api.get<PropertyBuyingApiResponse<PropertyBuying>>(`/api/property-buyings/${id}`);
+      const { data } = await api.get<PropertyBuyingApiResponse<PropertyBuying>>(
+        `/api/property-buyings/${id}`,
+        locale ? { headers: { "Accept-Language": locale, "X-Locale": locale } } : undefined
+      );
       return data.data; // Return just the data object inside
     },
     enabled: !!id,
+  });
+}
+
+// GET all locales for a single buy property (for translation admin)
+export function usePropertyBuyingTranslations(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["propertyBuying", id, "translations"],
+    queryFn: async () => {
+      const entries = await Promise.all(
+        adminTranslationLocales.map(async (locale) => {
+          const { data } = await api.get<PropertyBuyingApiResponse<PropertyBuying>>(
+            `/api/property-buyings/${id}`,
+            { headers: { "Accept-Language": locale, "X-Locale": locale } }
+          );
+          if (!data.data) throw new Error(`Buy property ${id} did not load for ${locale}`);
+          return [locale, data.data] as const;
+        })
+      );
+      const records = Object.fromEntries(entries) as LocaleRecord<PropertyBuying>;
+      return {
+        records,
+        title: buildTranslationFromRecords(records, (r) => r.title),
+        description: buildTranslationFromRecords(records, (r) => r.description),
+      };
+    },
+    enabled: Boolean(id && enabled),
+    staleTime: 30 * 1000,
   });
 }
 

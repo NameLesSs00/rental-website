@@ -70,6 +70,21 @@ export interface PropertyBuying {
   address: PropertyBuyingAddress;
   images: PropertyBuyingImage[];
   sections: PropertyBuyingSection[];
+  categoryValues?: {
+    id: string;
+    propertyBuyingId: string;
+    propertyBuyingCategoryItemId: string;
+    value: string | null;
+    propertyBuyingCategoryItem: {
+      id: string;
+      propertyBuyingCategoryId: string;
+      name: string;
+      icon: string | null;
+      displayOrder: number;
+      isActive: boolean;
+      isDefault: boolean;
+    };
+  }[];
 }
 
 // Model for GET /api/property-buyings (List)

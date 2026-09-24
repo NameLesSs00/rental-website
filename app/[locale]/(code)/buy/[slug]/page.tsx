@@ -54,12 +54,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function SingleBuyPropertyPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const id = await getPropertyIdBySlug(slug, 'buy');
-  
+
   if (!id) {
     notFound();
   }
-  
-  // Buy page is disabled on the vacation rental platform
-  notFound();
+
   return <SingleBuyPropertyPageContent id={id as string} />;
 }
+

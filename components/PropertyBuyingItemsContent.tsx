@@ -10,10 +10,18 @@ import {
   useUpdatePropertyBuyingCategoryItem,
   useDeletePropertyBuyingCategoryItem,
   useUpdatePropertyBuyingCategoryItemStatus,
+  usePropertyBuyingCategoryItemTranslations,
 } from "@/lib/hooks/usePropertyBuyingCategoryItem";
 import { usePropertyBuyingCategories } from "@/lib/hooks/usePropertyBuyingCategory";
 import type { PropertyBuyingCategoryItem, PropertyBuyingCategoryItemRequest } from "@/lib/types/propertyBuyingCategory";
 import ConfirmModal from "./ConfirmModal";
+import TranslationFields from "@/components/admin/TranslationFields";
+import {
+  emptyTranslation,
+  hasRequiredBaseTranslation,
+  trimTranslation,
+  type TranslationInput,
+} from "@/lib/i18n/adminTranslations";
 
 // ── Form slide-over panel ─────────────────────────────────────────────────────
 function ItemFormPanel({
@@ -31,28 +39,44 @@ function ItemFormPanel({
   const { data: categories = [] } = usePropertyBuyingCategories();
   const { mutate: createItem, isPending: isCreating } = useCreatePropertyBuyingCategoryItem();
   const { mutate: updateItem, isPending: isUpdating } = useUpdatePropertyBuyingCategoryItem();
+  const translationsQuery = usePropertyBuyingCategoryItemTranslations(
+    item?.id ?? "",
+    isOpen && isEditing
+  );
 
   const [propertyBuyingCategoryId, setPropertyBuyingCategoryId] = useState("");
-  const [name, setName] = useState("");
+  const [name, setName] = useState<TranslationInput>(emptyTranslation());
   const [icon, setIcon] = useState("amenities-title");
   const [isIconSelectorOpen, setIsIconSelectorOpen] = useState(false);
   const [isDefaultIconSelectorOpen, setIsDefaultIconSelectorOpen] = useState(false);
   const [displayOrder, setDisplayOrder] = useState<number | "">("");
 
   useEffect(() => {
-    if (isOpen) {
-      setPropertyBuyingCategoryId(item?.propertyBuyingCategoryId ?? (categories[0]?.id || ""));
-      setName(item?.name ?? "");
-      setIcon(item?.icon ?? "amenities-title");
-      setDisplayOrder(item?.displayOrder ?? "");
+    if (!isOpen) return;
+
+    if (!isEditing) {
+      setPropertyBuyingCategoryId(categories[0]?.id || "");
+      setName(emptyTranslation());
+      setIcon("amenities-title");
+      setDisplayOrder("");
+      return;
+    }
+
+    if (translationsQuery.data) {
+      setPropertyBuyingCategoryId(translationsQuery.data.propertyBuyingCategoryId ?? (categories[0]?.id || ""));
+      setName(translationsQuery.data.name);
+      setIcon(translationsQuery.data.icon ?? "amenities-title");
+      setDisplayOrder(translationsQuery.data.displayOrder ?? "");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, item, categories.length]);
+  }, [isOpen, isEditing, translationsQuery.data, categories.length]);
 
   if (!isOpen) return null;
 
   const isSaving = isCreating || isUpdating;
-  const isFormValid = name.trim().length > 0 && propertyBuyingCategoryId;
+  const isHydrating = isEditing && translationsQuery.isLoading;
+  const canEdit = !isEditing || translationsQuery.isSuccess;
+  const isFormValid = canEdit && hasRequiredBaseTranslation(name) && !!propertyBuyingCategoryId;
 
   function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -60,7 +84,7 @@ function ItemFormPanel({
 
     const payload: PropertyBuyingCategoryItemRequest = {
       propertyBuyingCategoryId,
-      name: name.trim(),
+      name: trimTranslation(name) as any,
       icon: icon.trim() || undefined,
       displayOrder: displayOrder !== "" ? Number(displayOrder) : undefined,
     };
@@ -120,14 +144,14 @@ function ItemFormPanel({
             <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">
               Name <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. WiFi"
-              className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none transition focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]"
-            />
+            {isHydrating ? (
+              <div className="flex h-10 items-center gap-2 text-[13px] text-[#8a9a94]">
+                <span className="size-3.5 animate-spin rounded-full border-2 border-[#dfe8e4] border-t-[#2e6f57]" />
+                Loading translations…
+              </div>
+            ) : (
+              <TranslationFields label="Name" value={name} onChange={setName} />
+            )}
           </div>
 
           {/* Icon */}

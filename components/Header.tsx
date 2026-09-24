@@ -101,6 +101,7 @@ export default function Header() {
   const navItems: NavItem[] = [
     { href: "/", label: t("nav.items.home") },
     { href: "/rent", label: t("nav.items.rent") },
+    { href: "/buy", label: t("nav.items.buy") },
     { href: "/transfer", label: t("nav.items.transfer") },
     { href: "/about", label: t("nav.items.about") },
     { href: "/contact", label: t("nav.items.contact") },

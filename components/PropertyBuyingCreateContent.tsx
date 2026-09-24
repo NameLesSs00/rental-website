@@ -9,6 +9,12 @@ import { usePropertyBuyingCategories } from "@/lib/hooks/usePropertyBuyingCatego
 import { usePropertyBuyingCategoryItems } from "@/lib/hooks/usePropertyBuyingCategoryItem";
 import { PropertyBuyingRequest, PropertyBuyingStatus } from "@/lib/types/propertyBuying";
 import { PropertyType, PropertyStatus } from "@/lib/types/property";
+import TranslationFields from "@/components/admin/TranslationFields";
+import {
+  emptyTranslation,
+  hasRequiredBaseTranslation,
+  type TranslationInput,
+} from "@/lib/i18n/adminTranslations";
 
 const defaultPayload: PropertyBuyingRequest = {
   categoryId: "",
@@ -43,6 +49,8 @@ export default function PropertyBuyingCreateContent() {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<PropertyBuyingRequest>(defaultPayload);
+  const [title, setTitle] = useState<TranslationInput>(emptyTranslation());
+  const [description, setDescription] = useState<TranslationInput>(emptyTranslation());
 
   const { data: locationCategories = [] } = useCategories();
   const { data: includeCategories = [] } = usePropertyBuyingCategories();
@@ -64,7 +72,13 @@ export default function PropertyBuyingCreateContent() {
       return;
     }
 
-    createProperty({ ...formData, currency: "USD" }, {
+    const payload: PropertyBuyingRequest = {
+      ...formData,
+      title: title as any,
+      description: description as any,
+    };
+
+    createProperty(payload, {
       onSuccess: () => {
         router.push("/admin/property-buyings");
       },
@@ -103,9 +117,9 @@ export default function PropertyBuyingCreateContent() {
             <h2 className="text-[18px] font-semibold text-[#183c2f]">1. Basic Information</h2>
             
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Property Title *</label>
-                <input required type="text" value={formData.title} onChange={e => updateForm({ title: e.target.value })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]" />
+              <div className="sm:col-span-2">
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Property Title <span className="text-red-500">*</span></label>
+                <TranslationFields label="Property Title" value={title} onChange={setTitle} />
               </div>
               <div>
                 <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Location Category *</label>
@@ -117,8 +131,8 @@ export default function PropertyBuyingCreateContent() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Description *</label>
-              <textarea required rows={4} value={formData.description} onChange={e => updateForm({ description: e.target.value })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]" />
+              <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Description <span className="text-red-500">*</span></label>
+              <TranslationFields label="Description" value={description} onChange={setDescription} textarea />
             </div>
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
@@ -145,7 +159,12 @@ export default function PropertyBuyingCreateContent() {
               </div>
               <div>
                 <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Currency</label>
-                <input type="text" value="USD" readOnly className="w-full rounded-xl border border-[#dfe8e4] bg-[#f8faf9] px-4 py-2.5 text-[14px] text-[#667c74] outline-none" />
+                <select value={formData.currency} onChange={e => updateForm({ currency: e.target.value })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]">
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="EGP">EGP</option>
+                  <option value="GBP">GBP</option>
+                </select>
               </div>
             </div>
 

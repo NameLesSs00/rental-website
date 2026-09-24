@@ -5,6 +5,11 @@ import type {
   PropertyBuyingCategoryRequest,
   PropertyBuyingCategoryApiResponse,
 } from "@/lib/types/propertyBuyingCategory";
+import {
+  adminTranslationLocales,
+  buildTranslationFromRecords,
+  type LocaleRecord,
+} from "@/lib/i18n/adminTranslations";
 
 const KEY = "property-buying-categories";
 
@@ -24,17 +29,52 @@ export function usePropertyBuyingCategories() {
 }
 
 // ── 2. Single category with its items ────────────────────────────────────────
-export function usePropertyBuyingCategoryById(id: string) {
+export function usePropertyBuyingCategoryById(id: string, locale?: string) {
   return useQuery({
-    queryKey: [KEY, id],
+    queryKey: [KEY, id, locale],
     queryFn: async () => {
       const { data } = await axiosInstance.get<PropertyBuyingCategoryApiResponse<PropertyBuyingCategory>>(
         `/api/property-buying/categories/${id}`,
-        { params: { includeItems: true, onlyActive: false } }
+        {
+          params: { includeItems: true, onlyActive: false },
+          ...(locale ? { headers: { "Accept-Language": locale, "X-Locale": locale } } : {}),
+        }
       );
       return data.data;
     },
     enabled: !!id,
+    staleTime: 30 * 1000,
+  });
+}
+
+// ── 2b. Translations for all locales ─────────────────────────────────────────
+export function usePropertyBuyingCategoryTranslations(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: [KEY, id, "translations"],
+    queryFn: async () => {
+      const entries = await Promise.all(
+        adminTranslationLocales.map(async (locale) => {
+          const { data } = await axiosInstance.get<PropertyBuyingCategoryApiResponse<PropertyBuyingCategory>>(
+            `/api/property-buying/categories/${id}`,
+            {
+              params: { includeItems: false, onlyActive: false },
+              headers: { "Accept-Language": locale, "X-Locale": locale },
+            }
+          );
+          if (!data.data) throw new Error(`Buy category ${id} did not load for ${locale}`);
+          return [locale, data.data] as const;
+        })
+      );
+      const records = Object.fromEntries(entries) as LocaleRecord<PropertyBuyingCategory>;
+      return {
+        records,
+        name: buildTranslationFromRecords(records, (r) => r.name),
+        icon: records.en.icon,
+        defaultIcon: records.en.defaultIcon,
+        displayOrder: records.en.displayOrder,
+      };
+    },
+    enabled: Boolean(id && enabled),
     staleTime: 30 * 1000,
   });
 }

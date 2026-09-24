@@ -77,6 +77,7 @@ export default function Footer() {
   const quickLinks = [
     { label: t("common.home"), href: "/" },
     { label: t("common.rent"), href: "/rent" },
+    { label: t("nav.items.buy"), href: "/buy" },
     { label: t("common.about"), href: "/about" },
     { label: t("common.contact"), href: "/contact" },
     { label: t("common.blogs"), href: "/blogs" },

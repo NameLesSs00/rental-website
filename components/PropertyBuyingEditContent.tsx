@@ -6,11 +6,17 @@ import Link from "next/link";
 import {
   usePropertyBuyingById,
   useUpdatePropertyBuying,
+  usePropertyBuyingTranslations,
 } from "@/lib/hooks/usePropertyBuying";
 import { useCategories } from "@/lib/hooks/useCategory";
 import { usePropertyBuyingCategoryItems } from "@/lib/hooks/usePropertyBuyingCategoryItem";
 import { usePropertyBuyingCategories } from "@/lib/hooks/usePropertyBuyingCategory";
 import { PropertyBuyingRequest, PropertyBuyingStatus } from "@/lib/types/propertyBuying";
+import TranslationFields from "@/components/admin/TranslationFields";
+import {
+  emptyTranslation,
+  type TranslationInput,
+} from "@/lib/i18n/adminTranslations";
 
 export default function PropertyBuyingEditContent({ id }: { id: string }) {
   const router = useRouter();
@@ -23,6 +29,10 @@ export default function PropertyBuyingEditContent({ id }: { id: string }) {
   const { mutate: updateProperty, isPending } = useUpdatePropertyBuying();
 
   const [formData, setFormData] = useState<PropertyBuyingRequest | null>(null);
+  const [title, setTitle] = useState<TranslationInput>(emptyTranslation());
+  const [description, setDescription] = useState<TranslationInput>(emptyTranslation());
+
+  const translationsQuery = usePropertyBuyingTranslations(id, true);
 
   useEffect(() => {
     if (property && !formData) {
@@ -53,12 +63,17 @@ export default function PropertyBuyingEditContent({ id }: { id: string }) {
           zipCode: property.address?.zipCode || "",
           street: property.address?.street || "",
         },
-        categoryValues: (property.sections || []).flatMap((s: any) =>
-          (s.items || []).map((i: any) => ({ itemId: i.itemId }))
-        ),
+        categoryValues: (property.categoryValues || []).map((cv: any) => ({
+          itemId: cv.propertyBuyingCategoryItemId,
+        })),
       });
     }
-  }, [property, formData]);
+    
+    if (translationsQuery.data) {
+      setTitle(translationsQuery.data.title);
+      setDescription(translationsQuery.data.description);
+    }
+  }, [property, formData, translationsQuery.data]);
 
   const updateForm = (updates: Partial<PropertyBuyingRequest>) => {
     setFormData((prev) => prev ? { ...prev, ...updates } : null);
@@ -76,8 +91,14 @@ export default function PropertyBuyingEditContent({ id }: { id: string }) {
     }
     
     if (step === 3 && formData) {
+      const payload: PropertyBuyingRequest = {
+        ...formData,
+        title: title as any,
+        description: description as any,
+      };
+      
       updateProperty(
-        { id, payload: { ...formData, currency: "USD" } },
+        { id, payload },
         {
           onSuccess: () => {
             router.push("/admin/property-buyings");
@@ -149,9 +170,16 @@ export default function PropertyBuyingEditContent({ id }: { id: string }) {
               <h2 className="text-[18px] font-semibold text-[#183c2f]">1. Basic Information</h2>
               
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Property Title *</label>
-                  <input required type="text" value={formData.title} onChange={e => updateForm({ title: e.target.value })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57]" />
+                <div className="sm:col-span-2">
+                  <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Property Title <span className="text-red-500">*</span></label>
+                  {translationsQuery.isLoading ? (
+                     <div className="flex h-10 items-center gap-2 text-[13px] text-[#8a9a94]">
+                       <span className="size-3.5 animate-spin rounded-full border-2 border-[#dfe8e4] border-t-[#2e6f57]" />
+                       Loading translations…
+                     </div>
+                   ) : (
+                     <TranslationFields label="Property Title" value={title} onChange={setTitle} />
+                   )}
                 </div>
                 <div>
                   <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Location Category *</label>
@@ -163,8 +191,15 @@ export default function PropertyBuyingEditContent({ id }: { id: string }) {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Description *</label>
-                <textarea required rows={4} value={formData.description} onChange={e => updateForm({ description: e.target.value })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57]" />
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Description <span className="text-red-500">*</span></label>
+                {translationsQuery.isLoading ? (
+                   <div className="flex h-10 items-center gap-2 text-[13px] text-[#8a9a94]">
+                     <span className="size-3.5 animate-spin rounded-full border-2 border-[#dfe8e4] border-t-[#2e6f57]" />
+                     Loading translations…
+                   </div>
+                 ) : (
+                   <TranslationFields label="Description" value={description} onChange={setDescription} textarea />
+                 )}
               </div>
 
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-4">
@@ -199,7 +234,12 @@ export default function PropertyBuyingEditContent({ id }: { id: string }) {
                 </div>
                 <div>
                   <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Currency</label>
-                  <input type="text" value="USD" readOnly className="w-full rounded-xl border border-[#dfe8e4] bg-[#f8faf9] px-4 py-2.5 text-[14px] text-[#667c74] outline-none" />
+                  <select value={formData.currency} onChange={e => updateForm({ currency: e.target.value })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]">
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="EGP">EGP</option>
+                    <option value="GBP">GBP</option>
+                  </select>
                 </div>
               </div>
 
