@@ -38,7 +38,6 @@ export default function PropertyBuyingEditContent({ id }: { id: string }) {
     if (property && !formData) {
       setFormData({
         id: property.id,
-        categoryId: property.category?.id || "00000000-0000-0000-0000-000000000000",
         title: property.title || "",
         description: property.description || "",
         price: property.price || 0,
@@ -93,6 +92,7 @@ export default function PropertyBuyingEditContent({ id }: { id: string }) {
     if (step === 3 && formData) {
       const payload: PropertyBuyingRequest = {
         ...formData,
+        categoryId: formData.categoryId || (locationCategories as any[])?.[0]?.id || "00000000-0000-0000-0000-000000000000",
         title: title as any,
         description: description as any,
       };
@@ -169,8 +169,8 @@ export default function PropertyBuyingEditContent({ id }: { id: string }) {
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h2 className="text-[18px] font-semibold text-[#183c2f]">1. Basic Information</h2>
               
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <div className="sm:col-span-2">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-1">
+                <div>
                   <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Property Title <span className="text-red-500">*</span></label>
                   {translationsQuery.isLoading ? (
                      <div className="flex h-10 items-center gap-2 text-[13px] text-[#8a9a94]">
@@ -180,13 +180,6 @@ export default function PropertyBuyingEditContent({ id }: { id: string }) {
                    ) : (
                      <TranslationFields label="Property Title" value={title} onChange={setTitle} />
                    )}
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Location Category *</label>
-                  <select required value={formData.categoryId} onChange={e => updateForm({ categoryId: e.target.value })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57]">
-                    <option value="" disabled>Select Location Category</option>
-                    {(locationCategories as any[]).map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
                 </div>
               </div>
 
@@ -314,11 +307,11 @@ export default function PropertyBuyingEditContent({ id }: { id: string }) {
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 pt-4 border-t border-[#dfe8e4]">
                 <div>
                   <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Latitude</label>
-                  <input type="number" step="any" value={formData.latitude} onChange={e => updateForm({ latitude: Number(e.target.value) })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57]" />
+                  <input type="number" step="any" value={formData.latitude ?? ""} onChange={e => updateForm({ latitude: e.target.value === "" ? null : Number(e.target.value) })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57]" />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Longitude</label>
-                  <input type="number" step="any" value={formData.longitude} onChange={e => updateForm({ longitude: Number(e.target.value) })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57]" />
+                  <input type="number" step="any" value={formData.longitude ?? ""} onChange={e => updateForm({ longitude: e.target.value === "" ? null : Number(e.target.value) })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57]" />
                 </div>
               </div>
             </div>

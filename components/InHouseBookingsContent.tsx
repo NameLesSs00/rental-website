@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useInHouseBookings } from "@/lib/hooks/useBooking";
@@ -67,9 +67,36 @@ export default function InHouseBookingsContent() {
   const [formError, setFormError] = useState("");
   const [downloadingFormat, setDownloadingFormat] = useState<"excel" | "pdf" | null>(null);
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
   const { data, isLoading, isFetching, isError } = useInHouseBookings(appliedRange ?? {});
   const { mutate: downloadReport, isPending: isDownloadingReport } = useDownloadReport();
   const units = data?.units ?? [];
+
+  const filteredUnits = useMemo(() => {
+    return units.filter((unit) => {
+      const matchesSearch =
+        !searchTerm.trim() ||
+        unit.unitName.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
+        unit.unitNumber.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
+        unit.bookings.some(
+          (b) =>
+            b.guestName.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
+            b.bookingNumber.toLowerCase().includes(searchTerm.toLowerCase().trim())
+        );
+
+      if (!matchesSearch) return false;
+
+      if (statusFilter === "all") return true;
+      const normalizedStatus = (unit.statusName || unit.status || "").toLowerCase();
+      if (statusFilter === "in-house") return normalizedStatus.includes("house");
+      if (statusFilter === "booked") return normalizedStatus.includes("booked");
+      if (statusFilter === "available") return normalizedStatus.includes("available");
+
+      return true;
+    });
+  }, [units, searchTerm, statusFilter]);
 
   function handleGenerate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -185,6 +212,43 @@ export default function InHouseBookingsContent() {
             <Metric label="Available" value={data?.availableCount ?? 0} />
           </div>
 
+          <div className="mb-6 rounded-2xl border border-[#dfe8e4] bg-white p-4 shadow-[0_8px_24px_rgba(31,77,61,0.04)] sm:p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="relative min-w-[240px] flex-1 max-w-md">
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search unit, guest name, booking #..."
+                    className="h-10 w-full rounded-xl border border-[#dfe8e4] bg-white pl-9 pr-3 text-[13px] text-[#183c2f] outline-none transition placeholder:text-[#aab4b0] focus:border-[#2e6f57]"
+                  />
+                  <svg
+                    className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#8a9a94]"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[13px] font-medium text-[#667c74]">Status:</span>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="h-10 rounded-xl border border-[#dfe8e4] bg-white px-3 text-[13px] font-medium text-[#183c2f] outline-none transition focus:border-[#2e6f57]"
+                  >
+                    <option value="all">All Units ({units.length})</option>
+                    <option value="in-house">In-House ({data?.inHouseCount ?? 0})</option>
+                    <option value="booked">Booked ({data?.bookedCount ?? 0})</option>
+                    <option value="available">Available ({data?.availableCount ?? 0})</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="w-full overflow-hidden rounded-2xl border border-[#dfe8e4] bg-white shadow-[0_8px_24px_rgba(31,77,61,0.05)]">
             <div className="flex flex-col gap-3 border-b border-[#dfe8e4] bg-[#f8faf9] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2.5">
@@ -249,15 +313,33 @@ export default function InHouseBookingsContent() {
                         Failed to load in-house data.
                       </td>
                     </tr>
-                  ) : units.length === 0 ? (
+                  ) : filteredUnits.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="py-24 text-center">
-                        <p className="text-[16px] font-medium text-[#183c2f]">No units found</p>
-                        <p className="mt-1 text-[14px] text-[#667c74]">Try a different date range.</p>
+                        <div className="mx-auto max-w-sm">
+                          <p className="text-[16px] font-medium text-[#183c2f]">No matching units</p>
+                          <p className="mt-1 text-[14px] text-[#667c74]">
+                            {searchTerm || statusFilter !== "all"
+                              ? "No units match your search or filter criteria. Try clearing the filters."
+                              : "No units found for this date range."}
+                          </p>
+                          {(searchTerm || statusFilter !== "all") && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSearchTerm("");
+                                setStatusFilter("all");
+                              }}
+                              className="mt-3 text-[13px] font-semibold text-[#2e6f57] hover:underline"
+                            >
+                              Clear all filters
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ) : (
-                    units.map((unit) => (
+                    filteredUnits.map((unit) => (
                       <tr key={unit.unitId} className="transition hover:bg-[#f8faf9]">
                         <td className="px-5 py-4 font-semibold text-[#183c2f]">{unit.unitName}</td>
                         <td className="px-5 py-4 font-mono text-[12px] text-[#414847]">{unit.unitNumber}</td>

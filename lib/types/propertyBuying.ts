@@ -11,9 +11,9 @@ export interface PropertyBuyingAddress {
   country: string;
   state?: string;
   city: string;
-  area: string;
-  street: string;
-  zipCode: string;
+  area?: string;
+  street?: string;
+  zipCode?: string;
 }
 
 export interface PropertyBuyingImage {
@@ -111,7 +111,7 @@ export interface PropertyBuyingListItem {
 // Model for POST/PUT /api/property-buyings
 export interface PropertyBuyingRequest {
   id?: string;
-  categoryId: string;
+  categoryId?: string | null;
   title: string;
   description: string;
   price: number;
@@ -124,17 +124,17 @@ export interface PropertyBuyingRequest {
   garage: number;
   area: number;
   yearBuilt: number;
-  latitude: number;
-  longitude: number;
+  latitude?: number | null;
+  longitude?: number | null;
   videoUrl: string;
   virtualTourUrl: string;
   address: {
     country: string;
     state: string; // the backend expects this, user said hardcode to "state" when sending
     city: string;
-    area: string;
-    street: string;
-    zipCode: string;
+    area?: string;
+    street?: string;
+    zipCode?: string;
   };
   categoryValues: { itemId: string }[];
 }

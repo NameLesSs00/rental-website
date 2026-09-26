@@ -35,7 +35,10 @@ function getReportEndpoint(request: ReportDownloadRequest) {
 }
 
 function getReportParams(request: ReportDownloadRequest) {
-  if (request.type === "in-house" || request.type === "cancelled") {
+  if (request.type === "in-house") {
+    return { from: request.from, to: request.to };
+  }
+  if (request.type === "cancelled") {
     return { fromDate: request.from, toDate: request.to };
   }
   return { date: (request as any).date };
