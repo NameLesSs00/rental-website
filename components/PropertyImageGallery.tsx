@@ -215,11 +215,10 @@ export default function PropertyImageGallery({ images }: PropertyImageGalleryPro
                   key={image.src + idx}
                   type="button"
                   onClick={() => setActiveIndex(idx)}
-                  className={`relative h-16 w-22 sm:h-18 sm:w-26 shrink-0 overflow-hidden rounded-xl border-2 transition-all duration-200 ${
-                    isActive
+                  className={`relative h-16 w-22 sm:h-18 sm:w-26 shrink-0 overflow-hidden rounded-xl border-2 transition-all duration-200 ${isActive
                       ? "border-[#2e6f57] ring-2 ring-[#cfb072]/60 scale-[1.03] shadow-sm"
                       : "border-transparent opacity-60 hover:opacity-100 hover:border-[#d2ded8]"
-                  }`}
+                    }`}
                 >
                   <Image
                     src={image.src}
@@ -316,11 +315,10 @@ export default function PropertyImageGallery({ images }: PropertyImageGalleryPro
                   key={image.src + idx}
                   type="button"
                   onClick={() => setActiveIndex(idx)}
-                  className={`relative h-16 w-24 shrink-0 overflow-hidden rounded-lg transition-all duration-200 ${
-                    idx === activeIndex
+                  className={`relative h-16 w-24 shrink-0 overflow-hidden rounded-lg transition-all duration-200 ${idx === activeIndex
                       ? "ring-2 ring-white ring-offset-2 ring-offset-black scale-105"
                       : "opacity-40 hover:opacity-100"
-                  }`}
+                    }`}
                 >
                   <Image
                     src={image.src}

@@ -83,7 +83,7 @@ export default function BlogSinglePageContent({
                 fill
                 priority
                 sizes="(min-width: 1024px) 1120px, 100vw"
-                className="object-cover"
+                className="object-contain"
               />
             </motion.div>
           </motion.header>

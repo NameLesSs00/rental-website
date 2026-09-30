@@ -179,7 +179,7 @@ function AboutImage({ shouldReduceMotion, viewport }: MotionProps) {
       className="relative min-h-[290px] overflow-hidden rounded-2xl bg-[#f4f1ec] shadow-[0_22px_50px_rgba(31,77,61,0.12)] sm:min-h-[420px] lg:min-h-[548px] lg:rounded-[28px]"
     >
       <Image
-        src="/about/living-room.png"
+        src="/about/about-hero.jpeg"
         alt={t("about.imageAlt")}
         fill
         priority

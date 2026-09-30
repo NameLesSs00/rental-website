@@ -125,7 +125,7 @@ function VideoPreview() {
       className="relative aspect-[338/234] w-full overflow-hidden rounded-2xl bg-[#d8d1c6] lg:aspect-[522/361] lg:rounded-3xl"
     >
       <Image
-        src="/homepage/about/video-still.png"
+        src="/homepage/about/who-we-are.jpeg"
         alt={t("home.who.videoAlt")}
         fill
         sizes="(min-width: 1024px) 522px, 100vw"
@@ -137,7 +137,7 @@ function VideoPreview() {
         whileTap={{ scale: 0.95 }}
         type="button"
         aria-label={t("home.who.playVideo")}
-        className="absolute left-1/2 top-1/2 grid size-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-[#1f4d3d]/85 lg:size-[74px]"
+        className="absolute left-1/2 top-1/2 grid size-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/90 shadow-[0_8px_32px_rgba(0,0,0,0.15)] backdrop-blur-md transition hover:bg-white lg:size-[74px]"
       >
         <Image
           src="/homepage/about/icons/play.svg"
