@@ -113,16 +113,19 @@ function TransferHero() {
   const { t } = useI18n();
 
   return (
-    <section className="relative w-full h-[400px] lg:h-[600px] overflow-hidden">
+    <section className="relative h-[420px] w-full overflow-hidden bg-[#183c2f] lg:h-[620px]">
       <Image
         src="/transfer/heroTransfer2.jpg"
         alt={t("transfer.heroAlt")}
         fill
         priority
-        className="object-cover object-center"
+        sizes="100vw"
+        className="scale-[1.03] object-cover object-[center_58%] brightness-[0.86] contrast-[1.08] saturate-[1.12]"
       />
       {/* Premium Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/70" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#06130f]/35 via-[#06130f]/20 to-[#06130f]/75" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(24,60,47,0.58),rgba(24,60,47,0.18)_45%,rgba(0,0,0,0.34))]" />
+      <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#183c2f]/70 to-transparent" />
 
       {/* Content */}
       <div className="absolute inset-0 flex flex-col items-center justify-center px-5 text-center">
@@ -132,7 +135,7 @@ function TransferHero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="max-w-[700px] text-[36px] font-semibold leading-tight text-white lg:text-[64px] lg:leading-[1.1]"
+          className="max-w-[720px] text-[36px] font-semibold leading-tight text-white drop-shadow-[0_4px_18px_rgba(0,0,0,0.38)] lg:text-[64px] lg:leading-[1.1]"
         >
           {t("transfer.heroTitle")}
         </motion.h1>
@@ -141,14 +144,14 @@ function TransferHero() {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="mx-auto mt-6 h-[4px] w-[100px] rounded-full bg-[#d59e52]"
+          className="mx-auto mt-6 h-[4px] w-[112px] rounded-full bg-[#d59e52] shadow-[0_0_22px_rgba(213,158,82,0.45)]"
         />
         
         <motion.p 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.5 }}
-          className="mt-6 max-w-[560px] text-[16px] leading-relaxed text-white/90 lg:text-[20px]"
+          className="mt-6 max-w-[580px] text-[16px] font-medium leading-relaxed text-white/92 drop-shadow-[0_3px_14px_rgba(0,0,0,0.35)] lg:text-[20px]"
         >
           {t("transfer.heroBody")}
         </motion.p>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 
 interface GalleryImage {
@@ -11,13 +11,31 @@ interface GalleryImage {
 
 interface PropertyImageGalleryProps {
   images: GalleryImage[];
+  className?: string;
+  mainImageClassName?: string;
 }
 
-export default function PropertyImageGallery({ images }: PropertyImageGalleryProps) {
+export default function PropertyImageGallery({
+  images,
+  className = "",
+  mainImageClassName = "aspect-[16/10] sm:aspect-[16/9]",
+}: PropertyImageGalleryProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const filmstripRef = useRef<HTMLDivElement>(null);
   const touchStartXRef = useRef<number | null>(null);
+
+  const handlePrev = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (images.length < 2) return;
+    setActiveIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  }, [images.length]);
+
+  const handleNext = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (images.length < 2) return;
+    setActiveIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+  }, [images.length]);
 
   // Prevent background scrolling when modal is open
   useEffect(() => {
@@ -40,7 +58,7 @@ export default function PropertyImageGallery({ images }: PropertyImageGalleryPro
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, activeIndex, images.length]);
+  }, [isOpen, handlePrev, handleNext]);
 
   // Scroll active thumbnail into view in filmstrip
   useEffect(() => {
@@ -54,16 +72,6 @@ export default function PropertyImageGallery({ images }: PropertyImageGalleryPro
       });
     }
   }, [activeIndex]);
-
-  const handlePrev = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    setActiveIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
-  };
-
-  const handleNext = (e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    setActiveIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
-  };
 
   const scrollFilmstrip = (direction: -1 | 1) => {
     if (!filmstripRef.current) return;
@@ -97,10 +105,10 @@ export default function PropertyImageGallery({ images }: PropertyImageGalleryPro
   const activeImage = images[activeIndex] || images[0];
 
   return (
-    <div className="w-full">
+    <div className={`w-full ${className}`}>
       {/* ─── Main Featured Photo (Interactive On-Page Slider) ─── */}
       <div
-        className="group relative aspect-[16/10] sm:aspect-[16/9] w-full cursor-pointer overflow-hidden rounded-2xl bg-[#e8eeec] shadow-sm select-none"
+        className={`group relative w-full cursor-pointer overflow-hidden rounded-2xl bg-[#e8eeec] shadow-sm select-none ${mainImageClassName}`}
         onClick={() => setIsOpen(true)}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}

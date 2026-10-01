@@ -1,14 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
 import PropertyImageGallery from "./PropertyImageGallery";
 import ScrollAnimation from "./ScrollAnimation";
 import ContactForm from "./ContactForm";
+import DynamicAmenityIcon from "./DynamicAmenityIcon";
 import { usePublicPropertyBuyingById } from "@/lib/hooks/usePropertyBuying";
 import { usePropertyBuyingCategories } from "@/lib/hooks/usePropertyBuyingCategory";
 import { API_BASE_URL } from "@/lib/api/config";
 import type { PropertyBuying, PropertyBuyingSection } from "@/lib/types/propertyBuying";
+import type { PropertyBuyingCategory } from "@/lib/types/propertyBuyingCategory";
 import { formatCurrency } from "@/lib/utils/currency";
 
 
@@ -56,7 +57,11 @@ export default function SingleBuyPropertyPageContent({ id }: { id: string }) {
 
           <div className="mt-5 min-w-0 lg:mt-[22px]">
             <ScrollAnimation delay={0} className="min-w-0">
-              <PropertyImageGallery images={galleryImages} />
+              <PropertyImageGallery
+                images={galleryImages}
+                className="mx-auto max-w-[1080px]"
+                mainImageClassName="aspect-[16/10] sm:aspect-[16/8.8] lg:aspect-[16/8.2]"
+              />
               <QuickFacts facts={quickFacts} />
             </ScrollAnimation>
           </div>
@@ -118,10 +123,10 @@ function PropertyHeader({ property }: { property: PropertyBuying }) {
 
 function QuickFacts({ facts }: { facts: QuickFact[] }) {
   return (
-    <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-[12px] leading-4 text-[#656566] lg:text-[14px]">
+    <div className="mx-auto mt-4 flex max-w-[1080px] flex-wrap items-center gap-x-7 gap-y-3 rounded-xl border border-[#dfe8e4] bg-[#fbfdfc] px-4 py-3 text-[13px] leading-5 text-[#40544c] lg:text-[14px]">
       {facts.map((fact) => (
-        <span key={fact.label} className="inline-flex items-center gap-2">
-          <Image src={fact.icon} alt="" width={16} height={16} className="size-4" />
+        <span key={fact.label} className="inline-flex items-center gap-2.5 font-medium">
+          <Image src={fact.icon} alt="" width={22} height={22} className="size-[22px] shrink-0 object-contain" />
           {fact.label}
         </span>
       ))}
@@ -168,8 +173,15 @@ function InfoCard({ title, icon, rows }: { title: string; icon: string; rows: De
   );
 }
 
-function AmenitiesSection({ categoryValues, categories }: { categoryValues: any[], categories: any[] }) {
+function AmenitiesSection({
+  categoryValues,
+  categories,
+}: {
+  categoryValues: NonNullable<PropertyBuying["categoryValues"]>;
+  categories: PropertyBuyingCategory[];
+}) {
   const sectionsMap = new Map<string, PropertyBuyingSection>();
+  const categoryById = new Map(categories.map((category) => [category.id, category]));
 
   for (const cv of categoryValues) {
     const item = cv.propertyBuyingCategoryItem;
@@ -177,11 +189,11 @@ function AmenitiesSection({ categoryValues, categories }: { categoryValues: any[
 
     const catId = item.propertyBuyingCategoryId;
     if (!sectionsMap.has(catId)) {
-      const category = categories.find((c) => c.id === catId);
+      const category = categoryById.get(catId);
       sectionsMap.set(catId, {
         categoryId: catId,
         categoryName: category?.name || "Features",
-        categoryIcon: category?.icon || null,
+        categoryIcon: category?.defaultIcon || category?.icon || null,
         displayOrder: category?.displayOrder || 0,
         items: [],
       });
@@ -195,27 +207,43 @@ function AmenitiesSection({ categoryValues, categories }: { categoryValues: any[
     });
   }
 
-  const sections = Array.from(sectionsMap.values()).sort((a, b) => a.displayOrder - b.displayOrder);
+  const sections = Array.from(sectionsMap.values())
+    .map((section) => ({
+      ...section,
+      items: [...section.items].sort((a, b) => a.displayOrder - b.displayOrder),
+    }))
+    .sort((a, b) => a.displayOrder - b.displayOrder);
 
   if (sections.length === 0) return null;
 
   return (
-    <section className="mt-7 rounded-lg border border-[#dfe8e4] bg-white p-[25px] shadow-[0_4px_10px_rgba(175,132,255,0.03)]">
+    <section className="mt-7 rounded-2xl border border-[#dfe8e4] bg-white p-5 shadow-[0_2px_12px_rgba(24,60,47,0.03)] sm:p-6">
       <div className="flex items-center gap-2">
-        <Image src="/icons/amenities/amenities-title.svg" alt="" width={20} height={20} className="object-contain" />
+        <Image src="/icons/amenities/amenities-title.svg" alt="" width={22} height={22} className="object-contain" />
         <SectionTitle>Amenities & Features</SectionTitle>
       </div>
-      <div className="mt-6 grid gap-8 lg:gap-10">
+      <div className="mt-5 grid gap-6">
         {sections?.map((section) => (
           <div key={section.categoryId}>
-            <h3 className="inline-flex min-h-10 items-center rounded bg-[#f5f7f6] px-3 text-[14px] font-medium leading-6 text-[#183c2f] lg:text-[16px]">
+            <h3 className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-[#f5f7f6] px-3 text-[14px] font-semibold text-[#183c2f]">
+              <DynamicAmenityIcon
+                icon={section.categoryIcon}
+                width={18}
+                height={18}
+                className="size-[18px] object-contain"
+              />
               {section.categoryName}
             </h3>
-            <ul className="mt-4 grid gap-x-4 gap-y-4 text-[14px] leading-5 text-[#656566] lg:grid-cols-4">
+            <ul className="mt-3 grid gap-x-4 gap-y-2.5 text-[14px] leading-5 text-[#556960] sm:grid-cols-2 md:grid-cols-3">
               {section.items?.map((item) => (
-                <li key={item.itemId} className="flex items-center gap-3">
-                  <span className="size-2.5 shrink-0 rounded-full bg-[#cfb072]" />
-                  {item.name}
+                <li key={item.itemId} className="flex items-center gap-2.5">
+                  <DynamicAmenityIcon
+                    icon={item.icon}
+                    width={18}
+                    height={18}
+                    className="size-[18px] shrink-0 object-contain"
+                  />
+                  <span>{item.name}</span>
                 </li>
               ))}
             </ul>

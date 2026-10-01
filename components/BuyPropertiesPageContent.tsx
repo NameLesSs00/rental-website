@@ -29,6 +29,12 @@ function BuyPropertiesPageInner() {
   const { href } = useI18n();
   const { data, isLoading, isError } = usePublicBuyProperties({ pageSize: 100 });
 
+  // Featured first
+  const sorted = useMemo(
+    () => [...(data?.items ?? [])].sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0)),
+    [data?.items]
+  );
+
   if (isError) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-6 text-center">
@@ -41,7 +47,7 @@ function BuyPropertiesPageInner() {
         </div>
         <h2 className="text-[20px] font-semibold text-[#183c2f]">Unable to load properties</h2>
         <p className="max-w-[360px] text-[14px] text-[#656566]">
-          We couldn't fetch the listings right now. Please check your connection and try again.
+          We couldn&apos;t fetch the listings right now. Please check your connection and try again.
         </p>
         <button
           type="button"
@@ -53,14 +59,6 @@ function BuyPropertiesPageInner() {
       </div>
     );
   }
-
-  const items = data?.items ?? [];
-
-  // Featured first
-  const sorted = useMemo(
-    () => [...items].sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0)),
-    [items]
-  );
 
   return (
     <main className="bg-[#fafafa] font-[var(--font-poppins)] text-[#183c2f]">
@@ -149,12 +147,12 @@ function BuyPropertyCard({
       className="group relative flex flex-col overflow-hidden rounded-2xl border border-[#e8e8e8] bg-white shadow-[0_2px_12px_rgba(31,77,61,0.06)] transition-shadow hover:shadow-[0_8px_28px_rgba(31,77,61,0.13)]"
     >
       {/* Image */}
-      <Link href={url} className="block aspect-[4/3] overflow-hidden bg-[#f0f0f0]">
+      <Link href={url} className="block aspect-[16/10] overflow-hidden bg-[#f0f0f0]">
         <Image
           src={image}
           alt={property.title}
           width={480}
-          height={360}
+          height={300}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           unoptimized
         />
@@ -194,17 +192,17 @@ function BuyPropertyCard({
         )}
 
         {/* Specs */}
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[12px] text-[#656566]">
-          <span className="flex items-center gap-1">
-            <Image src="/homepage/properties/icons/bed.svg" alt="" width={14} height={14} />
+        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-[#656566]">
+          <span className="flex items-center gap-1.5">
+            <Image src="/homepage/properties/icons/bed.svg" alt="" width={18} height={18} className="size-[18px] shrink-0 object-contain" />
             {property.bedrooms} {property.bedrooms === 1 ? "Bedroom" : "Bedrooms"}
           </span>
-          <span className="flex items-center gap-1">
-            <Image src="/homepage/properties/icons/bath.svg" alt="" width={14} height={14} />
+          <span className="flex items-center gap-1.5">
+            <Image src="/homepage/properties/icons/bath.svg" alt="" width={18} height={18} className="size-[18px] shrink-0 object-contain" />
             {property.bathrooms} {property.bathrooms === 1 ? "Bathroom" : "Bathrooms"}
           </span>
-          <span className="flex items-center gap-1">
-            <Image src="/homepage/properties/icons/size.svg" alt="" width={14} height={14} />
+          <span className="flex items-center gap-1.5">
+            <Image src="/homepage/properties/icons/size.svg" alt="" width={18} height={18} className="size-[18px] shrink-0 object-contain" />
             {property.area} m²
           </span>
         </div>

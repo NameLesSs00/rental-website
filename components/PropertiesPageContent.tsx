@@ -658,7 +658,7 @@ function PropertyCard({ property }: { property: NormalizedPropertyCard }) {
             <span className="truncate">{property.location}</span>
           </div>
         </div>
-        <div className="mt-3 flex items-center justify-between text-[12px] text-[#656566] lg:text-[13px]">
+        <div className="mt-3 flex items-center justify-between gap-3 text-[12px] text-[#656566] lg:text-[13px]">
           <PropertyMeta icon="/homepage/properties/icons/bed.svg" label={property.beds} />
           <PropertyMeta icon="/homepage/properties/icons/bath.svg" label={property.baths} />
           <PropertyMeta icon="/homepage/properties/icons/size.svg" label={property.size} />
@@ -676,8 +676,8 @@ function PropertyCard({ property }: { property: NormalizedPropertyCard }) {
 
 function PropertyMeta({ icon, label }: { icon: string; label: string }) {
   return (
-    <span className="inline-flex min-w-0 items-center gap-1 whitespace-nowrap">
-      <Image src={icon} alt="" width={13} height={13} className="shrink-0" />
+    <span className="inline-flex min-w-0 items-center gap-1.5 whitespace-nowrap">
+      <Image src={icon} alt="" width={18} height={18} className="size-[18px] shrink-0 object-contain" />
       <span>{label}</span>
     </span>
   );

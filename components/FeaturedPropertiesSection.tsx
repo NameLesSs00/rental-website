@@ -142,8 +142,13 @@ function SectionHeading() {
 
 function PropertyCard({ property }: { property: PropertyListItem }) {
   const { t, href } = useI18n();
+  const propertyWithSize = property as PropertyListItem & { size?: number | null };
   const imageUrl = property.coverImageUrl ? `${API_BASE_URL}/${property.coverImageUrl}` : "/rent/property-card.png";
   const location = property.city || property.country || t("home.featured.locationMissing");
+  const sizeLabel =
+    typeof propertyWithSize.size === "number" && propertyWithSize.size > 0
+      ? `${propertyWithSize.size} m²`
+      : t("home.featured.notAvailable");
 
   return (
     <motion.article 
@@ -184,7 +189,7 @@ function PropertyCard({ property }: { property: PropertyListItem }) {
         <div className="mt-4 flex items-center justify-between gap-2 text-[14px] text-[#656566]">
           <PropertyMeta icon="/homepage/properties/icons/bed.svg" label={`${property.bedroomNo || 0} ${t("home.featured.bed")}`} />
           <PropertyMeta icon="/homepage/properties/icons/bath.svg" label={`${property.bathroomNo || 0} ${t("home.featured.bath")}`} />
-          <PropertyMeta icon="/homepage/properties/icons/size.svg" label={property.capacity ? `${property.capacity} m²` : t("home.featured.notAvailable")} />
+          <PropertyMeta icon="/homepage/properties/icons/size.svg" label={sizeLabel} />
         </div>
 
         <Link href={href(`/rent/${slugify(property.name)}`)} className="mt-auto flex h-12 items-center justify-center rounded-full bg-[#2e6f57] text-[16px] font-semibold text-white transition hover:bg-[#245f49]">
