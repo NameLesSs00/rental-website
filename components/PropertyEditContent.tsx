@@ -134,14 +134,15 @@ function stripArrangements(arrangements: any[]) {
 //         latitude, longitude, rulesCancellation, notes, sleepingArrangements, propertyCategoryItemIds
 function buildPutPayload(
   property: any,
+  translations: any,
   currentItemIds: string[],
   currentLandmarkIds: string[],
   overrides: Record<string, any>
 ) {
   return {
     categoryId: property.category?.id || "00000000-0000-0000-0000-000000000000",
-    name: property.name || "",
-    description: property.description || "",
+    name: trimTranslation(translations.name),
+    description: trimTranslation(translations.description),
     bedroomNo: property.bedroomNo || 0,
     bathroomNo: property.bathroomNo || 0,
     roomNo: property.roomNo || 0,
@@ -301,7 +302,7 @@ function BasicInfoTab({
     // PUT /api/properties/{id} — pass currentItemIds and current beds unchanged
     updateProperty({
       id: property.id,
-      payload: buildPutPayload(property, currentItemIds, currentLandmarkIds, {
+      payload: buildPutPayload(property, translations, currentItemIds, currentLandmarkIds, {
         ...form,
         name: trimTranslation(form.name),
         description: trimTranslation(form.description),
@@ -455,11 +456,13 @@ function BasicInfoTab({
 // ── 2. Features — PUT /api/properties/{id} with views + category item IDs ────
 function FeaturesTab({
   property,
+  translations,
   currentItemIds,
   currentLandmarkIds,
   includeItems,
 }: {
   property: any;
+  translations: NonNullable<ReturnType<typeof usePropertyTranslations>["data"]>;
   currentItemIds: string[];
   currentLandmarkIds: string[];
   includeItems: any[];
@@ -497,7 +500,7 @@ function FeaturesTab({
     // PUT /api/properties/{id} — preserves existing beds, updates views + item IDs
     updateProperty({
       id: property.id,
-      payload: buildPutPayload(property, selectedIds, selectedLandmarkIds, {
+      payload: buildPutPayload(property, translations, selectedIds, selectedLandmarkIds, {
         ...views,
         sleepingArrangements: stripArrangements(property.sleepingArrangements || []),
         propertyCategoryItemIds: selectedIds,
@@ -597,10 +600,12 @@ function FeaturesTab({
 // ── 3. Beds — PUT /api/properties/{id} with new sleeping arrangements ─────────
 function BedsTab({
   property,
+  translations,
   currentItemIds,
   currentLandmarkIds,
 }: {
   property: any;
+  translations: NonNullable<ReturnType<typeof usePropertyTranslations>["data"]>;
   currentItemIds: string[];
   currentLandmarkIds: string[];
 }) {
@@ -615,7 +620,7 @@ function BedsTab({
     // PUT /api/properties/{id} — sends cleaned arrangements, preserves views + item IDs
     updateProperty({
       id: property.id,
-      payload: buildPutPayload(property, currentItemIds, currentLandmarkIds, {
+      payload: buildPutPayload(property, translations, currentItemIds, currentLandmarkIds, {
         sleepingArrangements: arrangements,
       }),
     });
