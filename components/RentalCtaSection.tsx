@@ -16,7 +16,7 @@ export default function RentalCtaSection() {
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true, margin: "-50px" }}
           transition={{ duration: 0.8 }}
-          className="pointer-events-none absolute inset-y-0 right-0 z-0 h-full w-[52%] opacity-75 sm:w-[46%] lg:w-[44%] lg:opacity-95"
+          className="pointer-events-none absolute inset-y-0 right-0 z-0 h-full w-[52%] opacity-75 sm:w-[46%] lg:w-[44%] lg:opacity-95 rtl:left-0 rtl:right-auto"
         >
           <Image
             src="/homepage/vacation/resort-night-view.jpeg"
@@ -27,7 +27,7 @@ export default function RentalCtaSection() {
           />
         </motion.div>
 
-        <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-r from-[#1f4d3d] via-[#1f4d3d]/95 to-[#1f4d3d]/25" />
+        <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-r from-[#1f4d3d] via-[#1f4d3d]/95 to-[#1f4d3d]/25 rtl:bg-gradient-to-l" />
 
         <motion.div
           initial="hidden"
@@ -53,7 +53,7 @@ export default function RentalCtaSection() {
           </motion.p>
           <motion.div 
             variants={{ hidden: { opacity: 0, scaleX: 0 }, visible: { opacity: 1, scaleX: 1 } }} 
-            className="mt-4 h-[5px] w-[120px] origin-left rounded bg-[#cfb072] lg:h-[7px] lg:w-[170px]" 
+            className="mt-4 h-[5px] w-[120px] origin-left rtl:origin-right rounded bg-[#cfb072] lg:h-[7px] lg:w-[170px]" 
           />
           <motion.div variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }}>
             <Link

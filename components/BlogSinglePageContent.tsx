@@ -8,6 +8,8 @@ import type { BlogItem, BlogSection } from "@/lib/types/blog";
 import { getBlogSlug } from "@/lib/utils/blogSlug";
 import { resolveApiImageUrl } from "@/lib/utils/imageUrl";
 import { useI18n } from "./I18nProvider";
+import { useHeaderStore } from "@/lib/headerStore";
+import { useEffect } from "react";
 
 const fallbackHeroImage = "/blog-single/hero.png";
 const fallbackCardImage = "/blogs/articles.png";
@@ -40,10 +42,17 @@ export default function BlogSinglePageContent({
   relatedBlogs?: BlogItem[];
 }) {
   const shouldReduceMotion = useReducedMotion();
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
+  const setPageEntity = useHeaderStore((state) => state.setPageEntity);
+
+  useEffect(() => {
+    setPageEntity(blog.id, "blogs");
+    return () => setPageEntity(null, null);
+  }, [blog.id, setPageEntity]);
+
   const heroImage = resolveApiImageUrl(blog.featuredImageUrl) || fallbackHeroImage;
   const sections = [...(blog.blogSections ?? [])].sort((a, b) => a.displayOrder - b.displayOrder);
-  const introParagraphs = splitParagraphs(blog.content || blog.summary || "No article content has been added yet.");
+  const introParagraphs = splitParagraphs(blog.content || blog.summary || t("blogs.noContent"));
   const initial = shouldReduceMotion ? undefined : "hidden";
   const animate = shouldReduceMotion ? undefined : "visible";
   const viewport = { once: true, amount: 0.2 };
@@ -176,13 +185,13 @@ function ArticleSection({
             alt={section.title}
             fill
             sizes="(min-width: 1024px) 980px, 100vw"
-            className="object-cover"
+            className="object-contain"
           />
         </motion.div>
       )}
 
       <motion.div variants={fadeUp} className={imageSrc ? "mt-7" : ""}>
-        {section.sectionType && (
+        {section.sectionType && section.sectionType.toLowerCase() !== "text" && (
           <p className="mb-2 text-[12px] font-semibold uppercase text-[#cfb072] sm:text-[13px]">
             {section.sectionType}
           </p>
@@ -265,7 +274,7 @@ function RelatedBlogCard({
             alt={blog.title}
             fill
             sizes="(min-width: 1024px) 31vw, (min-width: 640px) 50vw, 100vw"
-            className="object-cover transition duration-500 group-hover:scale-105"
+            className="object-contain transition duration-500 group-hover:scale-105"
           />
         </div>
 

@@ -15,13 +15,16 @@ const KEY = "property-category-items";
 const CATEGORIES_KEY = "property-categories";
 
 // ── 1. List all items ────────────────────────────────────────────────────────
-export function usePropertyCategoryItems() {
+export function usePropertyCategoryItems(locale?: string) {
   return useQuery({
-    queryKey: [KEY],
+    queryKey: [KEY, locale],
     queryFn: async () => {
       const { data } = await axiosInstance.get<PropertyCategoryApiResponse<PropertyCategoryItem[]>>(
         "/api/properties/category-items",
-        { params: { onlyActive: false } }
+        {
+          params: { onlyActive: false },
+          headers: locale ? { "Accept-Language": locale, "X-Locale": locale } : undefined,
+        }
       );
       return data.data ?? [];
     },

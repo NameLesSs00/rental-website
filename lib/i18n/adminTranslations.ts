@@ -8,6 +8,7 @@ export const adminTranslationLocales = locales;
 export function emptyTranslation(): TranslationInput {
   return {
     en: "",
+    ar: "",
     fr: "",
     de: "",
     ru: "",
@@ -17,6 +18,7 @@ export function emptyTranslation(): TranslationInput {
 export function translationFromLocaleValues(values: Partial<Record<Locale, string | null | undefined>>): TranslationInput {
   return {
     en: values.en ?? "",
+    ar: values.ar ?? "",
     fr: values.fr ?? "",
     de: values.de ?? "",
     ru: values.ru ?? "",
@@ -26,6 +28,7 @@ export function translationFromLocaleValues(values: Partial<Record<Locale, strin
 export function trimTranslation(value: TranslationInput): TranslationInput {
   return {
     en: value.en.trim(),
+    ar: value.ar.trim(),
     fr: value.fr.trim(),
     de: value.de.trim(),
     ru: value.ru.trim(),
@@ -43,6 +46,7 @@ export function hasAnyTranslation(value: TranslationInput) {
 export function appendTranslationFormData(formData: FormData, prefix: string, value: TranslationInput) {
   const trimmed = trimTranslation(value);
   formData.append(`${prefix}.En`, trimmed.en);
+  formData.append(`${prefix}.Ar`, trimmed.ar);
   formData.append(`${prefix}.Fr`, trimmed.fr);
   formData.append(`${prefix}.De`, trimmed.de);
   formData.append(`${prefix}.Ru`, trimmed.ru);
@@ -54,6 +58,7 @@ export function buildTranslationFromRecords<T>(
 ): TranslationInput {
   return translationFromLocaleValues({
     en: selector(records.en),
+    ar: selector(records.ar),
     fr: selector(records.fr),
     de: selector(records.de),
     ru: selector(records.ru),

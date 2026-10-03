@@ -155,15 +155,15 @@ export default function BlogsPageContent() {
               <StatePanel
                 key="blogs-error"
                 initialState={initialState}
-                title="Unable to load blogs"
-                description="Check your connection and try again in a moment."
+                titleKey="blogs.unableTitle"
+                descriptionKey="blogs.unableBody"
               />
             ) : blogs.length === 0 ? (
               <StatePanel
                 key="blogs-empty"
                 initialState={initialState}
-                title="No blogs published yet"
-                description="Published articles will appear here once they are available."
+                titleKey="blogs.emptyTitle"
+                descriptionKey="blogs.emptyBody"
               />
             ) : (
               <motion.div
@@ -252,7 +252,7 @@ function BlogCard({ blog, shouldReduceMotion, locale }: { blog: BlogItem; should
           alt={blog.title}
           fill
           sizes="(min-width: 1024px) 31vw, (min-width: 640px) 50vw, 100vw"
-          className="object-cover transition duration-500 group-hover:scale-105"
+          className="object-contain transition duration-500 group-hover:scale-105"
         />
       </div>
 
@@ -270,7 +270,7 @@ function BlogCard({ blog, shouldReduceMotion, locale }: { blog: BlogItem; should
 
         <Link
           href={href(`/blogs/${getBlogSlug(blog)}`)}
-          className="mt-auto ml-auto inline-flex h-11 min-w-[170px] items-center justify-center gap-2 rounded-full border border-[#d59e52] bg-white px-5 text-[15px] font-semibold text-[#183c2f] transition hover:-translate-y-0.5 hover:bg-[#f5f7f6] lg:min-w-[184px] lg:text-[16px]"
+          className="mt-auto mx-auto inline-flex h-11 min-w-[170px] items-center justify-center gap-2 rounded-full border border-[#d59e52] bg-white px-5 text-[15px] font-semibold text-[#183c2f] transition hover:-translate-y-0.5 hover:bg-[#f5f7f6] lg:min-w-[184px] lg:text-[16px]"
         >
           <span>{t("common.readArticle")}</span>
           <Image
@@ -299,7 +299,7 @@ function BlogCardSkeleton() {
         <span className="h-4 w-full animate-pulse rounded bg-[#f0f4f2]" />
         <span className="h-4 w-full animate-pulse rounded bg-[#f0f4f2]" />
         <span className="h-4 w-3/4 animate-pulse rounded bg-[#f0f4f2]" />
-        <span className="mt-auto ml-auto h-11 w-[170px] animate-pulse rounded-full bg-[#f0f4f2]" />
+        <span className="mt-auto mx-auto h-11 w-[170px] animate-pulse rounded-full bg-[#f0f4f2]" />
       </div>
     </motion.article>
   );
@@ -315,14 +315,16 @@ function ArticleMeta({ icon, label }: { icon: string; label: string }) {
 }
 
 function StatePanel({
-  title,
-  description,
+  titleKey,
+  descriptionKey,
   initialState,
 }: {
-  title: string;
-  description: string;
+  titleKey: string;
+  descriptionKey: string;
   initialState: false | "hidden";
 }) {
+  const { t } = useI18n();
+
   return (
     <motion.div
       variants={panelMotion}
@@ -331,8 +333,8 @@ function StatePanel({
       exit="exit"
       className="mt-9 rounded-3xl border border-[#dfe8e4] bg-[#f5f7f6] px-6 py-16 text-center"
     >
-      <p className="text-[18px] font-semibold text-[#183c2f]">{title}</p>
-      <p className="mx-auto mt-2 max-w-md text-[14px] leading-6 text-[#667c74]">{description}</p>
+      <p className="text-[18px] font-semibold text-[#183c2f]">{t(titleKey)}</p>
+      <p className="mx-auto mt-2 max-w-md text-[14px] leading-6 text-[#667c74]">{t(descriptionKey)}</p>
     </motion.div>
   );
 }
@@ -354,13 +356,15 @@ function BlogPagination({
   initialState: false | "hidden";
   onPageChange: (page: number) => void;
 }) {
+  const { t } = useI18n();
+
   if (totalPages <= 1) return null;
 
   const pages = getVisiblePages(currentPage, totalPages);
 
   return (
     <motion.nav
-      aria-label="Blog pagination"
+      aria-label={t("blogs.pagination")}
       variants={panelMotion}
       initial={initialState}
       animate="visible"
@@ -414,10 +418,12 @@ function PaginationArrow({
   disabled?: boolean;
   onClick: () => void;
 }) {
+  const { t } = useI18n();
+
   return (
     <motion.button
       type="button"
-      aria-label={`${direction === "prev" ? "Previous" : "Next"} blog page`}
+      aria-label={direction === "prev" ? t("common.previousPage") : t("common.nextPage")}
       disabled={disabled}
       onClick={onClick}
       whileTap={{ scale: 0.94 }}
@@ -437,6 +443,8 @@ function PaginationArrow({
 }
 
 function PropertyCta({ initialState }: { initialState: false | "hidden" }) {
+  const { t, href } = useI18n();
+
   return (
     <motion.section
       variants={panelMotion}
@@ -463,11 +471,10 @@ function PropertyCta({ initialState }: { initialState: false | "hidden" }) {
         className="relative mx-auto flex min-h-[320px] max-w-[1050px] flex-col items-center justify-center px-5 py-14 text-center text-white sm:px-8 lg:min-h-[432px] lg:py-20"
       >
         <motion.h2 variants={ctaItemMotion} className="text-[30px] font-semibold leading-[1.12] sm:text-[38px] lg:text-[48px]">
-          Find Your Perfect Vacation Home
+          {t("blogs.ctaTitle")}
         </motion.h2>
         <motion.p variants={ctaItemMotion} className="mt-4 max-w-[1001px] text-[14px] leading-[1.45] sm:text-[17px] lg:text-[20px]">
-          Whether you&apos;re planning a weekend beach break, a family holiday, or an extended stay in the sun, we&apos;re here to
-          make your Hurghada holiday effortless. Explore our handpicked vacation rentals and book your relaxing getaway today.
+          {t("blogs.ctaBody")}
         </motion.p>
         <motion.div
           variants={ctaItemMotion}
@@ -476,10 +483,10 @@ function PropertyCta({ initialState }: { initialState: false | "hidden" }) {
           className="mt-8 w-[min(100%,304px)]"
         >
           <Link
-            href="/rent"
+            href={href("/rent")}
             className="inline-flex h-12 w-full items-center justify-center rounded-full bg-white px-8 text-[16px] font-medium tracking-[-0.05em] text-[#2e6f57] transition hover:bg-[#f5f5f5] lg:h-[52px] lg:text-[20px]"
           >
-            Explore Vacation Homes
+            {t("blogs.ctaAction")}
           </Link>
         </motion.div>
       </motion.div>

@@ -9,6 +9,8 @@ import { Check, ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useHeaderStore } from "../lib/headerStore";
 import { localeFlags, localeLabels, locales, localizePath, stripLocale, type Locale } from "@/lib/i18n/config";
+import { API_BASE_URL } from "@/lib/api/config";
+import { slugify } from "@/lib/utils/slugify";
 import { useI18n } from "./I18nProvider";
 
 type NavItem = {
@@ -382,6 +384,7 @@ function LanguageSwitcher({ locale, publicPathname }: { locale: Locale; publicPa
   const [isOpen, setIsOpen] = useState(false);
   const switcherRef = useRef<HTMLDivElement>(null);
   const selectedLabel = localeLabels[locale];
+  const { pageEntityId, pageEntityType } = useHeaderStore();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -450,7 +453,46 @@ function LanguageSwitcher({ locale, publicPathname }: { locale: Locale; publicPa
                   <Link
                     href={localizePath(publicPathname, item)}
                     role="menuitem"
-                    onClick={() => setIsOpen(false)}
+                    onClick={async (e) => {
+                      if (pageEntityId && pageEntityType) {
+                        e.preventDefault();
+                        setIsOpen(false);
+                        
+                        try {
+                          let endpoint = "";
+                          if (pageEntityType === "rent") endpoint = `/api/properties/${pageEntityId}`;
+                          else if (pageEntityType === "buy") endpoint = `/api/public/property-buyings/${pageEntityId}`;
+                          else if (pageEntityType === "transfer") endpoint = `/api/journeys/${pageEntityId}`;
+                          else if (pageEntityType === "blogs") endpoint = `/api/blogs/${pageEntityId}`;
+
+                          const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+                            headers: { "Accept-Language": item, "X-Locale": item },
+                          });
+
+                          if (res.ok) {
+                            const json = await res.json();
+                            const data = json.data;
+                            let translatedSlug = "";
+                            if (pageEntityType === "rent") translatedSlug = slugify(data.name || "");
+                            else if (pageEntityType === "buy") translatedSlug = slugify(data.title || "");
+                            else if (pageEntityType === "transfer") translatedSlug = slugify(data.name || "");
+                            else if (pageEntityType === "blogs") translatedSlug = slugify(data.title || "");
+
+                            if (translatedSlug) {
+                              window.location.href = `/${item}/${pageEntityType}/${translatedSlug}`;
+                              return;
+                            }
+                          }
+                        } catch (err) {
+                          console.error("Failed to localize url slug:", err);
+                        }
+                        
+                        // Fallback if fetch fails
+                        window.location.href = localizePath(publicPathname, item);
+                      } else {
+                        setIsOpen(false);
+                      }
+                    }}
                     className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-[14px] font-semibold transition ${
                       isSelected
                         ? "bg-[#f0f7f4] text-[#1F4D3D]"

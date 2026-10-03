@@ -1,5 +1,7 @@
 // ── Property Buying Category Types ──────────────────────────────────────────────
 
+import type { TranslationInput } from "@/lib/i18n/adminTranslations";
+
 export interface PropertyBuyingCategoryItem {
   id: string;
   propertyBuyingCategoryId: string;
@@ -23,7 +25,7 @@ export interface PropertyBuyingCategory {
 
 export interface PropertyBuyingCategoryRequest {
   id?: string;
-  name: string;
+  name: TranslationInput;
   icon?: string;
   defaultIcon?: string;
   displayOrder?: number;
@@ -32,7 +34,7 @@ export interface PropertyBuyingCategoryRequest {
 export interface PropertyBuyingCategoryItemRequest {
   id?: string;
   propertyBuyingCategoryId?: string;
-  name?: string;
+  name?: TranslationInput;
   icon?: string;
   displayOrder?: number;
 }

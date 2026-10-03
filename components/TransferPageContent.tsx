@@ -93,7 +93,7 @@ export default function TransferPageContent() {
                     </div>
 
                     <Link
-                      href={href(`/transfer/${slugify(journey.name) || journey.id}`)}
+                      href={href(`/transfer/${slugify(journey.name)}`)}
                       className="mt-6 flex h-12 w-full items-center justify-center rounded-full bg-[#2e6f57] text-[16px] font-semibold text-white transition hover:bg-[#255f49]"
                     >
                       {t("common.bookNow")}

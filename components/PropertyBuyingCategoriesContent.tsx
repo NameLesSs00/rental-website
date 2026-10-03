@@ -129,7 +129,7 @@ function CategoryFormPanel({
     if (!isFormValid) return;
 
     const payload: PropertyBuyingCategoryRequest = {
-      name: trimTranslation(name) as any,
+      name: trimTranslation(name),
       icon: icon.trim() || undefined,
       defaultIcon: defaultIcon.trim() || undefined,
       displayOrder: displayOrder !== "" ? Number(displayOrder) : undefined,

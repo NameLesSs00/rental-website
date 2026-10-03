@@ -10,6 +10,7 @@ type TranslationParams = Record<string, string | number>;
 type I18nContextValue = {
   locale: Locale;
   messages: Messages;
+  isRtl: boolean;
   t: (key: string, params?: TranslationParams) => string;
   tArray: <T = unknown>(key: string) => T[];
   href: (path: string) => string;
@@ -28,11 +29,13 @@ export default function I18nProvider({
 }) {
   const queryClient = useQueryClient();
 
+  const isRtl = locale === "ar";
+
   useEffect(() => {
     document.documentElement.lang = locale;
-    document.documentElement.dir = "ltr";
+    document.documentElement.dir = isRtl ? "rtl" : "ltr";
     queryClient.invalidateQueries();
-  }, [locale, queryClient]);
+  }, [locale, isRtl, queryClient]);
 
   function t(key: string, params?: TranslationParams) {
     const value = getNestedValue(messages, key);
@@ -50,7 +53,7 @@ export default function I18nProvider({
   }
 
   return (
-    <I18nContext.Provider value={{ locale, messages, t, tArray, href }}>
+    <I18nContext.Provider value={{ locale, messages, isRtl, t, tArray, href }}>
       {children}
     </I18nContext.Provider>
   );

@@ -23,6 +23,7 @@ const contactDetails = [
     external: true,
     icon: "/contact/icons/phone.svg",
     iconSize: "size-[18px]",
+    forceLtr: true,
   },
   {
     labelKey: "contact.labels.office",
@@ -139,7 +140,11 @@ function ContactInfoPanel({ shouldReduceMotion, viewport }: MotionProps) {
             <div className="min-w-0">
               <p className="text-[12px] font-semibold uppercase text-[#8a9a94]">{t(detail.labelKey)}</p>
               <p className="mt-1 break-words text-[14px] leading-6 text-[#183c2f] lg:text-[15px]">
-                {"valueKey" in detail && detail.valueKey ? t(detail.valueKey) : detail.value}
+                {"valueKey" in detail && detail.valueKey ? t(detail.valueKey) : (
+                  <span dir={"forceLtr" in detail && detail.forceLtr ? "ltr" : "auto"} className={"forceLtr" in detail && detail.forceLtr ? "inline-block" : ""}>
+                    {detail.value}
+                  </span>
+                )}
               </p>
             </div>
           </motion.a>

@@ -91,14 +91,21 @@ function normalizeLookupKey(value: string) {
 
 import DynamicAmenityIcon from "./DynamicAmenityIcon";
 import { useI18n } from "./I18nProvider";
+import { useHeaderStore } from "@/lib/headerStore";
 
 export default function SinglePropertyPageContent({ id }: { id: string }) {
-  const { t, href } = useI18n();
-  const { data: property, isLoading } = usePropertyById(id);
-  const { data: includeCategories = [] } = usePropertyCategories();
-  const { data: includeItems = [] } = usePropertyCategoryItems();
-  const { data: landmarkItems = [] } = useLandmarks();
+  const { t, href, locale } = useI18n();
+  const { data: property, isLoading } = usePropertyById(id, locale);
+  const { data: includeCategories = [] } = usePropertyCategories(locale);
+  const { data: includeItems = [] } = usePropertyCategoryItems(locale);
+  const { data: landmarkItems = [] } = useLandmarks(locale);
   const { data: averageData } = usePropertyAverageRating(id);
+  const setPageEntity = useHeaderStore((state) => state.setPageEntity);
+
+  useEffect(() => {
+    setPageEntity(id, "rent");
+    return () => setPageEntity(null, null);
+  }, [id, setPageEntity]);
 
   if (isLoading) {
     return (
@@ -573,13 +580,13 @@ function PropertyDetailView({
   ];
 
   const priceDetails: DetailRow[] = [
-    ["Price per night:", `${formatUsd(property.basePrice)} / night`],
+    [t("property.pricePerNight"), `${formatUsd(property.basePrice)} / ${t("common.night")}`],
   ];
 
   const locationDetails: DetailRow[] = [
-    ["City:", property.address?.city || "Unknown"],
-    ["Area:", property.address?.area || "Unknown"],
-    ["Availability:", property.isAvailable ? "Available" : "Not Available"],
+    [t("property.city"), property.address?.city || t("property.unknown")],
+    [t("property.area"), property.address?.area || t("property.unknown")],
+    [t("property.availabilityLabel"), property.isAvailable ? t("property.available") : t("property.notAvailable")],
   ];
   const amenityCategories = getPropertyCategoryGroupsFromValues(property, includeCategories, includeItems);
   const selectedLandmarks = getPropertyLandmarks(property, landmarkItems);
@@ -729,11 +736,16 @@ function PropertyDetailView({
           <div>
             <div className="flex items-baseline gap-1">
               <span className="text-[18px] font-bold text-[#183c2f]">{formatUsd(basePrice)}</span>
-              <span className="text-[12px] text-[#667c74]">/ night</span>
+              <span className="text-[12px] text-[#667c74]">/ {t("common.night")}</span>
             </div>
             <p className="text-[11px] font-medium text-[#8a9a94]">
               {checkIn && checkOut
-                ? `${checkIn} to ${checkOut} (${nights} ${nights === 1 ? "nt" : "nts"})`
+                ? t("property.staySummary", {
+                    checkIn,
+                    checkOut,
+                    nights,
+                    nightLabel: nights === 1 ? t("common.night") : t("common.nights"),
+                  })
                 : t("booking.selectDates")}
             </p>
           </div>
@@ -808,21 +820,25 @@ function QuickFacts({ facts }: { facts: QuickFact[] }) {
 }
 
 function DescriptionSection({ text }: { text: string }) {
+  const { t } = useI18n();
+
   return (
     <section className="rounded-2xl border border-[#dfe8e4] bg-white p-5 sm:p-6 shadow-[0_2px_12px_rgba(24,60,47,0.03)]">
-      <SectionTitle>Description</SectionTitle>
+      <SectionTitle>{t("property.description")}</SectionTitle>
       <p className="mt-3.5 text-[14px] leading-[1.8] text-[#556960] sm:text-[15px]">
-        {text || "No description provided."}
+        {text || t("property.noDescription")}
       </p>
     </section>
   );
 }
 
 function DetailsCards({ prices, location }: { prices: DetailRow[]; location: DetailRow[] }) {
+  const { t } = useI18n();
+
   return (
     <section className="grid gap-4 sm:grid-cols-2">
-      <InfoCard title="PRICE DETAILS" icon="/billing/icons/cash.svg" rows={prices} />
-      <InfoCard title="LOCATION" icon="/billing/icons/location.svg" rows={location} />
+      <InfoCard title={t("property.priceDetails")} icon="/billing/icons/cash.svg" rows={prices} />
+      <InfoCard title={t("property.location")} icon="/billing/icons/location.svg" rows={location} />
     </section>
   );
 }
@@ -857,11 +873,13 @@ function AmenitiesSection({
   itemIconByName: Map<string, string | null>;
   itemIconByCategoryAndName: Map<string, string | null>;
 }) {
+  const { t } = useI18n();
+
   return (
     <section className="rounded-2xl border border-[#dfe8e4] bg-white p-5 sm:p-6 shadow-[0_2px_12px_rgba(24,60,47,0.03)]">
       <div className="flex items-center gap-2">
         <Image src="/icons/amenities/amenities-title.svg" alt="" width={22} height={22} className="object-contain" />
-        <SectionTitle>Amenities</SectionTitle>
+        <SectionTitle>{t("property.amenities")}</SectionTitle>
       </div>
       <div className="mt-5 grid gap-6">
         {categories?.map((cat) => (
@@ -876,13 +894,13 @@ function AmenitiesSection({
               {cat.categoryName}
             </h3>
             <ul className="mt-3 grid gap-x-4 gap-y-2.5 text-[14px] leading-5 text-[#556960] sm:grid-cols-2 md:grid-cols-3">
-              {cat.items?.map((item) => {
+              {cat.items?.map((item, index) => {
                 const categoryKey = normalizeLookupKey(cat.categoryName);
                 const itemKey = normalizeLookupKey(item);
                 const icon = itemIconByCategoryAndName.get(`${categoryKey}::${itemKey}`) ?? itemIconByName.get(itemKey);
 
                 return (
-                  <li key={item} className="flex items-center gap-2.5">
+                  <li key={`${item}-${index}`} className="flex items-center gap-2.5">
                     <DynamicAmenityIcon
                       icon={icon}
                       width={16}

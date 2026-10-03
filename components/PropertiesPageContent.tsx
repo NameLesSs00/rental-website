@@ -183,7 +183,7 @@ function PropertiesPageInner() {
 }
 
 function PropertiesHero() {
-  const { t } = useI18n();
+  const { t, isRtl } = useI18n();
 
   return (
     <section className="relative flex h-[200px] w-full items-center overflow-hidden bg-[#2e6f57] lg:h-[280px]">
@@ -196,10 +196,10 @@ function PropertiesHero() {
         className="pointer-events-none object-cover opacity-20 mix-blend-plus-lighter"
       />
       <motion.div
-        initial={{ x: 100, opacity: 0 }}
+        initial={{ x: isRtl ? -100 : 100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-        className="pointer-events-none absolute bottom-0 right-[6%] z-0 h-[76%] w-[38%] opacity-45 sm:right-[8%] sm:h-[82%] sm:w-[34%] lg:right-[5%] lg:h-[92%] lg:w-[28%] lg:opacity-100 xl:right-[9%] xl:w-[24%]"
+        className="pointer-events-none absolute bottom-0 end-[6%] z-0 h-[76%] w-[38%] opacity-45 sm:end-[8%] sm:h-[82%] sm:w-[34%] lg:end-[5%] lg:h-[92%] lg:w-[28%] lg:opacity-100 xl:end-[9%] xl:w-[24%] rtl:-scale-x-100"
       >
         <Image
           src="/rent/beach-lounge-chair-clean.png"
@@ -749,29 +749,30 @@ function PageArrow({ src, label, disabled = false, onClick }: { src: string; lab
 }
 
 function RentCta() {
+  const { t } = useI18n();
   return (
     <section
       data-rent-cta
       className="mt-10 min-h-[220px] bg-[#1f4d3d] lg:mt-16 lg:min-h-[361px]"
     >
       <div className="relative h-full w-full overflow-hidden">
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-0 h-full w-[52%] opacity-75 sm:w-[46%] lg:w-[44%] lg:opacity-95">
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-0 h-full w-[52%] opacity-75 sm:w-[46%] lg:w-[44%] lg:opacity-95 rtl:left-0 rtl:right-auto">
           <Image src="/homepage/vacation/coastal-vacation-home.jpeg" alt="" fill sizes="(min-width: 1024px) 44vw, 52vw" className="object-cover object-center" />
         </div>
-        <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-r from-[#1f4d3d] via-[#1f4d3d]/95 to-[#1f4d3d]/25" />
+        <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-r from-[#1f4d3d] via-[#1f4d3d]/95 to-[#1f4d3d]/25 rtl:bg-gradient-to-l" />
         <div className="relative z-10 flex min-h-[220px] max-w-[720px] flex-col justify-center px-5 py-8 sm:px-8 lg:min-h-[361px] lg:px-20 lg:py-14">
           <h2 className="max-w-[520px] text-[26px] font-semibold leading-[1.2] text-white sm:text-[34px] lg:max-w-none lg:text-[40px]">
-            Ready to Find Your Next Vacation Rental Home?
+            {t("rent.ctaTitle")}
           </h2>
           <p className="mt-4 max-w-[620px] text-[14px] font-medium leading-[1.6] text-white sm:text-[16px] lg:text-[20px]">
-            Browse verified vacation homes in Hurghada&apos;s top coastal spots and discover a relaxing stay that fits your holiday plans.
+            {t("rent.ctaBody")}
           </p>
           <div className="mt-4 h-[5px] w-[120px] rounded bg-[#cfb072] lg:h-[7px] lg:w-[170px]" />
           <Link
             href="#properties"
             className="mt-6 inline-flex h-12 min-w-[190px] items-center justify-center rounded-full bg-white px-7 text-[16px] font-medium text-[#2e6f57] transition hover:bg-[#f8f5f0] lg:h-14 lg:min-w-[251px] lg:text-[20px]"
           >
-            Explore Rentals
+            {t("rent.exploreRentals")}
           </Link>
         </div>
       </div>

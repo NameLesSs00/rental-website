@@ -67,6 +67,7 @@ export default function TranslationFields({
                   placeholder={placeholder}
                   rows={rows}
                   disabled={disabled}
+                  dir={locale === "ar" ? "rtl" : "ltr"}
                   className="w-full resize-y rounded-lg border border-[#dfe8e4] px-3 py-2 text-[13px] outline-none transition focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57] disabled:bg-[#f5f7f6] disabled:text-[#8a9a94]"
                 />
               ) : (
@@ -77,6 +78,7 @@ export default function TranslationFields({
                   onChange={(event) => updateLocale(locale, event.target.value)}
                   placeholder={placeholder}
                   disabled={disabled}
+                  dir={locale === "ar" ? "rtl" : "ltr"}
                   className="h-10 w-full rounded-lg border border-[#dfe8e4] px-3 text-[13px] outline-none transition focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57] disabled:bg-[#f5f7f6] disabled:text-[#8a9a94]"
                 />
               )}

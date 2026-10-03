@@ -1,5 +1,6 @@
 import { defaultLocale, type Locale } from "./config";
 import en from "./locales/en.json";
+import ar from "./locales/ar.json";
 import fr from "./locales/fr.json";
 import de from "./locales/de.json";
 import ru from "./locales/ru.json";
@@ -13,6 +14,7 @@ type PartialMessages = Partial<Messages>;
 
 const localeMessages: Record<Locale, PartialMessages> = {
   en,
+  ar: ar as unknown as PartialMessages,
   fr: fr as unknown as PartialMessages,
   de: de as unknown as PartialMessages,
   ru: ru as unknown as PartialMessages,
@@ -20,6 +22,7 @@ const localeMessages: Record<Locale, PartialMessages> = {
 
 const completeMessages: Record<Locale, Messages> = {
   en,
+  ar: mergeMessages(en, localeMessages.ar),
   fr: mergeMessages(en, localeMessages.fr),
   de: mergeMessages(en, localeMessages.de),
   ru: mergeMessages(en, localeMessages.ru),

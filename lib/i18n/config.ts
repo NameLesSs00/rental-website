@@ -1,4 +1,4 @@
-export const locales = ["en", "fr", "de", "ru"] as const;
+export const locales = ["en", "ar", "fr", "de", "ru"] as const;
 
 export type Locale = (typeof locales)[number];
 
@@ -6,6 +6,7 @@ export const defaultLocale: Locale = "en";
 
 export const localeLabels: Record<Locale, string> = {
   en: "English",
+  ar: "العربية",
   fr: "Français",
   de: "Deutsch",
   ru: "Русский",
@@ -13,6 +14,7 @@ export const localeLabels: Record<Locale, string> = {
 
 export const localeFlags: Record<Locale, { src: string; alt: string }> = {
   en: { src: "/flags/gb.svg", alt: "United Kingdom flag" },
+  ar: { src: "/flags/sa.svg", alt: "Saudi Arabia flag" },
   fr: { src: "/flags/fr.svg", alt: "France flag" },
   de: { src: "/flags/de.svg", alt: "Germany flag" },
   ru: { src: "/flags/ru.svg", alt: "Russia flag" },
@@ -20,6 +22,7 @@ export const localeFlags: Record<Locale, { src: string; alt: string }> = {
 
 export const localeNames: Record<Locale, string> = {
   en: "English",
+  ar: "Arabic",
   fr: "French",
   de: "German",
   ru: "Russian",
@@ -27,6 +30,7 @@ export const localeNames: Record<Locale, string> = {
 
 export const ogLocales: Record<Locale, string> = {
   en: "en_US",
+  ar: "ar_SA",
   fr: "fr_FR",
   de: "de_DE",
   ru: "ru_RU",

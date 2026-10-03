@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import PropertyImageGallery from "./PropertyImageGallery";
 import ScrollAnimation from "./ScrollAnimation";
 import ContactForm from "./ContactForm";
@@ -11,6 +12,9 @@ import { API_BASE_URL } from "@/lib/api/config";
 import type { PropertyBuying, PropertyBuyingSection } from "@/lib/types/propertyBuying";
 import type { PropertyBuyingCategory } from "@/lib/types/propertyBuyingCategory";
 import { formatCurrency } from "@/lib/utils/currency";
+import { useI18n } from "./I18nProvider";
+import { useHeaderStore } from "@/lib/headerStore";
+import { useEffect } from "react";
 
 
 type QuickFact = {
@@ -21,30 +25,37 @@ type QuickFact = {
 type DetailRow = [string, string];
 
 export default function SingleBuyPropertyPageContent({ id }: { id: string }) {
-  const { data: property, isLoading } = usePublicPropertyBuyingById(id);
-  const { data: categories = [] } = usePropertyBuyingCategories();
+  const { locale, t } = useI18n();
+  const { data: property, isLoading } = usePublicPropertyBuyingById(id, locale);
+  const { data: categories = [] } = usePropertyBuyingCategories(locale);
+  const setPageEntity = useHeaderStore((state) => state.setPageEntity);
 
-  if (isLoading) return <div className="p-20 text-center">Loading Property...</div>;
-  if (!property) return <div className="p-20 text-center">Property not found</div>;
+  useEffect(() => {
+    setPageEntity(id, "buy");
+    return () => setPageEntity(null, null);
+  }, [id, setPageEntity]);
+
+  if (isLoading) return <div className="p-20 text-center">{t("buy.loadingProperty")}</div>;
+  if (!property) return <div className="p-20 text-center">{t("buy.notFound")}</div>;
 
   const galleryImages = (property.images || []).sort((a,b)=>a.displayOrder - b.displayOrder).map((img) => ({ src: `${API_BASE_URL}/${img.imageUrl}`, alt: property.title }));
-  if (galleryImages.length === 0) galleryImages.push({ src: "/rent/property-card.png", alt: "Placeholder" });
+  if (galleryImages.length === 0) galleryImages.push({ src: "/rent/property-card.png", alt: property.title });
   
   const quickFacts = [
     { label: `${property.area || 0} m²`, icon: "/homepage/properties/icons/size.svg" },
-    { label: `${property.bedrooms || 0} Bedrooms`, icon: "/homepage/properties/icons/bed.svg" },
-    { label: `${property.bathrooms || 0} Bathrooms`, icon: "/homepage/properties/icons/bath.svg" },
+    { label: `${property.bedrooms || 0} ${Number(property.bedrooms || 0) === 1 ? t("buy.bedroom") : t("buy.bedrooms")}`, icon: "/homepage/properties/icons/bed.svg" },
+    { label: `${property.bathrooms || 0} ${Number(property.bathrooms || 0) === 1 ? t("buy.bathroom") : t("buy.bathrooms")}`, icon: "/homepage/properties/icons/bath.svg" },
   ];
 
   const priceDetails: DetailRow[] = [
-    ["Price:", formatCurrency(property.price, property.currency)],
-    ["Status:", property.status === 1 ? "Available" : property.status === 2 ? "Reserved" : "Sold"],
+    [t("buy.price"), formatCurrency(property.price, property.currency)],
+    [t("buy.status"), property.status === 1 ? t("buy.statuses.available") : property.status === 2 ? t("buy.statuses.reserved") : t("buy.statuses.sold")],
   ];
 
   const locationDetails: DetailRow[] = [
-    ["City:", property.address?.city || "Unknown"],
-    ["Area:", property.address?.area || "Unknown"],
-    ["Street:", property.address?.street || "Unknown"],
+    [t("buy.city"), property.address?.city || t("buy.unknown")],
+    [t("buy.area"), property.address?.area || t("buy.unknown")],
+    [t("buy.street"), property.address?.street || t("buy.unknown")],
   ];
 
   return (
@@ -87,10 +98,10 @@ export default function SingleBuyPropertyPageContent({ id }: { id: string }) {
       <section className="bg-white px-5 py-12 sm:px-8 lg:px-20 lg:py-20">
         <div className="mx-auto max-w-[800px]">
           <div className="mb-10 text-center">
-            <h2 className="text-[28px] font-semibold text-[#183c2f] sm:text-[32px]">Interested in this Property?</h2>
-            <p className="mt-4 text-[#667c74]">Send us a message and our sales team will get back to you shortly.</p>
+            <h2 className="text-[28px] font-semibold text-[#183c2f] sm:text-[32px]">{t("buy.contactTitle")}</h2>
+            <p className="mt-4 text-[#667c74]">{t("buy.contactBody")}</p>
           </div>
-          <ContactForm defaultSubject={`Inquiry for: ${property.title} (${property.propertyNumber})`} />
+          <ContactForm defaultSubject={t("buy.contactSubject", { title: property.title, propertyNumber: property.propertyNumber })} />
         </div>
       </section>
     </main>
@@ -98,14 +109,19 @@ export default function SingleBuyPropertyPageContent({ id }: { id: string }) {
 }
 
 function PropertyHeader({ property }: { property: PropertyBuying }) {
+  const { t, href } = useI18n();
+
   return (
     <header>
       <nav className="flex items-center gap-1 text-[14px] leading-6 text-[#b3b3b3] lg:text-[20px] lg:leading-[30px]">
         <span className="relative grid size-5 place-items-center lg:size-6">
           <Image src="/single-property/icon-home.svg" alt="" fill sizes="24px" className="object-contain" />
         </span>
-        <span>Home &gt; Buy Properties &gt;</span>
-        <span className="text-[#292d32]">Property Details</span>
+        <Link href={href("/")}>{t("common.home")}</Link>
+        <span>&gt;</span>
+        <Link href={href("/buy")}>{t("buy.heroTitle")}</Link>
+        <span>&gt;</span>
+        <span className="text-[#292d32]">{t("buy.detailsBreadcrumb")}</span>
       </nav>
 
       <div className="mt-4 lg:mt-6">
@@ -135,21 +151,25 @@ function QuickFacts({ facts }: { facts: QuickFact[] }) {
 }
 
 function DescriptionSection({ text }: { text: string }) {
+  const { t } = useI18n();
+
   return (
     <section className="mt-8 lg:mt-10">
-      <SectionTitle>Description</SectionTitle>
+      <SectionTitle>{t("buy.description")}</SectionTitle>
       <p className="mt-[15px] max-w-[954px] text-[14px] leading-[1.9] text-[#656566] lg:text-[16px] lg:leading-[23px]">
-        {text || "No description provided."}
+        {text || t("buy.noDescription")}
       </p>
     </section>
   );
 }
 
 function DetailsCards({ prices, location }: { prices: DetailRow[]; location: DetailRow[] }) {
+  const { t } = useI18n();
+
   return (
     <section className="mt-7 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2.05fr)]">
-      <InfoCard title="PRICE DETAILS" icon="/billing/icons/cash.svg" rows={prices} />
-      <InfoCard title="Location" icon="/billing/icons/location.svg" rows={location} />
+      <InfoCard title={t("buy.priceDetails")} icon="/billing/icons/cash.svg" rows={prices} />
+      <InfoCard title={t("buy.location")} icon="/billing/icons/location.svg" rows={location} />
     </section>
   );
 }
@@ -180,6 +200,7 @@ function AmenitiesSection({
   categoryValues: NonNullable<PropertyBuying["categoryValues"]>;
   categories: PropertyBuyingCategory[];
 }) {
+  const { t } = useI18n();
   const sectionsMap = new Map<string, PropertyBuyingSection>();
   const categoryById = new Map(categories.map((category) => [category.id, category]));
 
@@ -192,7 +213,7 @@ function AmenitiesSection({
       const category = categoryById.get(catId);
       sectionsMap.set(catId, {
         categoryId: catId,
-        categoryName: category?.name || "Features",
+        categoryName: category?.name || t("buy.features"),
         categoryIcon: category?.defaultIcon || category?.icon || null,
         displayOrder: category?.displayOrder || 0,
         items: [],
@@ -220,7 +241,7 @@ function AmenitiesSection({
     <section className="mt-7 rounded-2xl border border-[#dfe8e4] bg-white p-5 shadow-[0_2px_12px_rgba(24,60,47,0.03)] sm:p-6">
       <div className="flex items-center gap-2">
         <Image src="/icons/amenities/amenities-title.svg" alt="" width={22} height={22} className="object-contain" />
-        <SectionTitle>Amenities & Features</SectionTitle>
+        <SectionTitle>{t("buy.amenitiesFeatures")}</SectionTitle>
       </div>
       <div className="mt-5 grid gap-6">
         {sections?.map((section) => (

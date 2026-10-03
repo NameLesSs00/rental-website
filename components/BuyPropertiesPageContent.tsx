@@ -26,10 +26,10 @@ export default function BuyPropertiesPageContent() {
 }
 
 function BuyPropertiesPageInner() {
-  const { href } = useI18n();
+  const { href, t } = useI18n();
   const { data, isLoading, isError } = usePublicBuyProperties({ pageSize: 100 });
 
-  // Featured first
+  // {t("buy.featured")} first
   const sorted = useMemo(
     () => [...(data?.items ?? [])].sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0)),
     [data?.items]
@@ -54,7 +54,7 @@ function BuyPropertiesPageInner() {
           onClick={() => window.location.reload()}
           className="mt-2 rounded-full bg-[#2e6f57] px-6 py-2.5 text-[14px] font-semibold text-white transition hover:bg-[#255f49] active:scale-95"
         >
-          Try Again
+          {t("buy.tryAgain")}
         </button>
       </div>
     );
@@ -67,11 +67,11 @@ function BuyPropertiesPageInner() {
       <div className="mx-auto max-w-[1536px] px-4 pb-20 pt-8 sm:px-6 lg:px-10">
         <div className="mb-6">
           <h2 className="text-[22px] font-semibold text-[#183c2f] lg:text-[32px]">
-            Available Properties
+            {t("buy.availableProperties")}
           </h2>
           {!isLoading && (
             <p className="mt-1 text-[13px] text-[#656566]">
-              {sorted.length} {sorted.length === 1 ? "property" : "properties"} found
+              {t("buy.propertiesFound", { count: sorted.length })}
             </p>
           )}
         </div>
@@ -79,13 +79,13 @@ function BuyPropertiesPageInner() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#2e6f57] border-t-transparent" />
-            <p className="text-[14px] text-[#656566]">Loading properties...</p>
+            <p className="text-[14px] text-[#656566]">{t("buy.loading")}</p>
           </div>
         ) : sorted.length === 0 ? (
           <div className="py-24 text-center">
-            <p className="text-[18px] font-semibold text-[#183c2f]">No properties found</p>
+            <p className="text-[18px] font-semibold text-[#183c2f]">{t("buy.emptyTitle")}</p>
             <p className="mt-2 text-[14px] text-[#656566]">
-              Check back soon for new listings.
+              {t("buy.emptyBody")}
             </p>
           </div>
         ) : (
@@ -119,6 +119,7 @@ function BuyPropertyCard({
   property: PropertyBuyingListItem;
   url: string;
 }) {
+  const { t } = useI18n();
   const image = property.coverImageUrl
     ? `${API_BASE_URL}/${property.coverImageUrl}`
     : "/rent/property-card.png";
@@ -129,10 +130,10 @@ function BuyPropertyCard({
 
   const statusLabel =
     property.status === 1
-      ? "Available"
+      ? t("buy.statuses.available")
       : property.status === 2
-      ? "Reserved"
-      : "Sold";
+      ? t("buy.statuses.reserved")
+      : t("buy.statuses.sold");
 
   const statusColor =
     property.status === 1
@@ -162,7 +163,7 @@ function BuyPropertyCard({
       <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
         {property.isFeatured && (
           <span className="rounded-full bg-[#d9a441] px-2.5 py-0.5 text-[11px] font-bold text-white shadow">
-            Featured
+            {t("buy.featured")}
           </span>
         )}
         <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${statusColor}`}>
@@ -195,11 +196,11 @@ function BuyPropertyCard({
         <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-[#656566]">
           <span className="flex items-center gap-1.5">
             <Image src="/homepage/properties/icons/bed.svg" alt="" width={18} height={18} className="size-[18px] shrink-0 object-contain" />
-            {property.bedrooms} {property.bedrooms === 1 ? "Bedroom" : "Bedrooms"}
+            {property.bedrooms} {property.bedrooms === 1 ? t("property.bedroom") : t("property.bedrooms")}
           </span>
           <span className="flex items-center gap-1.5">
             <Image src="/homepage/properties/icons/bath.svg" alt="" width={18} height={18} className="size-[18px] shrink-0 object-contain" />
-            {property.bathrooms} {property.bathrooms === 1 ? "Bathroom" : "Bathrooms"}
+            {property.bathrooms} {property.bathrooms === 1 ? t("property.bathroom") : t("property.bathrooms")}
           </span>
           <span className="flex items-center gap-1.5">
             <Image src="/homepage/properties/icons/size.svg" alt="" width={18} height={18} className="size-[18px] shrink-0 object-contain" />
@@ -216,7 +217,7 @@ function BuyPropertyCard({
             href={url}
             className="rounded-full bg-[#2e6f57] px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-[#255f49] active:scale-95"
           >
-            View Details
+            {t("buy.viewDetails")}
           </Link>
         </div>
       </div>
@@ -225,6 +226,8 @@ function BuyPropertyCard({
 }
 
 function BuyPropertiesHero() {
+  const { t, isRtl } = useI18n();
+
   return (
     <section className="relative flex h-[200px] w-full items-center overflow-hidden bg-[#2e6f57] lg:h-[280px]">
       <Image
@@ -236,10 +239,10 @@ function BuyPropertiesHero() {
         className="pointer-events-none object-cover opacity-20 mix-blend-plus-lighter"
       />
       <motion.div
-        initial={{ x: 100, opacity: 0 }}
+        initial={{ x: isRtl ? -100 : 100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-        className="pointer-events-none absolute bottom-0 right-[6%] z-0 h-[85%] w-[45%] opacity-45 sm:right-[8%] sm:h-[95%] sm:w-[40%] lg:right-[5%] lg:h-[110%] lg:w-[35%] lg:opacity-100 xl:right-[9%] xl:w-[32%]"
+        className="pointer-events-none absolute bottom-0 end-[6%] z-0 h-[85%] w-[45%] opacity-45 sm:end-[8%] sm:h-[95%] sm:w-[40%] lg:end-[5%] lg:h-[110%] lg:w-[35%] lg:opacity-100 xl:end-[9%] xl:w-[32%] rtl:-scale-x-100"
       >
         <Image
           src="/rent/hero-house.png"
@@ -263,7 +266,7 @@ function BuyPropertiesHero() {
             transition={{ duration: 0.6 }}
             className="text-[24px] font-bold leading-[1.2] text-white sm:text-3xl lg:text-[44px]"
           >
-            Properties for Sale
+            {t("buy.heroTitle")}
           </motion.h1>
           <motion.p
             initial={{ y: 20, opacity: 0 }}
@@ -271,7 +274,7 @@ function BuyPropertiesHero() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="mt-2 text-[12px] leading-[1.6] text-white/90 sm:text-sm lg:mt-4 lg:text-[16px]"
           >
-            Find your perfect home in Hurghada
+            {t("buy.heroSubtitle")}
           </motion.p>
         </motion.div>
       </div>

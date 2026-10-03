@@ -1,18 +1,46 @@
 "use client";
 
-import { useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, Suspense, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { useLogin } from "@/lib/hooks/useAuth";
+import { useAuthStore } from "@/lib/stores/authStore";
+import axiosInstance from "@/lib/api/axiosInstance";
 
 function LoginForm() {
   const [emailOrUserName, setEmailOrUserName] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { mutate: login, isPending, isError, error, reset } = useLogin();
+  const { accessToken, refreshToken } = useAuthStore();
+
+  useEffect(() => {
+    let mounted = true;
+    if (accessToken) {
+      router.replace("/admin/dashboard");
+      return;
+    }
+    if (refreshToken && !accessToken) {
+      axiosInstance
+        .get("/api/auth/profile")
+        .then(() => {
+          if (mounted) router.replace("/admin/dashboard");
+        })
+        .catch(() => {
+          if (mounted) setIsCheckingAuth(false);
+        });
+      return;
+    }
+    setIsCheckingAuth(false);
+    return () => {
+      mounted = false;
+    };
+  }, [accessToken, refreshToken, router]);
   const successMessage =
     searchParams.get("reset") === "success"
       ? "Password reset successfully. You can now log in."
@@ -34,6 +62,14 @@ function LoginForm() {
     if (apiMsg) return apiMsg;
     if (apiErrors?.length) return apiErrors.join(", ");
     return "Invalid credentials. Please try again.";
+  }
+
+  if (isCheckingAuth) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f9fafa]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#2e6f57] border-t-transparent" />
+      </div>
+    );
   }
 
   return (

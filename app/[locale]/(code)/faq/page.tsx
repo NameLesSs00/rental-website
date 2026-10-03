@@ -20,6 +20,10 @@ const copy: Record<Locale, { title: string; description: string }> = {
     title: "Частые вопросы",
     description: "Ответы о бронировании жилья, оплате, частных трансферах и поддержке в Хургаде.",
   },
+  ar: {
+    title: "الأسئلة الشائعة",
+    description: "ابحث عن إجابات حول إيجارات العطلات، الحجوزات، المدفوعات، الانتقالات الخاصة، والدعم في الغردقة.",
+  },
 };
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/faq">): Promise<Metadata> {

@@ -20,6 +20,10 @@ const copy: Record<Locale, { title: string; description: string }> = {
     title: "Гиды по путешествиям и аренде жилья в Хургаде",
     description: "Читайте советы о Хургаде, аренде жилья, районах города и трансферах от Hurghada Vacation Homes.",
   },
+  ar: {
+    title: "أدلة السفر والعطلات في الغردقة",
+    description: "اقرأ نصائح السفر للغردقة، إرشادات الإيجار، أدلة الأحياء، ومعلومات الانتقالات من منازل عطلات الغردقة.",
+  },
 };
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/blogs">): Promise<Metadata> {

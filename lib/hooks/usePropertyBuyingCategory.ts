@@ -14,13 +14,16 @@ import {
 const KEY = "property-buying-categories";
 
 // ── 1. List all categories (no items) ────────────────────────────────────────
-export function usePropertyBuyingCategories() {
+export function usePropertyBuyingCategories(locale?: string) {
   return useQuery({
-    queryKey: [KEY],
+    queryKey: [KEY, locale],
     queryFn: async () => {
       const { data } = await axiosInstance.get<PropertyBuyingCategoryApiResponse<PropertyBuyingCategory[]>>(
         "/api/property-buying/categories",
-        { params: { includeItems: false, onlyActive: false } }
+        {
+          params: { includeItems: false, onlyActive: false },
+          ...(locale ? { headers: { "Accept-Language": locale, "X-Locale": locale } } : {}),
+        }
       );
       return data.data ?? [];
     },

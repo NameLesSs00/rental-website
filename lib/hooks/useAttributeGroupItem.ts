@@ -14,12 +14,13 @@ import {
 
 const KEY = "attribute-group-items";
 
-export function useAttributeGroupItemsByGroup(attributeGroupId: string = LANDMARK_ATTRIBUTE_GROUP_ID) {
+export function useAttributeGroupItemsByGroup(attributeGroupId: string = LANDMARK_ATTRIBUTE_GROUP_ID, locale?: string) {
   return useQuery({
-    queryKey: [KEY, "group", attributeGroupId],
+    queryKey: [KEY, "group", attributeGroupId, locale],
     queryFn: async () => {
       const { data } = await axiosInstance.get<AttributeGroupItemApiResponse<AttributeGroupItem[]>>(
-        `/api/attribute-group-items/group/${attributeGroupId}`
+        `/api/attribute-group-items/group/${attributeGroupId}`,
+        locale ? { headers: { "Accept-Language": locale, "X-Locale": locale } } : undefined
       );
       return data.data ?? [];
     },
@@ -28,8 +29,8 @@ export function useAttributeGroupItemsByGroup(attributeGroupId: string = LANDMAR
   });
 }
 
-export function useLandmarks() {
-  return useAttributeGroupItemsByGroup(LANDMARK_ATTRIBUTE_GROUP_ID);
+export function useLandmarks(locale?: string) {
+  return useAttributeGroupItemsByGroup(LANDMARK_ATTRIBUTE_GROUP_ID, locale);
 }
 
 export function useAttributeGroupItemById(id: string, locale?: string) {

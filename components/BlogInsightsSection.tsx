@@ -60,7 +60,7 @@ export default function BlogInsightsSection() {
       <div className="mx-auto max-w-[1280px]">
         <SectionHeading />
 
-        <div className="mt-10 hidden justify-end lg:flex">
+        <div className="mt-10 hidden justify-center lg:flex">
           <ViewMoreButton className="w-[162px]" />
         </div>
 
@@ -135,7 +135,7 @@ function ArticleCard({ blog, locale }: { blog: BlogItem; locale: string }) {
           alt={blog.title}
           fill
           sizes="(min-width: 1024px) 31vw, 302px"
-          className="object-cover transition duration-500 group-hover:scale-105"
+          className="object-contain transition duration-500 group-hover:scale-105"
         />
       </div>
 
@@ -165,7 +165,7 @@ function ReadArticleLink({ blog }: { blog: BlogItem }) {
   return (
     <Link
       href={href(`/blogs/${getBlogSlug(blog)}`)}
-      className="mt-auto ml-auto inline-flex h-10 min-w-[150px] items-center justify-center gap-2 rounded-full border border-[#d59e52] bg-white px-5 text-[14px] font-semibold text-[#183c2f] transition hover:-translate-y-0.5 hover:bg-[#f5f7f6] sm:h-11 sm:min-w-[170px] sm:text-[15px] lg:h-11 lg:min-w-[184px] lg:text-[16px]"
+      className="mt-auto mx-auto inline-flex h-10 min-w-[150px] items-center justify-center gap-2 rounded-full border border-[#d59e52] bg-white px-5 text-[14px] font-semibold text-[#183c2f] transition hover:-translate-y-0.5 hover:bg-[#f5f7f6] sm:h-11 sm:min-w-[170px] sm:text-[15px] lg:h-11 lg:min-w-[184px] lg:text-[16px]"
     >
       <span>{t("common.readArticle")}</span>
       <Image
@@ -190,7 +190,7 @@ function ArticleSkeleton() {
         <span className="mt-1 h-5 w-4/5 animate-pulse rounded bg-[#dfe8e4]" />
         <span className="h-4 w-full animate-pulse rounded bg-[#f0f4f2]" />
         <span className="h-4 w-3/4 animate-pulse rounded bg-[#f0f4f2]" />
-        <span className="mt-auto ml-auto h-10 w-[150px] animate-pulse rounded-full bg-[#f0f4f2] sm:h-11 sm:w-[170px]" />
+        <span className="mt-auto mx-auto h-10 w-[150px] animate-pulse rounded-full bg-[#f0f4f2] sm:h-11 sm:w-[170px]" />
       </div>
     </article>
   );

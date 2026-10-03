@@ -53,11 +53,14 @@ export function usePublicBuyProperties(params: {
 }
 
 // GET /api/public/property-buyings/{id}
-export function usePublicPropertyBuyingById(id: string) {
+export function usePublicPropertyBuyingById(id: string, locale?: string) {
   return useQuery({
-    queryKey: ["propertyBuying", "public", id],
+    queryKey: ["propertyBuying", "public", id, locale],
     queryFn: async () => {
-      const { data } = await api.get<PropertyBuyingApiResponse<PropertyBuying>>(`/api/public/property-buyings/${id}`);
+      const { data } = await api.get<PropertyBuyingApiResponse<PropertyBuying>>(
+        `/api/public/property-buyings/${id}`,
+        locale ? { headers: { "Accept-Language": locale, "X-Locale": locale } } : undefined
+      );
       return data.data;
     },
     enabled: !!id,

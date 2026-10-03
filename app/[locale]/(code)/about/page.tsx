@@ -32,6 +32,13 @@ const copy: Record<Locale, { title: string; description: string; ogTitle: string
     ogTitle: `О ${siteConfig.name} | Аренда для отдыха`,
     ogDescription: "Надежные местные хозяева, проверенное жилье и частные трансферы в Хургаде.",
   },
+  ar: {
+    title: "عن منازل عطلات الغردقة",
+    description:
+      "تعرف على كيفية مساعدة منازل عطلات الغردقة للمسافرين في العثور على شقق وشاليهات وانتقالات خاصة في الغردقة.",
+    ogTitle: `عن ${siteConfig.name} | منازل العطلات`,
+    ogDescription: "مضيفون محليون موثوقون لعقارات معتمدة وانتقالات خاصة في الغردقة.",
+  },
 };
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/about">): Promise<Metadata> {

@@ -84,7 +84,7 @@ function ItemFormPanel({
 
     const payload: PropertyBuyingCategoryItemRequest = {
       propertyBuyingCategoryId,
-      name: trimTranslation(name) as any,
+      name: trimTranslation(name),
       icon: icon.trim() || undefined,
       displayOrder: displayOrder !== "" ? Number(displayOrder) : undefined,
     };

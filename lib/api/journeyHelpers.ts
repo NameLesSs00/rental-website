@@ -6,30 +6,37 @@ type JourneyListResponse = JourneyApiResponse<{
   items: JourneyItem[];
 }>;
 
-export async function getJourneyIdBySlug(slug: string) {
+export async function getJourneyIdBySlug(slug: string, locale: string = "en") {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/journeys?pageNumber=1&pageSize=100&isActive=true`, {
-      next: { revalidate: 60 },
-    });
+    const decodedSlug = decodeURIComponent(slug);
+    const localesToTry = locale === "en" ? ["en"] : [locale, "en"];
 
-    if (!res.ok) return slug;
+    for (const lookupLocale of localesToTry) {
+      const res = await fetch(`${API_BASE_URL}/api/journeys?pageNumber=1&pageSize=100&isActive=true`, {
+        next: { revalidate: 60 },
+        headers: { "Accept-Language": lookupLocale, "X-Locale": lookupLocale },
+      });
 
-    const json = (await res.json()) as JourneyListResponse;
-    const journeys = json.data?.items ?? [];
-    const match = journeys.find((journey) => journey.id === slug || slugify(journey.name) === slug);
-
-    return match?.id ?? slug;
+      if (res.ok) {
+        const json = (await res.json()) as JourneyListResponse;
+        const journeys = json.data?.items ?? [];
+        const match = journeys.find((journey) => journey.id === decodedSlug || slugify(journey.name) === decodedSlug);
+        if (match) return match.id;
+      }
+    }
+    return slug;
   } catch {
     return slug;
   }
 }
 
-export async function getJourneyBySlug(slug: string) {
-  const id = await getJourneyIdBySlug(slug);
+export async function getJourneyBySlug(slug: string, locale: string = "en") {
+  const id = await getJourneyIdBySlug(slug, locale);
 
   try {
     const res = await fetch(`${API_BASE_URL}/api/journeys/${id}`, {
       next: { revalidate: 60 },
+      headers: { "Accept-Language": locale, "X-Locale": locale },
     });
 
     if (!res.ok) return null;

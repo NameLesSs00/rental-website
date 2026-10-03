@@ -10,6 +10,8 @@ import { savePaymentBookingContext } from "@/lib/utils/paymentBookingContext";
 import { formatUsd } from "@/lib/utils/currency";
 import { toast } from "sonner";
 import { useI18n } from "./I18nProvider";
+import { useHeaderStore } from "@/lib/headerStore";
+import { useEffect } from "react";
 
 function resolveImageUrl(url: string): string {
   if (!url || url.trim() === "") return "";
@@ -47,6 +49,12 @@ export default function SingleTransferPageContent({ id }: SingleTransferPageCont
   const { data: journey, isLoading, isError } = useJourneyById(id);
   const { mutate: createTransferBooking, isPending: isCreatingBooking } = useCreateTransferBooking();
   const { mutate: createPaypalOrder, isPending: isCreatingOrder } = useCreatePaypalOrder();
+  const setPageEntity = useHeaderStore((state) => state.setPageEntity);
+
+  useEffect(() => {
+    setPageEntity(id, "transfer");
+    return () => setPageEntity(null, null);
+  }, [id, setPageEntity]);
 
   const isPending = isCreatingBooking || isCreatingOrder;
 

@@ -1,3 +1,5 @@
+import { notFound, redirect } from "next/navigation";
+import { slugify } from "@/lib/utils/slugify";
 import SingleTransferPageContent from "@/components/SingleTransferPageContent";
 import { getJourneyBySlug, getJourneyIdBySlug } from "@/lib/api/journeyHelpers";
 import { siteConfig } from "@/lib/site";
@@ -8,7 +10,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale: rawLocale, id } = await params;
   const locale: Locale = isLocale(rawLocale) ? rawLocale : "en";
   const messages = getMessages(locale);
-  const journey = await getJourneyBySlug(id);
+  const journey = await getJourneyBySlug(id, locale);
 
   if (!journey) {
     return {
@@ -38,8 +40,14 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   };
 }
 
-export default async function SingleTransferPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const journeyId = await getJourneyIdBySlug(id);
+export default async function SingleTransferPage({ params }: { params: Promise<{ locale: string; id: string }> }) {
+  const { locale: rawLocale, id } = await params;
+  const locale: Locale = isLocale(rawLocale) ? rawLocale : "en";
+  const journeyId = await getJourneyIdBySlug(id, locale);
+  
+  if (!journeyId) {
+    notFound();
+  }
+
   return <SingleTransferPageContent id={journeyId} />;
 }
