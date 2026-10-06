@@ -3,13 +3,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { usePublicBuyProperties } from "@/lib/hooks/usePropertyBuying";
 import { slugify } from "@/lib/utils/slugify";
 import { API_BASE_URL } from "@/lib/api/config";
-import { formatCurrency } from "@/lib/utils/currency";
+import { formatPriceInfo } from "@/lib/utils/currency";
 import { useI18n } from "./I18nProvider";
 import type { PropertyBuyingListItem } from "@/lib/types/propertyBuying";
+import CurrencySelect from "./CurrencySelect";
+import { useSelectedCurrency } from "@/lib/hooks/useSelectedCurrency";
 
 export default function BuyPropertiesPageContent() {
   return (
@@ -27,7 +30,18 @@ export default function BuyPropertiesPageContent() {
 
 function BuyPropertiesPageInner() {
   const { href, t } = useI18n();
-  const { data, isLoading, isError } = usePublicBuyProperties({ pageSize: 100 });
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [selectedCurrency, setSelectedCurrency] = useSelectedCurrency(searchParams.get("Currency"));
+  const { data, isLoading, isError } = usePublicBuyProperties({ pageSize: 100, Currency: selectedCurrency });
+
+  function handleCurrencyChange(nextCurrency: string) {
+    const normalizedCurrency = nextCurrency.toUpperCase();
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set("Currency", normalizedCurrency);
+    setSelectedCurrency(normalizedCurrency);
+    router.push(href(`/buy?${nextParams.toString()}`));
+  }
 
   // {t("buy.featured")} first
   const sorted = useMemo(
@@ -65,15 +79,23 @@ function BuyPropertiesPageInner() {
       <BuyPropertiesHero />
       {/* Listing */}
       <div className="mx-auto max-w-[1536px] px-4 pb-20 pt-8 sm:px-6 lg:px-10">
-        <div className="mb-6">
-          <h2 className="text-[22px] font-semibold text-[#183c2f] lg:text-[32px]">
-            {t("buy.availableProperties")}
-          </h2>
-          {!isLoading && (
-            <p className="mt-1 text-[13px] text-[#656566]">
-              {t("buy.propertiesFound", { count: sorted.length })}
-            </p>
-          )}
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-[22px] font-semibold text-[#183c2f] lg:text-[32px]">
+              {t("buy.availableProperties")}
+            </h2>
+            {!isLoading && (
+              <p className="mt-1 text-[13px] text-[#656566]">
+                {t("buy.propertiesFound", { count: sorted.length })}
+              </p>
+            )}
+          </div>
+          <CurrencySelect
+            value={selectedCurrency}
+            onChange={handleCurrencyChange}
+            className="w-full sm:w-[180px]"
+            selectClassName="h-11 w-full rounded-xl border border-[#e6e6e6] bg-white px-4 text-[14px] text-[#414847] outline-none transition focus:border-[#2e6f57] focus:ring-2 focus:ring-[#2e6f57]/10"
+          />
         </div>
 
         {isLoading ? (
@@ -102,7 +124,8 @@ function BuyPropertiesPageInner() {
               <BuyPropertyCard
                 key={property.id}
                 property={property}
-                url={href(`/buy/${slugify(property.title)}`)}
+                selectedCurrency={selectedCurrency}
+                url={href(`/buy/${slugify(property.title)}?id=${property.id}&Currency=${selectedCurrency}`)}
               />
             ))}
           </motion.div>
@@ -115,9 +138,11 @@ function BuyPropertiesPageInner() {
 function BuyPropertyCard({
   property,
   url,
+  selectedCurrency,
 }: {
   property: PropertyBuyingListItem;
   url: string;
+  selectedCurrency: string;
 }) {
   const { t } = useI18n();
   const image = property.coverImageUrl
@@ -211,7 +236,7 @@ function BuyPropertyCard({
         {/* Price + CTA */}
         <div className="mt-auto flex items-center justify-between pt-4">
           <p className="text-[18px] font-bold text-[#183c2f] lg:text-[20px]">
-            {formatCurrency(property.price, property.currency)}
+            {formatPriceInfo(property.priceInfo, property.price, property.priceInfo?.currency || selectedCurrency || property.currency || "USD")}
           </p>
           <Link
             href={url}

@@ -35,12 +35,13 @@ export default function PropertyBuyingEditContent({ id }: { id: string }) {
   const translationsQuery = usePropertyBuyingTranslations(id, true);
 
   useEffect(() => {
+    const timer = window.setTimeout(() => {
     if (property && !formData) {
       setFormData({
         id: property.id,
         title: property.title || "",
         description: property.description || "",
-        price: property.price || 0,
+        price: property.priceInfo?.baseAmount ?? property.price ?? 0,
         currency: "USD",
         propertyTypeId: property.propertyTypeId || 1,
         status: property.status || 1,
@@ -62,7 +63,7 @@ export default function PropertyBuyingEditContent({ id }: { id: string }) {
           zipCode: property.address?.zipCode || "",
           street: property.address?.street || "",
         },
-        categoryValues: (property.categoryValues || []).map((cv: any) => ({
+        categoryValues: (property.categoryValues || []).map((cv) => ({
           itemId: cv.propertyBuyingCategoryItemId,
         })),
       });
@@ -72,6 +73,9 @@ export default function PropertyBuyingEditContent({ id }: { id: string }) {
       setTitle(translationsQuery.data.title);
       setDescription(translationsQuery.data.description);
     }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [property, formData, translationsQuery.data]);
 
   const updateForm = (updates: Partial<PropertyBuyingRequest>) => {
@@ -92,9 +96,10 @@ export default function PropertyBuyingEditContent({ id }: { id: string }) {
     if (step === 3 && formData) {
       const payload: PropertyBuyingRequest = {
         ...formData,
-        categoryId: formData.categoryId || (locationCategories as any[])?.[0]?.id || "00000000-0000-0000-0000-000000000000",
-        title: title as any,
-        description: description as any,
+        currency: "USD",
+        categoryId: formData.categoryId || locationCategories[0]?.id || "00000000-0000-0000-0000-000000000000",
+        title,
+        description,
       };
       
       updateProperty(
@@ -222,17 +227,12 @@ export default function PropertyBuyingEditContent({ id }: { id: string }) {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Price</label>
+                  <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Price (USD)</label>
                   <input type="number" min={0} required value={formData.price} onChange={e => updateForm({ price: Number(e.target.value) })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57]" />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Currency</label>
-                  <select value={formData.currency} onChange={e => updateForm({ currency: e.target.value })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]">
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                    <option value="EGP">EGP</option>
-                    <option value="GBP">GBP</option>
-                  </select>
+                  <input value="USD" readOnly className="w-full rounded-xl border border-[#dfe8e4] bg-[#f5f7f6] px-4 py-2.5 text-[14px] text-[#667c74] outline-none" />
                 </div>
               </div>
 

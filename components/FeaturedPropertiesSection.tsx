@@ -4,11 +4,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { usePublicRentProperties } from "@/lib/hooks/useProperties";
+import { useProperties } from "@/lib/hooks/useProperties";
+import { useCurrencies } from "@/lib/hooks/useCurrency";
 import { API_BASE_URL } from "@/lib/api/config";
 import { PropertyListItem } from "@/lib/types/property";
+import type { Currency } from "@/lib/types/currency";
 import { slugify } from "@/lib/utils/slugify";
-import { formatUsd } from "@/lib/utils/currency";
+import { formatPriceForCurrency, getPriceInfoAmount } from "@/lib/utils/currency";
+import { useSelectedCurrency } from "@/lib/hooks/useSelectedCurrency";
 import { useI18n } from "./I18nProvider";
 
 const filterTabs = [
@@ -19,9 +22,11 @@ const filterTabs = [
 
 export default function FeaturedPropertiesSection() {
   const [activeTab, setActiveTab] = useState("hot");
+  const [currency] = useSelectedCurrency();
   const { t, href } = useI18n();
+  const { data: currencies = [] } = useCurrencies({ isActive: true });
 
-  const { data: response, isLoading } = usePublicRentProperties({ IsFeatured: true, pageSize: 50 });
+  const { data: response, isLoading } = useProperties({ pageNumber: 1, pageSize: 100, Currency: currency });
   const allProperties: PropertyListItem[] = (response?.items || []).filter((p) => p.isFeatured);
 
   let properties: PropertyListItem[] = [];
@@ -36,7 +41,7 @@ export default function FeaturedPropertiesSection() {
   } else if (activeTab === "price") {
     // Lowest price
     properties = [...allProperties]
-      .sort((a, b) => (a.basePrice || 0) - (b.basePrice || 0))
+      .sort((a, b) => getPriceInfoAmount(a.basePriceInfo, a.basePrice || 0) - getPriceInfoAmount(b.basePriceInfo, b.basePrice || 0))
       .slice(0, 6);
   }
 
@@ -87,7 +92,7 @@ export default function FeaturedPropertiesSection() {
             </div>
           ) : (
             <motion.div 
-              key={activeTab}
+              key={`${activeTab}-${currency}`}
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, margin: "-50px" }}
@@ -98,7 +103,7 @@ export default function FeaturedPropertiesSection() {
               className="flex w-max gap-9 lg:grid lg:w-full lg:grid-cols-3 lg:gap-x-5 lg:gap-y-5"
             >
               {properties.map((property) => (
-                <PropertyCard key={property.id} property={property} />
+                <PropertyCard key={property.id} property={property} currency={currency} currencies={currencies} />
               ))}
             </motion.div>
           )}
@@ -140,11 +145,25 @@ function SectionHeading() {
   );
 }
 
-function PropertyCard({ property }: { property: PropertyListItem }) {
+function PropertyCard({
+  property,
+  currency,
+  currencies,
+}: {
+  property: PropertyListItem;
+  currency: string;
+  currencies: Currency[];
+}) {
   const { t, href } = useI18n();
   const propertyWithSize = property as PropertyListItem & { size?: number | null };
   const imageUrl = property.coverImageUrl ? `${API_BASE_URL}/${property.coverImageUrl}` : "/rent/property-card.png";
   const location = property.city || property.country || t("home.featured.locationMissing");
+  const detailParams = new URLSearchParams({
+    id: property.id,
+    Currency: property.basePriceInfo?.currency || currency,
+  });
+  const detailUrl = href(`/rent/${slugify(property.name)}?${detailParams.toString()}`);
+  const priceLabel = formatPriceForCurrency(property.basePriceInfo, property.basePrice, currency, currencies);
   const sizeLabel =
     typeof propertyWithSize.size === "number" && propertyWithSize.size > 0
       ? `${propertyWithSize.size} m²`
@@ -173,7 +192,7 @@ function PropertyCard({ property }: { property: PropertyListItem }) {
         </div>
 
         <div className="absolute left-0 top-[68%] inline-flex h-[37px] items-center gap-2 rounded-r-lg bg-[#d59e52] px-3 text-[16px] font-semibold text-white">
-          <span>{formatUsd(property.basePrice)} /{t("common.night")}</span>
+          <span>{priceLabel} /{t("common.night")}</span>
         </div>
       </div>
 
@@ -192,7 +211,7 @@ function PropertyCard({ property }: { property: PropertyListItem }) {
           <PropertyMeta icon="/homepage/properties/icons/size.svg" label={sizeLabel} />
         </div>
 
-        <Link href={href(`/rent/${slugify(property.name)}`)} className="mt-auto flex h-12 items-center justify-center rounded-full bg-[#2e6f57] text-[16px] font-semibold text-white transition hover:bg-[#245f49]">
+        <Link href={detailUrl} className="mt-auto flex h-12 items-center justify-center rounded-full bg-[#2e6f57] text-[16px] font-semibold text-white transition hover:bg-[#245f49]">
           {t("common.bookNow")}
         </Link>
       </div>

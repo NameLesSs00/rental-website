@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import type { Variants } from "framer-motion";
 import { Check, ChevronDown } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useHeaderStore } from "../lib/headerStore";
 import { localeFlags, localeLabels, locales, localizePath, stripLocale, type Locale } from "@/lib/i18n/config";
 import { API_BASE_URL } from "@/lib/api/config";
@@ -92,10 +92,19 @@ const mobileMenuMotion: Variants = {
   },
 };
 
+function subscribeToLocationChanges() {
+  return () => {};
+}
+
+function getLocationSearchSnapshot() {
+  return typeof window === "undefined" ? "" : window.location.search.replace(/^\?/, "");
+}
+
 export default function Header() {
-  const { menuOpen, toggleMenu, closeMenu } = useHeaderStore();
+  const { menuOpen, toggleMenu, closeMenu, pageEntityId, pageEntityType } = useHeaderStore();
   const pathname = usePathname();
   const publicPathname = stripLocale(pathname);
+  const queryString = useSyncExternalStore(subscribeToLocationChanges, getLocationSearchSnapshot, () => "");
   const { t, href, locale } = useI18n();
   const shouldReduceMotion = useReducedMotion();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -246,7 +255,7 @@ export default function Header() {
         </motion.nav>
 
         <motion.div variants={headerItemMotion} className="hidden justify-self-end lg:block">
-          <LanguageSwitcher locale={locale} publicPathname={publicPathname} />
+          <LanguageSwitcher locale={locale} publicPathname={publicPathname} queryString={queryString} />
         </motion.div>
 
         <motion.button
@@ -352,7 +361,31 @@ export default function Header() {
                 {locales.map((item) => (
                   <Link
                     key={item}
-                    href={localizePath(publicPathname, item)}
+                    href={
+                      pageEntityId && pageEntityType
+                        ? buildLocalizedEntityPath({
+                            targetLocale: item,
+                            entityType: pageEntityType,
+                            entityId: pageEntityId,
+                            translatedSlug: "",
+                            fallbackPathname: publicPathname,
+                            queryString,
+                          })
+                        : buildLocalizedPath(publicPathname, item, queryString)
+                    }
+                    onClick={(event) => {
+                      if (!pageEntityId || !pageEntityType) return;
+                      event.preventDefault();
+                      closeMenu();
+                      window.location.href = buildLocalizedEntityPath({
+                        targetLocale: item,
+                        entityType: pageEntityType,
+                        entityId: pageEntityId,
+                        translatedSlug: "",
+                        fallbackPathname: publicPathname,
+                        queryString: getLocationSearchSnapshot(),
+                      });
+                    }}
                     className={`flex items-center gap-3 rounded-lg px-2 py-2.5 text-[14px] font-semibold transition ${
                       item === locale
                         ? "bg-[#f0f7f4] text-[#1F4D3D]"
@@ -380,7 +413,45 @@ export default function Header() {
   );
 }
 
-function LanguageSwitcher({ locale, publicPathname }: { locale: Locale; publicPathname: string }) {
+function buildLocalizedPath(pathname: string, targetLocale: Locale, queryString?: string) {
+  const suffix = queryString ? `?${queryString}` : "";
+  return localizePath(`${pathname}${suffix}`, targetLocale);
+}
+
+function buildLocalizedEntityPath({
+  targetLocale,
+  entityType,
+  entityId,
+  translatedSlug,
+  fallbackPathname,
+  queryString,
+}: {
+  targetLocale: Locale;
+  entityType: "rent" | "buy" | "transfer" | "blogs";
+  entityId: string;
+  translatedSlug: string;
+  fallbackPathname: string;
+  queryString?: string;
+}) {
+  const params = new URLSearchParams(queryString || "");
+  if (entityType === "rent" || entityType === "buy") {
+    params.set("id", entityId);
+  }
+
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  const path = translatedSlug ? `/${entityType}/${translatedSlug}${suffix}` : `${fallbackPathname}${suffix}`;
+  return localizePath(path, targetLocale);
+}
+
+function LanguageSwitcher({
+  locale,
+  publicPathname,
+  queryString,
+}: {
+  locale: Locale;
+  publicPathname: string;
+  queryString: string;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const switcherRef = useRef<HTMLDivElement>(null);
   const selectedLabel = localeLabels[locale];
@@ -451,12 +522,24 @@ function LanguageSwitcher({ locale, publicPathname }: { locale: Locale; publicPa
               return (
                 <motion.div key={item} variants={dropdownItemMotion}>
                   <Link
-                    href={localizePath(publicPathname, item)}
+                    href={
+                      pageEntityId && pageEntityType
+                        ? buildLocalizedEntityPath({
+                            targetLocale: item,
+                            entityType: pageEntityType,
+                            entityId: pageEntityId,
+                            translatedSlug: "",
+                            fallbackPathname: publicPathname,
+                            queryString,
+                          })
+                        : buildLocalizedPath(publicPathname, item, queryString)
+                    }
                     role="menuitem"
                     onClick={async (e) => {
                       if (pageEntityId && pageEntityType) {
                         e.preventDefault();
                         setIsOpen(false);
+                        const currentQueryString = getLocationSearchSnapshot();
                         
                         try {
                           let endpoint = "";
@@ -479,7 +562,14 @@ function LanguageSwitcher({ locale, publicPathname }: { locale: Locale; publicPa
                             else if (pageEntityType === "blogs") translatedSlug = slugify(data.title || "");
 
                             if (translatedSlug) {
-                              window.location.href = `/${item}/${pageEntityType}/${translatedSlug}`;
+                              window.location.href = buildLocalizedEntityPath({
+                                targetLocale: item,
+                                entityType: pageEntityType,
+                                entityId: pageEntityId,
+                                translatedSlug,
+                                fallbackPathname: publicPathname,
+                                queryString: currentQueryString,
+                              });
                               return;
                             }
                           }
@@ -488,7 +578,14 @@ function LanguageSwitcher({ locale, publicPathname }: { locale: Locale; publicPa
                         }
                         
                         // Fallback if fetch fails
-                        window.location.href = localizePath(publicPathname, item);
+                        window.location.href = buildLocalizedEntityPath({
+                          targetLocale: item,
+                          entityType: pageEntityType,
+                          entityId: pageEntityId,
+                          translatedSlug: "",
+                          fallbackPathname: publicPathname,
+                          queryString: currentQueryString,
+                        });
                       } else {
                         setIsOpen(false);
                       }

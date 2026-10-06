@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import SinglePropertyPageContent from "@/components/SinglePropertyPageContent";
 import { API_BASE_URL } from "@/lib/api/config";
 import { getPropertyIdBySlug } from "@/lib/api/propertyHelpers";
@@ -7,18 +7,25 @@ import { siteConfig } from "@/lib/site";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getMessages } from "@/lib/i18n/messages";
 
-import { slugify } from "@/lib/utils/slugify";
-
 type PropertyImage = {
   isCover?: boolean;
   imageUrl?: string;
 };
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
+type PageSearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string; slug: string }>;
+  searchParams: PageSearchParams;
+}): Promise<Metadata> {
   const { locale: rawLocale, slug } = await params;
+  const query = await searchParams;
   const locale: Locale = isLocale(rawLocale) ? rawLocale : "en";
   const messages = getMessages(locale);
-  const id = await getPropertyIdBySlug(slug, "rent", locale);
+  const id = await getPropertyIdBySlug(slug, "rent", locale, query.id);
   
   if (!id) {
     return {
@@ -60,10 +67,17 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   }
 }
 
-export default async function SinglePropertyPage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
+export default async function SinglePropertyPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string; slug: string }>;
+  searchParams: PageSearchParams;
+}) {
   const { locale: rawLocale, slug } = await params;
+  const query = await searchParams;
   const locale: Locale = isLocale(rawLocale) ? rawLocale : "en";
-  const id = await getPropertyIdBySlug(slug, "rent", locale);
+  const id = await getPropertyIdBySlug(slug, "rent", locale, query.id);
   
   if (!id) {
     notFound();

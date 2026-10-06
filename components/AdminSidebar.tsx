@@ -12,6 +12,7 @@ const mainNavItems = [
   { label: "Reservations", href: "/admin/in-house", icon: "bed" },
   { label: "Reports", href: "/admin/reports", icon: "report" },
   { label: "Reviews", href: "/admin/reviews", icon: "star" },
+  { label: "Currencies", href: "/admin/currencies", icon: "currency" },
   { label: "Transfer Bookings", href: "/admin/transfer-bookings", icon: "route" },
   { label: "Properties Views", href: "/admin/properties-locations", icon: "globe" },
   { label: "Rent Properties", href: "/admin/properties", icon: "home" },
@@ -196,6 +197,13 @@ function SidebarIcon({ name }: { name: string }) {
         <svg {...common}>
           <rect x="4" y="7" width="16" height="10" rx="2" />
           <path d="M4 10h16M8 14h3" />
+        </svg>
+      );
+    case "currency":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="8" />
+          <path d="M12 7v10M9.5 9.5h3.5a2 2 0 0 1 0 4h-2a2 2 0 0 0 0 4h3.5" />
         </svg>
       );
     case "grid":

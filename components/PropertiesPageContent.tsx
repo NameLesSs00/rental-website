@@ -5,7 +5,8 @@ import { PropertyType, type PropertyListItem } from "@/lib/types/property";
 import { slugify } from "@/lib/utils/slugify";
 import { API_BASE_URL } from "@/lib/api/config";
 import { useCategories } from "@/lib/hooks/useCategory";
-import { formatUsd } from "@/lib/utils/currency";
+import { useCurrencies } from "@/lib/hooks/useCurrency";
+import { formatPriceForCurrency } from "@/lib/utils/currency";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -13,6 +14,9 @@ import { Suspense, useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useInHouseBookings } from "@/lib/hooks/useBooking";
 import { useI18n } from "./I18nProvider";
+import CurrencySelect from "./CurrencySelect";
+import type { Currency } from "@/lib/types/currency";
+import { useSelectedCurrency } from "@/lib/hooks/useSelectedCurrency";
 
 type RentGridItem = PropertyListItem & {
   size?: number | null;
@@ -26,11 +30,45 @@ type NormalizedPropertyCard = {
   beds: string;
   baths: string;
   size: string;
-  price: number;
+  priceLabel: string;
   image: string;
   url: string;
   isFeatured: boolean;
 };
+
+function formatNumberParam(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, "");
+}
+
+function convertPriceFilterToBaseCurrency(
+  value: string | undefined,
+  selectedCurrency: string,
+  currencies: Currency[],
+) {
+  const amount = Number(value);
+  if (!value || !Number.isFinite(amount)) return value;
+
+  const selected = currencies.find((currency) => currency.code.toUpperCase() === selectedCurrency.toUpperCase());
+  if (!selected || selected.isBaseCurrency || selected.exchangeRate === 0) return value;
+
+  const baseCurrency = currencies.find((currency) => currency.isBaseCurrency);
+  const baseRate = baseCurrency?.exchangeRate || 1;
+  return formatNumberParam((amount / selected.exchangeRate) * baseRate);
+}
+
+function buildRentApiParams(paramsObj: Record<string, string>, selectedCurrency: string, currencies: Currency[]) {
+  const apiParams: Record<string, string> = { ...paramsObj };
+
+  if (apiParams.MinPrice) {
+    apiParams.MinPrice = convertPriceFilterToBaseCurrency(apiParams.MinPrice, selectedCurrency, currencies) || apiParams.MinPrice;
+  }
+
+  if (apiParams.MaxPrice) {
+    apiParams.MaxPrice = convertPriceFilterToBaseCurrency(apiParams.MaxPrice, selectedCurrency, currencies) || apiParams.MaxPrice;
+  }
+
+  return apiParams;
+}
 
 export default function PropertiesPageContent() {
   return (
@@ -44,9 +82,22 @@ function PropertiesPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t, href } = useI18n();
-  const paramsKey = searchParams.toString();
   const paramsObj = useMemo(() => Object.fromEntries(searchParams.entries()), [searchParams]);
+  const [selectedCurrency, setSelectedCurrency] = useSelectedCurrency(paramsObj.Currency);
+  const effectiveParamsObj = useMemo(
+    () => ({ ...paramsObj, Currency: selectedCurrency }),
+    [paramsObj, selectedCurrency],
+  );
+  const paramsKey = `${searchParams.toString()}|${selectedCurrency}`;
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  const handleCurrencyChange = (nextCurrency: string) => {
+    const normalizedCurrency = nextCurrency.toUpperCase();
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.set("Currency", normalizedCurrency);
+    setSelectedCurrency(normalizedCurrency);
+    router.push(href(`/rent?${newParams.toString()}`));
+  };
 
   useEffect(() => {
     if (mobileFiltersOpen) {
@@ -69,6 +120,7 @@ function PropertiesPageInner() {
     const minPrice = formData.get("minPrice") as string;
     const maxPrice = formData.get("maxPrice") as string;
     const propertyType = formData.get("propertyType") as string;
+    const currency = ((formData.get("Currency") as string) || "USD").trim().toUpperCase();
 
     if (from && to) {
       newParams.append("from", from);
@@ -85,6 +137,10 @@ function PropertiesPageInner() {
     if (propertyType) newParams.append("PropertyType", propertyType);
     if (minPrice) newParams.append("MinPrice", minPrice);
     if (maxPrice) newParams.append("MaxPrice", maxPrice);
+    if (currency) {
+      setSelectedCurrency(currency);
+      newParams.append("Currency", currency);
+    }
 
     const isAvailable = formData.get("isAvailable") === "on";
     if (isAvailable) newParams.append("IsAvailable", "true");
@@ -156,7 +212,12 @@ function PropertiesPageInner() {
               </button>
             </div>
             <div className="flex-1 overflow-y-auto px-5 py-4">
-              <FilterForm key={`mobile-${paramsKey}`} paramsObj={paramsObj} onSubmit={handleFilterSubmit} />
+              <FilterForm
+                key={`mobile-${paramsKey}`}
+                paramsObj={effectiveParamsObj}
+                onSubmit={handleFilterSubmit}
+                onCurrencyChange={handleCurrencyChange}
+              />
             </div>
           </motion.aside>
         )}
@@ -168,11 +229,16 @@ function PropertiesPageInner() {
         <div className="mt-6 flex flex-col gap-6 lg:mt-8 lg:flex-row lg:items-start lg:gap-8">
           {/* Desktop sidebar always visible, sticky */}
           <aside className="hidden lg:sticky lg:top-8 lg:block lg:w-[280px] lg:shrink-0">
-            <FilterForm key={`desktop-${paramsKey}`} paramsObj={paramsObj} onSubmit={handleFilterSubmit} />
+            <FilterForm
+              key={`desktop-${paramsKey}`}
+              paramsObj={effectiveParamsObj}
+              onSubmit={handleFilterSubmit}
+              onCurrencyChange={handleCurrencyChange}
+            />
           </aside>
           {/* Property grid */}
           <div className="min-w-0 flex-1">
-            <PropertyGrid key={`grid-${paramsKey}`} paramsObj={paramsObj} />
+            <PropertyGrid key={`grid-${paramsKey}`} paramsObj={effectiveParamsObj} />
           </div>
         </div>
       </div>
@@ -244,9 +310,11 @@ const inputCls = "h-11 w-full rounded-xl border border-[#e6e6e6] bg-white px-4 t
 function FilterForm({
   paramsObj,
   onSubmit,
+  onCurrencyChange,
 }: {
   paramsObj: Record<string, string>;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  onCurrencyChange: (currency: string) => void;
 }) {
   const { t } = useI18n();
   const { data: categories } = useCategories();
@@ -256,6 +324,7 @@ function FilterForm({
   const propertyTypeVal = paramsObj.PropertyType || paramsObj.propertyType || "";
   const minPriceVal = paramsObj.MinPrice || "";
   const maxPriceVal = paramsObj.MaxPrice || "";
+  const currencyParam = paramsObj.Currency || "USD";
   const isAvailableVal = paramsObj.IsAvailable === "true";
   const hasSeaViewVal = paramsObj.HasSeaView === "true";
   const hasPoolViewVal = paramsObj.HasPoolView === "true";
@@ -269,12 +338,16 @@ function FilterForm({
   const [toDate, setToDate] = useState(toVal);
   const [prevFrom, setPrevFrom] = useState(fromVal);
   const [prevTo, setPrevTo] = useState(toVal);
+  const [currency, setCurrency] = useState(currencyParam);
+  const [prevCurrency, setPrevCurrency] = useState(currencyParam);
 
-  if (prevFrom !== fromVal || prevTo !== toVal) {
+  if (prevFrom !== fromVal || prevTo !== toVal || prevCurrency !== currencyParam) {
     setPrevFrom(fromVal);
     setPrevTo(toVal);
+    setPrevCurrency(currencyParam);
     setFromDate(fromVal);
     setToDate(toVal);
+    setCurrency(currencyParam);
   }
 
   const todayString = new Date().toISOString().split("T")[0];
@@ -374,6 +447,15 @@ function FilterForm({
             <option value={PropertyType.twoBedroom}>{t("home.categories.twoBedroom")}</option>
           </select>
         </label>
+        <CurrencySelect
+          value={currency}
+          onChange={(nextCurrency) => {
+            setCurrency(nextCurrency);
+            onCurrencyChange(nextCurrency);
+          }}
+          className="block"
+          selectClassName={inputCls}
+        />
         <div>
           <span className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wide text-[#656566]">{t("rent.priceNight")}</span>
           <div className="flex items-center gap-2">
@@ -432,7 +514,13 @@ function PropertyGrid({ paramsObj }: { paramsObj: Record<string, string> }) {
   const { t, href } = useI18n();
   const pageNumber = Number(paramsObj.page) || 1;
   const pageSize = 50;
-  const { data, isLoading } = usePublicRentProperties({ ...paramsObj, pageNumber, pageSize });
+  const { data: currencies = [] } = useCurrencies({ isActive: true });
+  const selectedCurrency = (paramsObj.Currency || "USD").toUpperCase();
+  const apiParams = useMemo(
+    () => buildRentApiParams(paramsObj, selectedCurrency, currencies),
+    [currencies, paramsObj, selectedCurrency],
+  );
+  const { data, isLoading } = usePublicRentProperties({ ...apiParams, pageNumber, pageSize });
   const minCapacity = Math.max(0, Number(paramsObj.MinCapacity || paramsObj.minCapacity || 0) || 0);
 
   const hasDateFilter = Boolean(paramsObj.from && paramsObj.to);
@@ -524,6 +612,8 @@ function PropertyGrid({ paramsObj }: { paramsObj: Record<string, string> }) {
     if (minCapacity) {
       detailParams.set("person", String(minCapacity));
     }
+    detailParams.set("id", rentItem.id);
+    detailParams.set("Currency", selectedCurrency);
     const queryString = detailParams.toString();
     const url = `/rent/${slugify(rentItem.name)}${queryString ? `?${queryString}` : ""}`;
 
@@ -534,7 +624,7 @@ function PropertyGrid({ paramsObj }: { paramsObj: Record<string, string> }) {
       beds: `${rentItem.bedroomNo} ${Number(rentItem.bedroomNo) === 1 ? t("property.bedroom") : t("property.bedrooms")}`,
       baths: `${rentItem.bathroomNo} ${Number(rentItem.bathroomNo) === 1 ? t("property.bathroom") : t("property.bathrooms")}`,
       size: `${rentItem.size || rentItem.capacity || 0} sqm`,
-      price: rentItem.basePrice,
+      priceLabel: formatPriceForCurrency(rentItem.basePriceInfo, rentItem.basePrice, selectedCurrency, currencies),
       image: rentItem.coverImageUrl ? `${API_BASE_URL}/${rentItem.coverImageUrl}` : "/rent/property-card.png",
       url,
       isFeatured: Boolean(rentItem.isFeatured),
@@ -645,7 +735,7 @@ function PropertyCard({ property }: { property: NormalizedPropertyCard }) {
           </span>
         )}
         <span className="absolute bottom-3 left-3 flex h-9 items-center gap-1.5 rounded-lg bg-[#cfb072] px-3 text-white shadow-lg">
-          <span className="text-[14px] font-bold lg:text-[17px]">{formatUsd(property.price)}<span className="text-[11px] font-normal">/{t("common.night")}</span></span>
+          <span className="text-[14px] font-bold lg:text-[17px]">{property.priceLabel}<span className="text-[11px] font-normal">/{t("common.night")}</span></span>
         </span>
       </Link>
       <div className="flex flex-1 flex-col p-4">
@@ -664,7 +754,7 @@ function PropertyCard({ property }: { property: NormalizedPropertyCard }) {
           <PropertyMeta icon="/homepage/properties/icons/size.svg" label={property.size} />
         </div>
         <Link
-          href={property.url}
+          href={href(property.url)}
           className="mt-4 flex h-10 w-full items-center justify-center rounded-xl bg-[#2e6f57] text-[13px] font-semibold text-white transition hover:bg-[#255f49] lg:h-11 lg:text-[14px]"
         >
           {t("common.bookNow")}

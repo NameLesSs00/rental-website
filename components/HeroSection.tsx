@@ -5,11 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useI18n } from "./I18nProvider";
+import CurrencySelect from "./CurrencySelect";
+import { useSelectedCurrency } from "@/lib/hooks/useSelectedCurrency";
 
 export default function HeroSection() {
   const router = useRouter();
   const { t, href } = useI18n();
   const listingType = "rent";
+  const [currency, setCurrency] = useSelectedCurrency();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -19,6 +22,7 @@ export default function HeroSection() {
     const from = (formData.get("from") as string)?.trim();
     const to = (formData.get("to") as string)?.trim();
     const minCapacity = (formData.get("minCapacity") as string)?.trim();
+    const selectedCurrency = ((formData.get("Currency") as string) || currency || "USD").trim().toUpperCase();
     
     if (from && to) {
       searchParams.append("from", from);
@@ -32,6 +36,11 @@ export default function HeroSection() {
 
     if (minCapacity) {
       searchParams.append("MinCapacity", minCapacity);
+    }
+
+    if (selectedCurrency) {
+      setCurrency(selectedCurrency);
+      searchParams.append("Currency", selectedCurrency);
     }
 
     router.push(href(`/${listingType}?${searchParams.toString()}`));
@@ -97,7 +106,7 @@ export default function HeroSection() {
           <div className="flex flex-col sm:flex-row items-end gap-3 sm:gap-4 w-full">
             {/* Check-in & Check-out Dates */}
             <div className="min-w-0 text-[#1F4D3D] w-full sm:flex-1">
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-4">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 sm:gap-4">
                 <label className="block min-w-0">
                   <span className="mb-1.5 block truncate text-[13px] font-medium leading-none text-[#1F4D3D] sm:text-[14px] xl:text-[15px] 2xl:text-[16px]">
                     {t("home.hero.checkIn")}
@@ -141,6 +150,13 @@ export default function HeroSection() {
                     className="h-10 w-full min-w-0 rounded-lg border border-[#e6ece9] bg-white px-2 text-[12px] font-medium text-[#1F4D3D] outline-none transition hover:border-[#cfb072] focus:border-[#1F4D3D] focus:ring-2 focus:ring-[#1F4D3D]/10 sm:rounded-xl sm:px-3 sm:text-[13px] xl:h-[48px] xl:text-[14px] 2xl:text-[15px]"
                   />
                 </label>
+
+                <CurrencySelect
+                  value={currency}
+                  onChange={setCurrency}
+                  className="block min-w-0"
+                  selectClassName="h-10 w-full min-w-0 rounded-lg border border-[#e6ece9] bg-white px-2 text-[12px] font-medium text-[#1F4D3D] outline-none transition hover:border-[#cfb072] focus:border-[#1F4D3D] focus:ring-2 focus:ring-[#1F4D3D]/10 sm:rounded-xl sm:px-3 sm:text-[13px] xl:h-[48px] xl:text-[14px]"
+                />
               </div>
             </div>
 

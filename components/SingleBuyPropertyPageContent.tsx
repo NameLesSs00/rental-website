@@ -2,19 +2,23 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import PropertyImageGallery from "./PropertyImageGallery";
 import ScrollAnimation from "./ScrollAnimation";
 import ContactForm from "./ContactForm";
 import DynamicAmenityIcon from "./DynamicAmenityIcon";
 import { usePublicPropertyBuyingById } from "@/lib/hooks/usePropertyBuying";
 import { usePropertyBuyingCategories } from "@/lib/hooks/usePropertyBuyingCategory";
+import { useCurrencies } from "@/lib/hooks/useCurrency";
 import { API_BASE_URL } from "@/lib/api/config";
 import type { PropertyBuying, PropertyBuyingSection } from "@/lib/types/propertyBuying";
 import type { PropertyBuyingCategory } from "@/lib/types/propertyBuyingCategory";
-import { formatCurrency } from "@/lib/utils/currency";
+import { formatPriceForCurrency } from "@/lib/utils/currency";
 import { useI18n } from "./I18nProvider";
 import { useHeaderStore } from "@/lib/headerStore";
 import { useEffect } from "react";
+import CurrencySelect from "./CurrencySelect";
+import { useSelectedCurrency } from "@/lib/hooks/useSelectedCurrency";
 
 
 type QuickFact = {
@@ -26,8 +30,13 @@ type DetailRow = [string, string];
 
 export default function SingleBuyPropertyPageContent({ id }: { id: string }) {
   const { locale, t } = useI18n();
-  const { data: property, isLoading } = usePublicPropertyBuyingById(id, locale);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [selectedCurrency, setSelectedCurrency] = useSelectedCurrency(searchParams.get("Currency"));
+  const { data: property, isLoading } = usePublicPropertyBuyingById(id, locale, selectedCurrency);
   const { data: categories = [] } = usePropertyBuyingCategories(locale);
+  const { data: currencies = [] } = useCurrencies({ isActive: true });
   const setPageEntity = useHeaderStore((state) => state.setPageEntity);
 
   useEffect(() => {
@@ -37,6 +46,22 @@ export default function SingleBuyPropertyPageContent({ id }: { id: string }) {
 
   if (isLoading) return <div className="p-20 text-center">{t("buy.loadingProperty")}</div>;
   if (!property) return <div className="p-20 text-center">{t("buy.notFound")}</div>;
+
+  const handleCurrencyChange = (nextCurrency: string) => {
+    const normalizedCurrency = nextCurrency.toUpperCase();
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set("id", id);
+    nextParams.set("Currency", normalizedCurrency);
+    setSelectedCurrency(normalizedCurrency);
+    router.push(`${pathname}?${nextParams.toString()}`);
+  };
+
+  const priceLabel = formatPriceForCurrency(
+    property.priceInfo,
+    property.price,
+    selectedCurrency,
+    currencies,
+  );
 
   const galleryImages = (property.images || []).sort((a,b)=>a.displayOrder - b.displayOrder).map((img) => ({ src: `${API_BASE_URL}/${img.imageUrl}`, alt: property.title }));
   if (galleryImages.length === 0) galleryImages.push({ src: "/rent/property-card.png", alt: property.title });
@@ -48,7 +73,7 @@ export default function SingleBuyPropertyPageContent({ id }: { id: string }) {
   ];
 
   const priceDetails: DetailRow[] = [
-    [t("buy.price"), formatCurrency(property.price, property.currency)],
+    [t("buy.price"), priceLabel],
     [t("buy.status"), property.status === 1 ? t("buy.statuses.available") : property.status === 2 ? t("buy.statuses.reserved") : t("buy.statuses.sold")],
   ];
 
@@ -63,7 +88,12 @@ export default function SingleBuyPropertyPageContent({ id }: { id: string }) {
       <section className="px-5 pb-12 pt-6 lg:px-20 lg:pb-4 lg:pt-14">
         <div className="mx-auto w-full max-w-[1282px]">
           <ScrollAnimation delay={0}>
-            <PropertyHeader property={property} />
+            <PropertyHeader
+              property={property}
+              selectedCurrency={selectedCurrency}
+              priceLabel={priceLabel}
+              onCurrencyChange={handleCurrencyChange}
+            />
           </ScrollAnimation>
 
           <div className="mt-5 min-w-0 lg:mt-[22px]">
@@ -108,7 +138,17 @@ export default function SingleBuyPropertyPageContent({ id }: { id: string }) {
   );
 }
 
-function PropertyHeader({ property }: { property: PropertyBuying }) {
+function PropertyHeader({
+  property,
+  selectedCurrency,
+  priceLabel,
+  onCurrencyChange,
+}: {
+  property: PropertyBuying;
+  selectedCurrency: string;
+  priceLabel: string;
+  onCurrencyChange: (currency: string) => void;
+}) {
   const { t, href } = useI18n();
 
   return (
@@ -132,6 +172,18 @@ function PropertyHeader({ property }: { property: PropertyBuying }) {
           <Image src="/homepage/properties/icons/location.svg" alt="" width={24} height={24} className="size-6" />
           <span className="truncate">{[property.address?.street, property.address?.area, property.address?.city, property.address?.country].filter(Boolean).join(", ")}</span>
         </p>
+        <div className="mt-4 flex flex-col gap-3 rounded-xl border border-[#dfe8e4] bg-[#fbfdfc] p-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-[#667c74]">{t("buy.price")}</p>
+            <p className="mt-1 text-[24px] font-bold leading-tight text-[#183c2f] lg:text-[32px]">{priceLabel}</p>
+          </div>
+          <CurrencySelect
+            value={selectedCurrency}
+            onChange={onCurrencyChange}
+            className="w-full sm:w-[180px]"
+            selectClassName="h-11 w-full rounded-xl border border-[#dfe8e4] bg-white px-4 text-[14px] text-[#414847] outline-none transition focus:border-[#2e6f57] focus:ring-2 focus:ring-[#2e6f57]/10"
+          />
+        </div>
       </div>
     </header>
   );

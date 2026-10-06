@@ -20,8 +20,16 @@ async function getSlugItems(type: "rent" | "buy", locale: Locale) {
   return (json.data?.items || []) as SlugSourceItem[];
 }
 
-export async function getPropertyIdBySlug(slug: string, type: "rent" | "buy" = "rent", locale: Locale = defaultLocale): Promise<string | null> {
+export async function getPropertyIdBySlug(
+  slug: string,
+  type: "rent" | "buy" = "rent",
+  locale: Locale = defaultLocale,
+  id?: string | string[] | null,
+): Promise<string | null> {
   try {
+    const idParam = Array.isArray(id) ? id[0] : id;
+    if (idParam?.trim()) return idParam.trim();
+
     const decodedSlug = decodeURIComponent(slug);
     const localesToTry = locale === defaultLocale ? [defaultLocale] : [locale, defaultLocale];
 

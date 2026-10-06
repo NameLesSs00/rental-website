@@ -1,4 +1,6 @@
-import { PropertyStatus, PropertyType } from "./property";
+import { PropertyType } from "./property";
+import type { PriceInfo } from "@/lib/types/currency";
+import type { TranslationInput } from "@/lib/i18n/adminTranslations";
 
 export enum PropertyBuyingStatus {
   Available = 1,
@@ -50,8 +52,9 @@ export interface PropertyBuying {
   propertyNumber: string;
   title: string;
   description: string;
-  price: number;
-  currency: string;
+  price: number | null;
+  currency: string | null;
+  priceInfo?: PriceInfo | null;
   propertyTypeId: PropertyType;
   status: PropertyBuyingStatus;
   isFeatured: boolean;
@@ -92,8 +95,9 @@ export interface PropertyBuyingListItem {
   id: string;
   propertyNumber: string;
   title: string;
-  price: number;
-  currency: string;
+  price: number | null;
+  currency: string | null;
+  priceInfo?: PriceInfo | null;
   propertyTypeId: PropertyType;
   status: PropertyBuyingStatus;
   isFeatured: boolean;
@@ -112,8 +116,8 @@ export interface PropertyBuyingListItem {
 export interface PropertyBuyingRequest {
   id?: string;
   categoryId?: string | null;
-  title: string;
-  description: string;
+  title: string | TranslationInput;
+  description: string | TranslationInput;
   price: number;
   currency: string;
   propertyTypeId: PropertyType;

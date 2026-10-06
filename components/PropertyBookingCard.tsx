@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { formatUsd } from "@/lib/utils/currency";
+import { formatCurrency } from "@/lib/utils/currency";
 import { useI18n } from "./I18nProvider";
 
 interface PropertyBookingCardProps {
@@ -9,6 +9,7 @@ interface PropertyBookingCardProps {
   propertyId: string;
   propertyName: string;
   basePrice: number;
+  currencyCode?: string;
   capacity: number;
   rating?: number;
   totalReviews?: number;
@@ -48,6 +49,7 @@ interface PropertyBookingCardProps {
 export default function PropertyBookingCard({
   idPrefix,
   basePrice,
+  currencyCode = "USD",
   capacity,
   rating = 0,
   totalReviews = 0,
@@ -93,7 +95,7 @@ export default function PropertyBookingCard({
       <div className="flex items-baseline justify-between border-b border-[#edf2ef] pb-3.5">
         <div>
           <span className="text-[26px] font-bold text-[#183c2f] lg:text-[28px]">
-            {formatUsd(basePrice)}
+            {formatCurrency(basePrice, currencyCode)}
           </span>
           <span className="text-[13px] font-medium text-[#667c74]"> / {t("common.night")}</span>
         </div>
@@ -263,13 +265,13 @@ export default function PropertyBookingCard({
           <dl className="mt-2.5 space-y-2 text-[13px]">
             <div className="flex justify-between text-[#667c74]">
               <span>
-                {formatUsd(basePrice)} × {nights || 0}{" "}
+                {formatCurrency(basePrice, currencyCode)} × {nights || 0}{" "}
                 {nights === 1 ? t("common.night") : t("common.nights")}
               </span>
               <span className="font-semibold text-[#183c2f]">
                 {isCheckingPrice && checkIn && checkOut
                   ? t("common.checking")
-                  : formatUsd(estimatedTotal)}
+                  : formatCurrency(estimatedTotal, currencyCode)}
               </span>
             </div>
             <div className="flex justify-between border-t border-[#edf2ef] pt-2 text-[14px]">
@@ -277,7 +279,7 @@ export default function PropertyBookingCard({
               <span className="text-[17px] font-bold text-[#2e6f57]">
                 {isCheckingPrice && checkIn && checkOut
                   ? t("common.checking")
-                  : formatUsd(estimatedTotal)}
+                  : formatCurrency(estimatedTotal, currencyCode)}
               </span>
             </div>
           </dl>

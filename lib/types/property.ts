@@ -1,3 +1,6 @@
+import type { PriceInfo } from "@/lib/types/currency";
+import type { TranslationInput } from "@/lib/i18n/adminTranslations";
+
 export enum PropertyStatus {
   Clean = 1,
   Dirty = 2,
@@ -191,6 +194,7 @@ export interface Property {
   capacity: number;
   size: number;
   basePrice: number;
+  basePriceInfo?: PriceInfo | null;
   propertyType: PropertyType;
   propertyTypeName: string;
   propertyStatus: PropertyStatus;
@@ -238,6 +242,7 @@ export interface PropertyListItem {
   bathroomNo: number;
   capacity: number;
   basePrice: number;
+  basePriceInfo?: PriceInfo | null;
   propertyType: PropertyType;
   propertyTypeName: string;
   isAvailable: boolean;
@@ -314,4 +319,3 @@ export interface PropertyTypeCount {
   name: string;
   count: number;
 }
-import type { TranslationInput } from "@/lib/i18n/adminTranslations";

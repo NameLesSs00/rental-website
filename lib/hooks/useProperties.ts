@@ -5,9 +5,7 @@ import type {
   Property,
   PropertyListItem,
   PropertyRequest,
-  PropertyAddress,
   PropertyAddressRequest,
-  PropertyListingDetails,
   PropertyListingDetailsRequest,
   PropertyImage,
   BulkDailyPricesRequest,
@@ -73,6 +71,32 @@ function getRentBedroomNo(params: PropertyQueryParams) {
   const bedroomNo = params.BedroomNo ?? params.bedroomNo;
   const value = typeof bedroomNo === "string" ? Number(bedroomNo) : typeof bedroomNo === "number" ? bedroomNo : NaN;
   return Number.isInteger(value) && value >= 0 ? value : null;
+}
+
+function hasServerRentFilters(params: PropertyQueryParams) {
+  const clientOnlyKeys = new Set([
+    "page",
+    "pageNumber",
+    "pageSize",
+    "Currency",
+    "currency",
+    "from",
+    "to",
+    "MinCapacity",
+    "minCapacity",
+    "CategoryId",
+    "categoryId",
+    "BedroomNo",
+    "bedroomNo",
+    "LocationName",
+    "locationName",
+  ]);
+
+  return Object.entries(params).some(([key, value]) => {
+    if (clientOnlyKeys.has(key)) return false;
+    if (value === undefined || value === null || value === "") return false;
+    return true;
+  });
 }
 
 async function filterRentItemsByCategory(items: PropertyListItem[], categoryId: string) {
@@ -273,10 +297,26 @@ export function usePublicRentProperties(params: PropertyQueryParams = {}) {
   return useQuery({
     queryKey: [KEY, "public", params],
     queryFn: async () => {
+      const shouldUseFilterEndpoint = hasServerRentFilters(params);
       const groupedTypes = getGroupedRentPropertyTypes(params);
       const categoryId = getRentCategoryId(params);
       const bedroomNo = getRentBedroomNo(params);
       const baseParams = stripRentGroupParams({ pageNumber: 1, pageSize: 10, ...params });
+
+      if (!shouldUseFilterEndpoint && groupedTypes.length === 0) {
+        const { data } = await axiosInstance.get<PropertyApiResponse<PaginatedResponse<PropertyListItem>>>(
+          "/api/properties",
+          { params: baseParams }
+        );
+
+        if (categoryId || bedroomNo !== null) {
+          const categoryFilteredItems = await filterRentItemsByCategory(data.data?.items ?? [], categoryId);
+          const filteredItems = filterRentItemsByBedroom(categoryFilteredItems, bedroomNo);
+          return buildSinglePageResponse(filteredItems, Number(baseParams.pageSize) || 10);
+        }
+
+        return data.data;
+      }
 
       if (categoryId || bedroomNo !== null) {
         baseParams.pageNumber = 1;
@@ -330,13 +370,16 @@ export function usePublicRentProperties(params: PropertyQueryParams = {}) {
   });
 }
 
-export function usePropertyById(id: string, locale?: string) {
+export function usePropertyById(id: string, locale?: string, currency?: string) {
   return useQuery({
-    queryKey: [KEY, id, locale],
+    queryKey: [KEY, id, locale, currency],
     queryFn: async () => {
       const { data } = await axiosInstance.get<PropertyApiResponse<Property>>(
         `/api/properties/${id}`,
-        locale ? { headers: { "Accept-Language": locale, "X-Locale": locale } } : undefined
+        {
+          params: currency ? { Currency: currency } : undefined,
+          headers: locale ? { "Accept-Language": locale, "X-Locale": locale } : undefined,
+        }
       );
       return data.data;
     },

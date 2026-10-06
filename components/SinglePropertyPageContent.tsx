@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import * as LucideIcons from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import PropertyImageGallery from "./PropertyImageGallery";
 import PropertyBookingCard from "./PropertyBookingCard";
 import ScrollAnimation from "./ScrollAnimation";
@@ -24,7 +25,8 @@ import type { PropertyCategory, PropertyCategoryItem } from "@/lib/types/propert
 import type { AttributeGroupItem } from "@/lib/types/attributeGroupItem";
 import { useReviews, usePropertyAverageRating, useCreateReview } from "@/lib/hooks/useReview";
 import { savePaymentBookingContext } from "@/lib/utils/paymentBookingContext";
-import { formatUsd } from "@/lib/utils/currency";
+import { formatCurrency, formatPriceInfo, getPriceInfoAmount, getPriceInfoCurrency } from "@/lib/utils/currency";
+import { useSelectedCurrency } from "@/lib/hooks/useSelectedCurrency";
 import { DEFAULT_LANDMARK_ICON } from "@/lib/constants/landmarks";
 import { getPropertyLandmarks } from "@/lib/utils/landmarks";
 import { getPropertyCategoryGroupsFromValues } from "@/lib/utils/propertyCategoryValues";
@@ -95,7 +97,9 @@ import { useHeaderStore } from "@/lib/headerStore";
 
 export default function SinglePropertyPageContent({ id }: { id: string }) {
   const { t, href, locale } = useI18n();
-  const { data: property, isLoading } = usePropertyById(id, locale);
+  const searchParams = useSearchParams();
+  const [selectedCurrency] = useSelectedCurrency(searchParams.get("Currency"));
+  const { data: property, isLoading } = usePropertyById(id, locale, selectedCurrency);
   const { data: includeCategories = [] } = usePropertyCategories(locale);
   const { data: includeItems = [] } = usePropertyCategoryItems(locale);
   const { data: landmarkItems = [] } = useLandmarks(locale);
@@ -141,6 +145,7 @@ export default function SinglePropertyPageContent({ id }: { id: string }) {
       landmarkItems={landmarkItems}
       averageRating={averageData?.averageRating ?? 0}
       totalReviews={averageData?.totalReviews ?? 0}
+      selectedCurrency={selectedCurrency}
     />
   );
 }
@@ -152,6 +157,7 @@ function PropertyDetailView({
   landmarkItems,
   averageRating,
   totalReviews,
+  selectedCurrency,
 }: {
   property: Property;
   includeCategories: PropertyCategory[];
@@ -159,11 +165,14 @@ function PropertyDetailView({
   landmarkItems: AttributeGroupItem[];
   averageRating: number;
   totalReviews: number;
+  selectedCurrency: string;
 }) {
   const { t, locale } = useI18n();
   const propertyId = property.id;
   const propertyName = property.name;
-  const basePrice = property.basePrice || 0;
+  const basePrice = getPriceInfoAmount(property.basePriceInfo, property.basePrice || 0);
+  const currencyCode = getPriceInfoCurrency(property.basePriceInfo, selectedCurrency);
+  const conversionRate = property.basePriceInfo?.conversionRate ?? 1;
   const capacity = property.capacity || 1;
 
   // ─── Booking State ───
@@ -421,7 +430,7 @@ function PropertyDetailView({
   }, [checkDailyPrices, checkIn, checkOut, propertyId, resetPriceCheck]);
 
   const nights = checkIn && checkOut ? getNights(checkIn, checkOut) : 0;
-  const estimatedTotal = checkIn && checkOut && priceCheck?.isPriceAvailable ? priceCheck.totalPrice : nights * basePrice;
+  const estimatedTotal = checkIn && checkOut && priceCheck?.isPriceAvailable ? priceCheck.totalPrice * conversionRate : nights * basePrice;
   const missingDates = priceCheck?.missingDates || [];
   const isPriceUnavailable = Boolean(checkIn && checkOut && priceCheck && !priceCheck.isPriceAvailable);
 
@@ -580,7 +589,7 @@ function PropertyDetailView({
   ];
 
   const priceDetails: DetailRow[] = [
-    [t("property.pricePerNight"), `${formatUsd(property.basePrice)} / ${t("common.night")}`],
+    [t("property.pricePerNight"), `${formatPriceInfo(property.basePriceInfo, property.basePrice)} / ${t("common.night")}`],
   ];
 
   const locationDetails: DetailRow[] = [
@@ -658,6 +667,7 @@ function PropertyDetailView({
                   propertyId={property.id}
                   propertyName={property.name}
                   basePrice={basePrice}
+                  currencyCode={currencyCode}
                   capacity={capacity}
                   rating={averageRating}
                   totalReviews={totalReviews}
@@ -693,6 +703,7 @@ function PropertyDetailView({
                 propertyId={property.id}
                 propertyName={property.name}
                 basePrice={basePrice}
+                currencyCode={currencyCode}
                 capacity={capacity}
                 rating={averageRating}
                 totalReviews={totalReviews}
@@ -735,7 +746,7 @@ function PropertyDetailView({
         <div className="mx-auto flex max-w-[1282px] items-center justify-between gap-4">
           <div>
             <div className="flex items-baseline gap-1">
-              <span className="text-[18px] font-bold text-[#183c2f]">{formatUsd(basePrice)}</span>
+              <span className="text-[18px] font-bold text-[#183c2f]">{formatCurrency(basePrice, currencyCode)}</span>
               <span className="text-[12px] text-[#667c74]">/ {t("common.night")}</span>
             </div>
             <p className="text-[11px] font-medium text-[#8a9a94]">

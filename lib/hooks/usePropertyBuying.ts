@@ -14,6 +14,16 @@ import {
   type LocaleRecord,
 } from "@/lib/i18n/adminTranslations";
 
+function getApiErrorMessage(error: unknown, fallback: string) {
+  const apiError = error as { response?: { data?: { errors?: string[]; message?: string }; status?: number } };
+  return apiError.response?.data?.errors?.[0] || apiError.response?.data?.message || fallback;
+}
+
+function getApiErrorStatus(error: unknown) {
+  const apiError = error as { response?: { status?: number } };
+  return apiError.response?.status;
+}
+
 // GET /api/property-buyings
 export function usePropertyBuyings(params: {
   pageNumber?: number;
@@ -36,6 +46,7 @@ export function usePublicBuyProperties(params: {
   pageSize?: number;
   search?: string;
   propertyTypeId?: number;
+  Currency?: string;
 } = {}) {
   return useQuery({
     queryKey: ["propertyBuyings", "public", params],
@@ -44,22 +55,25 @@ export function usePublicBuyProperties(params: {
       return data.data;
     },
     // Don't retry on 4xx — bad request won't fix itself on retry
-    retry: (failureCount, error: any) => {
-      const status = error?.response?.status;
-      if (status >= 400 && status < 500) return false;
+    retry: (failureCount, error: unknown) => {
+      const status = getApiErrorStatus(error);
+      if (typeof status === "number" && status >= 400 && status < 500) return false;
       return failureCount < 2;
     },
   });
 }
 
 // GET /api/public/property-buyings/{id}
-export function usePublicPropertyBuyingById(id: string, locale?: string) {
+export function usePublicPropertyBuyingById(id: string, locale?: string, currency?: string) {
   return useQuery({
-    queryKey: ["propertyBuying", "public", id, locale],
+    queryKey: ["propertyBuying", "public", id, locale, currency],
     queryFn: async () => {
       const { data } = await api.get<PropertyBuyingApiResponse<PropertyBuying>>(
         `/api/public/property-buyings/${id}`,
-        locale ? { headers: { "Accept-Language": locale, "X-Locale": locale } } : undefined
+        {
+          params: currency ? { Currency: currency } : undefined,
+          headers: locale ? { "Accept-Language": locale, "X-Locale": locale } : undefined,
+        }
       );
       return data.data;
     },
@@ -68,13 +82,16 @@ export function usePublicPropertyBuyingById(id: string, locale?: string) {
 }
 
 // GET /api/property-buyings/{id}
-export function usePropertyBuyingById(id: string, locale?: string) {
+export function usePropertyBuyingById(id: string, locale?: string, currency?: string) {
   return useQuery({
-    queryKey: ["propertyBuying", id, locale],
+    queryKey: ["propertyBuying", id, locale, currency],
     queryFn: async () => {
       const { data } = await api.get<PropertyBuyingApiResponse<PropertyBuying>>(
         `/api/property-buyings/${id}`,
-        locale ? { headers: { "Accept-Language": locale, "X-Locale": locale } } : undefined
+        {
+          params: currency ? { Currency: currency } : undefined,
+          headers: locale ? { "Accept-Language": locale, "X-Locale": locale } : undefined,
+        }
       );
       return data.data; // Return just the data object inside
     },
@@ -120,8 +137,8 @@ export function useCreatePropertyBuying() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["propertyBuyings"] });
     },
-    onError: (error: any) => {
-      const msg = error.response?.data?.errors?.[0] || error.response?.data?.message || "Failed to create property";
+    onError: (error: unknown) => {
+      const msg = getApiErrorMessage(error, "Failed to create property");
       console.error(msg);
     }
   });
@@ -139,8 +156,8 @@ export function useUpdatePropertyBuying() {
       queryClient.invalidateQueries({ queryKey: ["propertyBuyings"] });
       queryClient.invalidateQueries({ queryKey: ["propertyBuying", variables.id] });
     },
-    onError: (error: any) => {
-      const msg = error.response?.data?.errors?.[0] || error.response?.data?.message || "Failed to update property";
+    onError: (error: unknown) => {
+      const msg = getApiErrorMessage(error, "Failed to update property");
       console.error(msg);
     }
   });
@@ -157,8 +174,8 @@ export function useDeletePropertyBuying() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["propertyBuyings"] });
     },
-    onError: (error: any) => {
-      const msg = error.response?.data?.errors?.[0] || error.response?.data?.message || "Failed to delete property";
+    onError: (error: unknown) => {
+      const msg = getApiErrorMessage(error, "Failed to delete property");
       console.error(msg);
     }
   });
@@ -176,7 +193,7 @@ export function useUpdatePropertyBuyingStatus() {
       queryClient.invalidateQueries({ queryKey: ["propertyBuyings"] });
       queryClient.invalidateQueries({ queryKey: ["propertyBuying", variables.id] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error("Failed to update status", error);
     }
   });
@@ -269,7 +286,7 @@ export function useUploadPropertyBuyingImages() {
       queryClient.invalidateQueries({ queryKey: ["propertyBuyings"] });
       queryClient.invalidateQueries({ queryKey: ["propertyBuying", variables.id] });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error("Failed to upload images", error);
     }
   });

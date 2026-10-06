@@ -8,11 +8,10 @@ import { useCategories } from "@/lib/hooks/useCategory";
 import { usePropertyBuyingCategories } from "@/lib/hooks/usePropertyBuyingCategory";
 import { usePropertyBuyingCategoryItems } from "@/lib/hooks/usePropertyBuyingCategoryItem";
 import { PropertyBuyingRequest, PropertyBuyingStatus } from "@/lib/types/propertyBuying";
-import { PropertyType, PropertyStatus } from "@/lib/types/property";
+import { PropertyType } from "@/lib/types/property";
 import TranslationFields from "@/components/admin/TranslationFields";
 import {
   emptyTranslation,
-  hasRequiredBaseTranslation,
   type TranslationInput,
 } from "@/lib/i18n/adminTranslations";
 
@@ -73,9 +72,10 @@ export default function PropertyBuyingCreateContent() {
 
     const payload: PropertyBuyingRequest = {
       ...formData,
-      categoryId: formData.categoryId || (locationCategories as any[])?.[0]?.id || "00000000-0000-0000-0000-000000000000",
-      title: title as any,
-      description: description as any,
+      currency: "USD",
+      categoryId: formData.categoryId || locationCategories[0]?.id || "00000000-0000-0000-0000-000000000000",
+      title,
+      description,
     };
 
     createProperty(payload, {
@@ -147,17 +147,12 @@ export default function PropertyBuyingCreateContent() {
                 </select>
               </div>
               <div>
-                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Price</label>
+                <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Price (USD)</label>
                 <input type="number" min={0} required value={formData.price} onChange={e => updateForm({ price: Number(e.target.value) })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]" />
               </div>
               <div>
                 <label className="mb-1.5 block text-[13px] font-medium text-[#183c2f]">Currency</label>
-                <select value={formData.currency} onChange={e => updateForm({ currency: e.target.value })} className="w-full rounded-xl border border-[#dfe8e4] px-4 py-2.5 text-[14px] outline-none focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]">
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                  <option value="EGP">EGP</option>
-                  <option value="GBP">GBP</option>
-                </select>
+                <input value="USD" readOnly className="w-full rounded-xl border border-[#dfe8e4] bg-[#f5f7f6] px-4 py-2.5 text-[14px] text-[#667c74] outline-none" />
               </div>
             </div>
 
