@@ -9,6 +9,9 @@
     "blogs": "Blog",
     "faq": "FAQ",
     "houseRules": "Hausregeln",
+    "privacyPolicy": "Datenschutzerklärung",
+    "refundPolicy": "Rückerstattungsrichtlinie",
+    "cancellationPolicy": "Stornierungsbedingungen",
     "search": "Suchen",
     "bookNow": "Jetzt buchen",
     "viewMore": "Mehr anzeigen",
@@ -638,5 +641,97 @@
   "notFound": {
     "title": "Seite nicht gefunden",
     "body": "Die gesuchte Seite wurde möglicherweise verschoben oder die Adresse ist falsch."
+  },
+  "privacyPolicy": {
+    "metadataTitle": "Datenschutzerklärung",
+    "metadataDescription": "Erfahren Sie, wie Hurghada Vacation Homes Ihre personenbezogenen Daten für Apartmentreservierungen, Resortsicherheit und Gästeservice erhebt und schützt.",
+    "eyebrow": "Gästeinformation & Rechtliches",
+    "title": "Datenschutzerklärung",
+    "intro": "Bei Hurghada Vacation Homes respektieren wir Ihre Privatsphäre und schützen Ihre Daten gewissenhaft. Diese Richtlinie erklärt, wie wir Gästedaten im Rahmen unserer Ferienwohnungen zur Selbstverpflegung, der Einhaltung der Hausregeln und unseres Services verarbeiten.",
+    "heroAlt": "Hurghada Vacation Homes Ferienwohnung",
+    "card1Title": "1. Erhobene Daten",
+    "card1Items": [
+      ["Buchungsdetails:", "Vollständiger Name, E-Mail-Adresse, Telefonnummer und Gästeanzahl zur Bestätigung Ihrer Reservierung."],
+      ["Identitätsprüfung:", "Reisepass- oder Personalausweiskopien bei der Ankunft gemäß Vorgaben der ägyptischen Tourismusbehörde und zur Zugangskontrolle am Resorttor."],
+      ["Zahlungsdaten:", "Transaktions-IDs und Zeitstempel der Zahlungsbestätigung. Wir speichern keine vollständigen Kreditkartennummern."]
+    ],
+    "card2Title": "2. Verwendung Ihrer Daten",
+    "card2Items": [
+      ["Buchungsverwaltung:", "Organisation von Check-in (ab 14:00 Uhr), Check-out (bis 12:00 Uhr mittags) und Schlüsselübergabe."],
+      ["Gästekommunikation:", "Bereitstellung von Anreisehinweisen, Türcodes und Unterstützung während Ihres Urlaubs."],
+      ["Zusatzleistungen:", "Organisation von Flughafentransfers, Wäscheservice auf Anfrage oder zusätzlicher Reinigung."]
+    ],
+    "card3Title": "3. Hausregeln & Sicherheit",
+    "card3Body": "Gemäß unseren Hausregeln dürfen sich nur registrierte Gäste in den Apartments aufhalten. Die Identitätsdaten stellen die Einhaltung der Resortsicherheit sicher, verhindern unangemeldete Feiern oder Besucher und garantieren eine ruhige Nachbarschaft.",
+    "card4Title": "4. Speicherdauer & Weitergabe",
+    "card4Body": "Wir speichern Buchungsdaten nur so lange wie nötig, um Ihren Aufenthalt abzuwickeln und gesetzliche sowie steuerliche Vorgaben zu erfüllen. Wir verkaufen keine Daten an Dritte. Daten werden ausschließlich an verifizierte Zahlungsanbieter (z. B. PayPal) und den Sicherheitsdienst des Resorts übermittelt.",
+    "rightsTitle": "Ihre Rechte & Optionen",
+    "rightsBody": "Sie haben das Recht, Ihre Daten nach der Abreise einzusehen, zu korrigieren oder löschen zu lassen, sofern alle Zahlungen und die Wohnungsinspektion abgeschlossen sind. Für Anfragen wenden Sie sich bitte direkt an unser lokales Team.",
+    "supportTitle": "Datenschutz-Support",
+    "supportBody": "Haben Sie Fragen zu Ihren persönlichen Daten oder den Anreiseanforderungen im Resort?"
+  },
+  "refundPolicy": {
+    "metadataTitle": "Rückerstattungsrichtlinie",
+    "metadataDescription": "Lesen Sie die Rückerstattungsrichtlinie von Hurghada Vacation Homes zu berechtigten Stornierungen, Kautionsrückzahlungen, Wohnungsinspektionen und nicht erstattungsfähigen Leistungen.",
+    "eyebrow": "Buchungsbedingungen & Transparenz",
+    "title": "Rückerstattungsrichtlinie",
+    "intro": "Bei Hurghada Vacation Homes setzen wir auf faire und klare Bedingungen. Da unsere Unterkünfte exklusiv für Ihren gebuchten Zeitraum reserviert werden, gelten für Rückerstattungen folgende Regelungen.",
+    "heroAlt": "Hurghada Vacation Homes Ferienobjekt",
+    "card1Title": "1. Berechtigte Rückerstattungsszenarien",
+    "card1Items": [
+      ["Fristgerechte Stornierungen:", "Volle oder anteilige Rückerstattung gemäß unserer Stornierungsfristen (100 % ab 14 Tagen, 50 % bei 7–13 Tagen vor Anreise)."],
+      ["Unbewohnbare Mängel:", "Sollten wesentliche Mängel an Sanitär, Strom oder Bauwerk nicht umgehend behoben werden können, erhalten Gäste eine vollständige Erstattung."],
+      ["Überzahlungen oder Doppelbuchungen:", "Werden unmittelbar nach Prüfung mit dem Zahlungsanbieter korrigiert."]
+    ],
+    "card2Title": "2. Wohnungsinspektion beim Check-out",
+    "card2Intro": "Beim Check-out (vor 12:00 Uhr mittags) prüft unser Team das Apartment auf Einhaltung der Hausregeln. Folgende Schäden führen zu Abzügen von der Kaution:",
+    "card2Deductions": [
+      "Dauerhafte Flecken auf Bettwäsche (z. B. durch Blumendekorationen oder Öle).",
+      "Beschädigte Elektrogeräte, Klimaanlagen, Möbel oder Einrichtungen.",
+      "Verlorene Wohnungsschlüssel oder Zugangskarten für das Resort.",
+      "Erhöhter Reinigungsaufwand durch Rauchen im Innenbereich oder Müllansammlungen."
+    ],
+    "card3Title": "3. Nicht erstattungsfähige Leistungen",
+    "card3Items": [
+      ["Genutzte Übernachtungen:", "Bereits verbrachte Urlaubstage sind nicht erstattungsfähig."],
+      ["Erbringung gebuchter Services:", "Durchgeführte Wäscheservices, Transfers und abgeschlossene Reinigungen können nach Erbringung nicht erstattet werden."],
+      ["Verstöße gegen die Hausordnung:", "Bei Abbruch des Aufenthalts wegen Partys, unbefugter Besucher oder Haustieren besteht kein Anspruch auf Rückerstattung."]
+    ],
+    "card4Title": "4. Fristen und Abwicklung",
+    "card4Body": "Genehmigte Rückerstattungen werden über die ursprüngliche Zahlungsmethode (PayPal oder Bankkarte) abgewickelt. Nach Freigabe durch die Verwaltung dauert die Gutschrift in der Regel 5 bis 10 Werktage, abhängig von Ihrem Kreditinstitut.",
+    "guaranteeTitle": "Transparenzgarantie",
+    "guaranteeBody": "Sollte während Ihres Urlaubs versehentlich etwas zu Bruch gehen, informieren Sie uns bitte sofort, damit wir dies gemeinsam vor der Abreise klären können.",
+    "supportTitle": "Hilfe zu Rückerstattungen benötigt?",
+    "supportBody": "Bei Fragen zu einer Erstattung, Kaution oder Inspektionsprotokollen erreichen Sie uns direkt."
+  },
+  "cancellationPolicy": {
+    "metadataTitle": "Stornierungsbedingungen",
+    "metadataDescription": "Verstehen Sie die Stornierungsrichtlinien für Hurghada Vacation Homes: Erstattungsfristen, Umbuchungen, Einhaltung der Hausregeln und Gastgeber-Garantien.",
+    "eyebrow": "Buchungsrichtlinien & Flexibilität",
+    "title": "Stornierungsbedingungen",
+    "intro": "Reisepläne können sich ändern. Um unsere Ferienwohnungen zuverlässig vorzubereiten und bereitzustellen, gelten für Stornierungen und Datumsänderungen nachstehende Bedingungen.",
+    "heroAlt": "Hurghada Vacation Homes Mietunterkunft",
+    "card1Title": "1. Standard-Stornierungsfristen",
+    "card1Items": [
+      ["14+ Tage vor Anreise:", "Bei Stornierung mindestens 14 Tage vor dem Check-in-Datum (14:00 Uhr) wird die geleistete Anzahlung vollständig erstattet."],
+      ["7 bis 13 Tage vor Anreise:", "Bei Stornierung zwischen 7 und 13 Tagen vor Anreise werden 50 % der Anzahlung erstattet."],
+      ["Weniger als 7 Tage / Nichterscheinen:", "Bei Stornierungen unter 7 Tagen vor Anreise oder Nichterscheinen ohne Mitteilung erfolgt keine Rückerstattung."]
+    ],
+    "card2Title": "2. Verstöße gegen die Hausordnung",
+    "card2Intro": "Gäste verpflichten sich mit der Buchung zur Einhaltung der Hausregeln. Eine fristlose Kündigung ohne Rückerstattung erfolgt bei schweren Verstößen wie:",
+    "card2Breaches": [
+      "Veranstaltung von Partys oder Empfang nicht angemeldeter Gäste.",
+      "Mitbringen von Haustieren ohne vorherige Genehmigung.",
+      "Rauchen in nicht dafür ausgewiesenen Innenbereichen.",
+      "Vorsätzliche Ruhestörung während der nächtlichen Ruhezeiten."
+    ],
+    "card3Title": "3. Vorzeitige Abreise & Ungenutzte Nächte",
+    "card3Body": "Der reguläre Check-out erfolgt vor 12:00 Uhr mittags. Reisen Sie vor Ihrem gebuchten Abreisedatum ab, können nicht genutzte Nächte nicht erstattet werden, da die Wohnung exklusiv blockiert war.",
+    "card4Title": "4. Änderung des Reisezeitraums",
+    "card4Body": "Datumsänderungen sind bis mindestens 7 Tage vor Anreise kostenfrei möglich, vorbehaltlich Verfügbarkeit der Ferienwohnung und eventueller saisonaler Preisunterschiede.",
+    "guaranteeTitle": "Garantie bei Gastgeberstornierung",
+    "guaranteeBody": "Sollte die Unterkunft in seltenen Fällen wegen unvorhersehbarer Schäden nicht bezugsfähig sein, bieten wir Ihnen umgehend eine höherwertige Alternative oder eine 100%ige Erstattung aller Zahlungen.",
+    "supportTitle": "Möchten Sie stornieren oder umbuchen?",
+    "supportBody": "Kontaktieren Sie unser Gästebetreuungsteam unter Angabe Ihrer Buchungsnummer zur schnellen Bearbeitung."
   }
 }

@@ -9,6 +9,9 @@
     "blogs": "Blogs",
     "faq": "FAQ",
     "houseRules": "Règlement intérieur",
+    "privacyPolicy": "Politique de confidentialité",
+    "refundPolicy": "Politique de remboursement",
+    "cancellationPolicy": "Politique d'annulation",
     "search": "Rechercher",
     "bookNow": "Réserver",
     "viewMore": "Voir plus",
@@ -638,5 +641,97 @@
   "notFound": {
     "title": "Page introuvable",
     "body": "La page que vous cherchez a peut-être été déplacée ou l'adresse est incorrecte."
+  },
+  "privacyPolicy": {
+    "metadataTitle": "Politique de confidentialité",
+    "metadataDescription": "Découvrez comment Hurghada Vacation Homes recueille, protège et gère vos données personnelles pour la réservation d'appartements, la sécurité de la résidence et le service client.",
+    "eyebrow": "Informations clients & Mentions légales",
+    "title": "Politique de confidentialité",
+    "intro": "Chez Hurghada Vacation Homes, nous respectons votre vie privée et protégeons vos données personnelles. Cette politique détaille la collecte, l'utilisation et la sécurité des données relatives à nos appartements meublés de vacances, au respect du règlement intérieur et à nos services d'accueil.",
+    "heroAlt": "Appartement de vacances Hurghada Vacation Homes",
+    "card1Title": "1. Informations collectées",
+    "card1Items": [
+      ["Détails de réservation :", "Nom complet, adresse e-mail, numéro de téléphone et nombre de personnes pour la confirmation du séjour."],
+      ["Vérification d'identité :", "Copie du passeport ou de la pièce d'identité requise à l'arrivée conformément aux exigences de l'Autorité du Tourisme égyptienne et pour l'accès aux barrières du complexe."],
+      ["Dossiers de paiement :", "Identifiants de transaction et horodatages. Nous ne stockons aucun numéro complet de carte bancaire."]
+    ],
+    "card2Title": "2. Utilisation de vos données",
+    "card2Items": [
+      ["Gestion des séjours :", "Organisation de l'arrivée (dès 14h00), du départ (avant 12h00) et remise des clés."],
+      ["Communication client :", "Envoi des instructions d'accès, codes de porte et assistance durant votre séjour."],
+      ["Services additionnels :", "Réservation de transferts aéroport, blanchisserie à la demande ou ménage supplémentaire sur demande."]
+    ],
+    "card3Title": "3. Règlement intérieur & Sécurité",
+    "card3Body": "Conformément au règlement intérieur de nos résidences, seuls les invités enregistrés sont autorisés dans les appartements. Les pièces d'identité garantissent la conformité avec la sécurité du complexe, empêchent les fêtes ou visiteurs non autorisés et préservent la tranquillité du voisinage.",
+    "card4Title": "4. Conservation et partage des données",
+    "card4Body": "Nous conservons vos données uniquement le temps nécessaire à votre séjour et aux obligations fiscales ou légales locales. Nous ne vendons ni ne louons jamais vos données personnelles à des tiers. Les données sont partagées exclusivement avec nos processeurs de paiement sécurisés (ex. PayPal) et la sécurité officielle du complexe.",
+    "rightsTitle": "Vos droits et choix",
+    "rightsBody": "Vous avez le droit de consulter, modifier ou demander la suppression de vos données personnelles après votre départ, une fois toutes les formalités et l'état des lieux validés. Pour toute demande, contactez directement notre équipe d'accueil locale.",
+    "supportTitle": "Assistance Confidentialité",
+    "supportBody": "Une question concernant vos données personnelles ou les formalités d'enregistrement à la résidence ?"
+  },
+  "refundPolicy": {
+    "metadataTitle": "Politique de remboursement",
+    "metadataDescription": "Consultez la politique de remboursement de Hurghada Vacation Homes : conditions d'éligibilité, état des lieux de départ, délais de restitution de caution et prestations non remboursables.",
+    "eyebrow": "Conditions de réservation & Transparence",
+    "title": "Politique de remboursement",
+    "intro": "Chez Hurghada Vacation Homes, nous prônons des conditions transparentes et équitables. Nos logements étant des résidences de vacances privatisées pour vos dates, les remboursements obéissent aux règles ci-dessous.",
+    "heroAlt": "Hébergement de vacances Hurghada Vacation Homes",
+    "card1Title": "1. Situations éligibles au remboursement",
+    "card1Items": [
+      ["Annulations dans les délais :", "Remboursement intégral ou partiel selon notre calendrier d'annulation (14 jours ou plus pour 100 %, 7 à 13 jours pour 50 %)."],
+      ["Conditions inhabitables :", "En cas de panne majeure (plomberie, électricité, structure) non résolue sans délai, les voyageurs sont remboursés intégralement."],
+      ["Paiements en double ou excédentaires :", "Régularisés immédiatement après confirmation auprès de la passerelle de paiement."]
+    ],
+    "card2Title": "2. État des lieux au départ",
+    "card2Intro": "Lors du départ (avant 12h00), notre équipe inspecte l'appartement pour vérifier le respect du règlement. Les dégradations suivantes entraîneront des déductions sur la caution :",
+    "card2Deductions": [
+      "Taches indélébiles sur le linge de lit (ex. pétales de fleurs décoratifs ou huiles).",
+      "Équipements, climatiseurs, mobilier ou installations endommagés.",
+      "Perte des clés de l'appartement ou des badges d'accès de la résidence.",
+      "Frais de nettoyage en profondeur suite au tabagisme intérieur ou à l'accumulation de déchets."
+    ],
+    "card3Title": "3. Éléments non remboursables",
+    "card3Items": [
+      ["Nuitées consommées :", "Les jours de séjour effectués et les dates passées ne sont jamais remboursables."],
+      ["Services payants effectués :", "Les services de blanchisserie livrés, les transferts exécutés et les ménages réalisés ne sont pas remboursables."],
+      ["Infractions au règlement :", "Les réservations interrompues pour fêtes non autorisées, visiteurs clandestins ou animaux sans autorisation ne donnent droit à aucun remboursement."]
+    ],
+    "card4Title": "4. Délais et modes de traitement",
+    "card4Body": "Les remboursements approuvés sont effectués sur le moyen de paiement d'origine utilisé lors de la réservation (PayPal ou carte bancaire). Après validation administrative, les fonds apparaissent généralement sur votre compte sous 5 à 10 jours ouvrés selon votre banque.",
+    "guaranteeTitle": "Garantie de transparence",
+    "guaranteeBody": "En cas de casse ou de désagrément imprévu durant votre séjour, avertissez notre équipe immédiatement pour régler la situation sereinement et éviter toute surprise lors de l'état des lieux.",
+    "supportTitle": "Besoin d'aide pour un remboursement ?",
+    "supportBody": "Pour toute question sur un remboursement en cours, la caution ou un rapport d'état des lieux, contactez-nous directement."
+  },
+  "cancellationPolicy": {
+    "metadataTitle": "Politique d'annulation",
+    "metadataDescription": "Comprenez les conditions d'annulation d'Hurghada Vacation Homes : fenêtres de remboursement, modifications de dates, respect du règlement et garanties de l'hôte.",
+    "eyebrow": "Conditions de réservation & Flexibilité",
+    "title": "Politique d'annulation",
+    "intro": "Nous savons que les imprévus arrivent. Pour maintenir nos appartements prêts et disponibles pour tous nos hôtes, les annulations et modifications suivent les modalités ci-dessous.",
+    "heroAlt": "Logement à louer Hurghada Vacation Homes",
+    "card1Title": "1. Délais standards d'annulation",
+    "card1Items": [
+      ["14 jours ou plus avant l'arrivée :", "Les annulations effectuées au moins 14 jours avant l'heure d'arrivée (14h00) sont éligibles à un remboursement intégral de l'acompte."],
+      ["7 à 13 jours avant l'arrivée :", "Les annulations effectuées entre 7 et 13 jours avant donnent droit à 50 % de remboursement de l'acompte."],
+      ["Moins de 7 jours / Non-présentation :", "Les annulations à moins de 7 jours ou les non-présentations sans préavis ne sont pas remboursables."]
+    ],
+    "card2Title": "2. Infractions au règlement intérieur",
+    "card2Intro": "Tout voyageur s'engage à respecter notre règlement intérieur dès sa réservation. L'annulation immédiate sans remboursement s'applique en cas de manquements graves tels que :",
+    "card2Breaches": [
+      "Organisation de fêtes, réceptions ou invitation de personnes non enregistrées.",
+      "Présence d'animaux domestiques sans accord préalable.",
+      "Tabagisme à l'intérieur dans les zones non autorisées.",
+      "Nuisances sonores délibérées pendant les heures de repos nocturnes."
+    ],
+    "card3Title": "3. Départs anticipés & Nuits non utilisées",
+    "card3Body": "Le départ officiel s'effectue avant 12h00 le jour convenu. Si vous choisissez de libérer le logement avant la date réservée, les nuits restantes ne sont pas remboursables car le bien a été bloqué pour votre séjour.",
+    "card4Title": "4. Modification des dates de réservation",
+    "card4Body": "Les demandes de modification de dates sont gratuites si elles sont transmises au moins 7 jours avant l'arrivée, sous réserve de disponibilité du logement et de variations tarifaires saisonnières.",
+    "guaranteeTitle": "Garantie d'annulation par l'hôte",
+    "guaranteeBody": "Dans le cas exceptionnel d'un incident technique imprévu rendant le logement indisponible, nous vous proposerons immédiatement un relogement supérieur ou le remboursement à 100 % des montants versés.",
+    "supportTitle": "Besoin d'annuler ou de modifier ?",
+    "supportBody": "Contactez notre équipe d'assistance locale avec votre numéro de réservation pour traiter votre demande."
   }
 }

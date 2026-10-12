@@ -9,15 +9,20 @@ type SlugSourceItem = {
 };
 
 async function getSlugItems(type: "rent" | "buy", locale: Locale) {
-  const endpoint = type === "rent" ? "/api/properties/filter?pageSize=1000" : "/api/public/property-buyings?pageSize=1000";
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-    cache: "no-store",
-    headers: { "Accept-Language": locale, "X-Locale": locale },
-  });
-  if (!res.ok) return [];
+  try {
+    const endpoint = type === "rent" ? "/api/properties/filter?pageSize=1000" : "/api/public/property-buyings?pageSize=1000";
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+      cache: "no-store",
+      headers: { "Accept-Language": locale, "X-Locale": locale },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return [];
 
-  const json = await res.json();
-  return (json.data?.items || []) as SlugSourceItem[];
+    const json = await res.json();
+    return (json.data?.items || []) as SlugSourceItem[];
+  } catch {
+    return [];
+  }
 }
 
 export async function getPropertyIdBySlug(

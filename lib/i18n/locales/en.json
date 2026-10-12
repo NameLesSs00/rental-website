@@ -9,6 +9,9 @@
     "blogs": "Blogs",
     "faq": "FAQ",
     "houseRules": "House Rules",
+    "privacyPolicy": "Privacy Policy",
+    "refundPolicy": "Refund Policy",
+    "cancellationPolicy": "Cancellation Policy",
     "search": "Search",
     "bookNow": "Book Now",
     "viewMore": "View More",
@@ -699,5 +702,97 @@
     "contactTitle": "Interested in this Property?",
     "contactBody": "Send us a message and our sales team will get back to you shortly.",
     "contactSubject": "Inquiry for: {title} ({propertyNumber})"
+  },
+  "privacyPolicy": {
+    "metadataTitle": "Privacy Policy",
+    "metadataDescription": "Learn how Hurghada Vacation Homes collects, protects, and handles your personal information for apartment reservations, resort security, and guest services.",
+    "eyebrow": "Guest Information & Legal",
+    "title": "Privacy Policy",
+    "intro": "At Hurghada Vacation Homes, we respect your privacy and are committed to safeguarding your personal data. This policy explains how we collect, use, and protect guest information in connection with our self-catering rental apartments, house rules compliance, and hospitality services.",
+    "heroAlt": "Hurghada Vacation Homes guest apartment",
+    "card1Title": "1. Information We Collect",
+    "card1Items": [
+      ["Booking Details:", "Full name, email address, phone number, and number of guests for reservation confirmations."],
+      ["Identity Verification:", "Passport or national ID copies required upon arrival to comply with Egyptian Tourism Authority rules and resort gate access."],
+      ["Payment Records:", "Transaction IDs and payment confirmation timestamps. We do not store raw credit card numbers."]
+    ],
+    "card2Title": "2. How We Use Your Data",
+    "card2Items": [
+      ["Reservation Management:", "Scheduling check-in (from 2:00 PM), check-out (before 12:00 PM), and key handovers."],
+      ["Guest Communication:", "Providing arrival instructions, apartment access codes, and assistance during your stay."],
+      ["Additional Services:", "Arranging optional airport transfers, on-demand laundry, or extra apartment cleaning upon request."]
+    ],
+    "card3Title": "3. House Rules & Security",
+    "card3Body": "In accordance with our property house rules, only registered guests are permitted inside the apartments. Guest identification records ensure compliance with resort safety protocols, prevent unauthorized visitors or parties, and guarantee a peaceful community environment for all neighbors.",
+    "card4Title": "4. Data Retention & Sharing",
+    "card4Body": "We retain booking information only for as long as necessary to complete your stay and satisfy local legal or tax obligations. We never sell or rent your personal information to third parties. Data is shared exclusively with secure payment processors (e.g. PayPal) and official resort compound security.",
+    "rightsTitle": "Your Rights & Choices",
+    "rightsBody": "You have the right to review, update, or request the deletion of your personal records following your departure, provided all outstanding balances and property inspections are settled. To request data updates or ask any questions regarding our privacy practices, please contact our local hosting team directly.",
+    "supportTitle": "Privacy Support",
+    "supportBody": "Have questions or need assistance with your personal information or resort check-in requirements?"
+  },
+  "refundPolicy": {
+    "metadataTitle": "Refund Policy",
+    "metadataDescription": "Read the refund policy for Hurghada Vacation Homes, covering eligible refund scenarios, check-out inspections, deposit return timelines, and non-refundable items.",
+    "eyebrow": "Booking Terms & Transparency",
+    "title": "Refund Policy",
+    "intro": "At Hurghada Vacation Homes, we are committed to clear and fair terms. Because our properties are self-catering holiday homes held exclusively for your reserved dates, refunds are governed by the guidelines below.",
+    "heroAlt": "Hurghada Vacation Homes hospitality property",
+    "card1Title": "1. Eligible Refund Scenarios",
+    "card1Items": [
+      ["Timely Cancellations:", "Full or partial refunds issued in accordance with our Cancellation Policy timelines (14+ days for full refund, 7–13 days for 50%)."],
+      ["Uninhabitable Conditions:", "If a property experiences major plumbing, electrical, or structural failures that cannot be repaired promptly, guests are refunded in full."],
+      ["Overpayments or Duplicate Charges:", "Reconciled immediately upon identification with the payment gateway."]
+    ],
+    "card2Title": "2. Check-out Property Inspection",
+    "card2Intro": "During check-out (before 12:00 PM noon), our local team inspects the apartment to ensure compliance with House Rules. The following damages will result in deductions from the security deposit:",
+    "card2Deductions": [
+      "Permanent stains on bed linens (e.g. from flower decorations or spilled oils).",
+      "Broken appliances, air conditioners, furniture, or fixtures.",
+      "Lost apartment keys or resort security gate passes.",
+      "Deep cleaning costs required due to smoking indoors or trash neglect."
+    ],
+    "card3Title": "3. Non-Refundable Items",
+    "card3Items": [
+      ["Consumed Nights:", "Completed accommodation days and past dates are non-refundable."],
+      ["Completed Paid Services:", "Rendered laundry services, executed airport transfers, and completed cleaning requests are non-refundable once delivered."],
+      ["Rule Violations:", "Bookings terminated on-site due to unauthorized parties, illegal visitors, or pet violations do not qualify for any refund."]
+    ],
+    "card4Title": "4. Processing Timeline & Methods",
+    "card4Body": "Approved refunds are processed through the original payment method used during booking (PayPal account or bank card). Once initiated by our administrative team, funds typically appear in your account within 5 to 10 business days, depending on your bank or payment provider's settlement schedule.",
+    "guaranteeTitle": "Clear Communication Guarantee",
+    "guaranteeBody": "Should an accidental breakage or issue occur during your holiday, please notify our team immediately so we can resolve it together transparently and avoid surprises during check-out inspection.",
+    "supportTitle": "Need Assistance with a Refund?",
+    "supportBody": "If you have questions regarding a pending refund, deposit return, or an inspection report, please reach out directly."
+  },
+  "cancellationPolicy": {
+    "metadataTitle": "Cancellation Policy",
+    "metadataDescription": "Understand cancellation terms for Hurghada Vacation Homes, including refund windows, date modifications, house rules compliance, and host cancellation guarantees.",
+    "eyebrow": "Reservation Policies & Flexibility",
+    "title": "Cancellation Policy",
+    "intro": "We understand that travel plans can change. To keep our self-catering holiday apartments available and well-prepared for all guests, our cancellations and date modifications follow the terms detailed below.",
+    "heroAlt": "Hurghada Vacation Homes rental property",
+    "card1Title": "1. Standard Cancellation Windows",
+    "card1Items": [
+      ["14+ Days Prior:", "Cancellations made at least 14 days before the scheduled check-in date (2:00 PM) are eligible for a full refund of the deposit paid."],
+      ["7 to 13 Days Prior:", "Cancellations made between 7 and 13 days prior are eligible for a 50% refund of the deposit."],
+      ["Less than 7 Days / No-Show:", "Cancellations made within 7 days of arrival or failure to check in without notice are non-refundable."]
+    ],
+    "card2Title": "2. House Rules Violations",
+    "card2Intro": "Guests agree to respect our official House Rules upon booking. Immediate reservation cancellation without refund applies if a guest commits serious breaches during their stay, including:",
+    "card2Breaches": [
+      "Hosting unauthorized visitors, parties, or social gatherings.",
+      "Bringing pets into the apartment without prior permission.",
+      "Smoking inside non-designated indoor areas.",
+      "Causing deliberate disturbance during night quiet hours."
+    ],
+    "card3Title": "3. Early Check-out & Departures",
+    "card3Body": "Official check-out is before 12:00 PM noon on your departure date. If you decide to vacate the apartment earlier than your booked departure date, unused nights are non-refundable, as the apartment was reserved and held exclusively for your booking calendar.",
+    "card4Title": "4. Booking Date Modifications",
+    "card4Body": "Requests to adjust your arrival or departure dates can be accommodated free of charge when submitted at least 7 days prior to check-in, subject to apartment availability and seasonal rate differences. Please reach out to our hosting team as early as possible to adjust dates.",
+    "guaranteeTitle": "Host-Initiated Cancellations",
+    "guaranteeBody": "In the rare event of an unforeseen maintenance issue or unforeseen circumstance rendering the property unfit for stay, our team will immediately offer you an upgraded alternative accommodation or issue a 100% full refund of all sums paid.",
+    "supportTitle": "Need to Cancel or Reschedule?",
+    "supportBody": "Contact our local host care team with your booking number to process your cancellation or modification request."
   }
 }

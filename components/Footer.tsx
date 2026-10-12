@@ -112,15 +112,15 @@ export default function Footer() {
         <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-center lg:mt-12 lg:flex-row">
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] text-white/75 lg:text-[12px]">
             <Link href={href("/privacy-policy")} className="transition hover:text-white hover:underline">
-              Privacy Policy
+              {t("common.privacyPolicy")}
             </Link>
             <span className="text-white/40">•</span>
             <Link href={href("/refund-policy")} className="transition hover:text-white hover:underline">
-              Refund Policy
+              {t("common.refundPolicy")}
             </Link>
             <span className="text-white/40">•</span>
             <Link href={href("/cancellation-policy")} className="transition hover:text-white hover:underline">
-              Cancellation Policy
+              {t("common.cancellationPolicy")}
             </Link>
             <span className="text-white/40">•</span>
             <Link href={href("/house-rules")} className="transition hover:text-white hover:underline">

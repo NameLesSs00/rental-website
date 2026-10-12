@@ -15,6 +15,7 @@ export async function getJourneyIdBySlug(slug: string, locale: string = "en") {
       const res = await fetch(`${API_BASE_URL}/api/journeys?pageNumber=1&pageSize=100&isActive=true`, {
         next: { revalidate: 60 },
         headers: { "Accept-Language": lookupLocale, "X-Locale": lookupLocale },
+        signal: AbortSignal.timeout(8000),
       });
 
       if (res.ok) {
@@ -37,6 +38,7 @@ export async function getJourneyBySlug(slug: string, locale: string = "en") {
     const res = await fetch(`${API_BASE_URL}/api/journeys/${id}`, {
       next: { revalidate: 60 },
       headers: { "Accept-Language": locale, "X-Locale": locale },
+      signal: AbortSignal.timeout(8000),
     });
 
     if (!res.ok) return null;
