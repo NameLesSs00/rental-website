@@ -1158,6 +1158,7 @@ function Legend({ label, className }: { label: string; className: string }) {
 }
 
 function ReviewsSection({ propertyId, propertyName }: { propertyId: string; propertyName: string }) {
+  const { t, locale } = useI18n();
   const { data: averageData } = usePropertyAverageRating(propertyId);
   const { data: reviewsData, isLoading: isLoadingReviews } = useReviews({
     SearchTerm: propertyName,
@@ -1186,28 +1187,30 @@ function ReviewsSection({ propertyId, propertyName }: { propertyId: string; prop
     <section className="space-y-6">
       <div className="rounded-2xl border border-[#dfe8e4] bg-white p-5 sm:p-7 shadow-[0_2px_12px_rgba(24,60,47,0.03)]">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-[18px] font-bold text-[#183c2f] sm:text-[22px]">Guest Reviews & Ratings</h2>
+          <h2 className="text-[18px] font-bold text-[#183c2f] sm:text-[22px]">{t("reviews.sectionTitle")}</h2>
           <a
             href="#add-review-section"
             className="inline-flex h-9 items-center justify-center gap-2 rounded-full bg-[#1F4D3D] px-5 text-[12px] font-semibold text-white shadow-sm transition hover:bg-[#183c2f] hover:shadow sm:w-auto"
           >
             <span>★</span>
-            <span>Write a Review</span>
+            <span>{t("reviews.writeReview")}</span>
           </a>
         </div>
 
         <div className="mt-5 grid gap-6 border-b border-[#edf2ef] pb-6 sm:grid-cols-[minmax(10rem,0.4fr)_1fr] sm:items-center">
-          <div className="text-center sm:text-left">
+          <div className="text-center sm:text-left rtl:sm:text-right">
             <div className="inline-flex items-center gap-2.5">
               <span className="text-[44px] font-bold leading-none text-[#183c2f] sm:text-[54px]">
-                {totalReviews > 0 ? average.toFixed(1) : "New"}
+                {totalReviews > 0 ? average.toFixed(1) : t("reviews.newBadge")}
               </span>
               <span className="text-[28px] leading-none text-[#cfb072]">★</span>
             </div>
             <p className="mt-2.5 inline-flex items-center gap-2 rounded-full bg-[#f4f7f5] px-4 py-1.5 text-[12px] font-medium text-[#40544c]">
               {totalReviews > 0
-                ? `${totalReviews} verified ${totalReviews === 1 ? "review" : "reviews"}`
-                : "No reviews yet"}
+                ? totalReviews === 1
+                  ? t("reviews.verifiedReview", { count: 1 })
+                  : t("reviews.verifiedReviews", { count: totalReviews })
+                : t("reviews.noReviewsYet")}
             </p>
           </div>
 
@@ -1221,7 +1224,7 @@ function ReviewsSection({ propertyId, propertyName }: { propertyId: string; prop
                     style={{ width: bar.pct }}
                   />
                 </span>
-                <span className="text-right text-[11px] text-[#8a9a94]">{bar.count}</span>
+                <span className="text-right rtl:text-left text-[11px] text-[#8a9a94]">{bar.count}</span>
               </div>
             ))}
           </div>
@@ -1236,10 +1239,10 @@ function ReviewsSection({ propertyId, propertyName }: { propertyId: string; prop
           ) : reviews.length === 0 ? (
             <div className="rounded-xl bg-[#f8faf9] p-6 text-center">
               <p className="text-[14px] font-semibold text-[#183c2f]">
-                No reviews yet for this vacation home
+                {t("reviews.emptyTitle")}
               </p>
               <p className="mt-1 text-[13px] text-[#667c74]">
-                Be the first guest to share your feedback after completing your stay!
+                {t("reviews.emptySubtitle")}
               </p>
             </div>
           ) : (
@@ -1253,10 +1256,10 @@ function ReviewsSection({ propertyId, propertyName }: { propertyId: string; prop
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <h3 className="text-[15px] font-semibold text-[#183c2f]">
-                          {review.customerName || "Verified Guest"}
+                          {review.customerName || t("reviews.verifiedGuest")}
                         </h3>
                         <p className="text-[12px] text-[#8a9a94]">
-                          {new Date(review.createdAtUtc).toLocaleDateString("en-US", {
+                          {new Date(review.createdAtUtc).toLocaleDateString(locale === "ar" ? "ar-EG" : locale, {
                             month: "short",
                             day: "numeric",
                             year: "numeric",
@@ -1273,7 +1276,7 @@ function ReviewsSection({ propertyId, propertyName }: { propertyId: string; prop
                   </div>
                   {review.bookingNumber && (
                     <p className="mt-4 border-t border-[#edf2ef] pt-2.5 text-[11px] font-medium text-[#8a9a94]">
-                      Stay verified • Booking {review.bookingNumber}
+                      {t("reviews.stayVerified", { bookingNumber: review.bookingNumber })}
                     </p>
                   )}
                 </article>
@@ -1289,6 +1292,7 @@ function ReviewsSection({ propertyId, propertyName }: { propertyId: string; prop
 }
 
 function AddReviewForm({ propertyName }: { propertyName: string }) {
+  const { t } = useI18n();
   const [bookingNumber, setBookingNumber] = useState("");
   const [rate, setRate] = useState(5);
   const [hoverRate, setHoverRate] = useState<number | null>(null);
@@ -1305,11 +1309,11 @@ function AddReviewForm({ propertyName }: { propertyName: string }) {
 
     const trimmedBooking = bookingNumber.trim();
     if (!trimmedBooking) {
-      setErrorMessage("Please enter your booking confirmation number.");
+      setErrorMessage(t("reviews.errorBookingRequired"));
       return;
     }
     if (!comment.trim()) {
-      setErrorMessage("Please write a short comment about your stay.");
+      setErrorMessage(t("reviews.errorCommentRequired"));
       return;
     }
 
@@ -1321,8 +1325,8 @@ function AddReviewForm({ propertyName }: { propertyName: string }) {
       },
       {
         onSuccess: () => {
-          setSuccessMessage("Thank you! Your review has been submitted successfully.");
-          toast.success("Review submitted successfully!");
+          setSuccessMessage(t("reviews.successMessage"));
+          toast.success(t("reviews.successToast"));
           setBookingNumber("");
           setComment("");
           setRate(5);
@@ -1334,18 +1338,14 @@ function AddReviewForm({ propertyName }: { propertyName: string }) {
             errorData?.response?.data?.message ||
             "";
 
-          let friendlyError =
-            "Unable to submit review. Please verify your booking number and ensure your stay has concluded.";
+          let friendlyError = t("reviews.errorGeneric");
 
           if (rawError.toLowerCase().includes("completed")) {
-            friendlyError =
-              "Reviews can only be created for completed bookings. Please leave your review on or after your checkout date once your stay has concluded. We look forward to hearing your thoughts then!";
+            friendlyError = t("reviews.errorBookingNotCompleted");
           } else if (rawError.toLowerCase().includes("already") || rawError.toLowerCase().includes("unique")) {
-            friendlyError =
-              "A review has already been submitted for this booking number. Thank you for sharing your experience!";
+            friendlyError = t("reviews.errorAlreadySubmitted");
           } else if (rawError.toLowerCase().includes("not found")) {
-            friendlyError =
-              "We couldn't find a booking matching this confirmation number. Please check your booking confirmation email.";
+            friendlyError = t("reviews.errorBookingNotFound");
           } else if (rawError) {
             friendlyError = rawError;
           }
@@ -1358,18 +1358,18 @@ function AddReviewForm({ propertyName }: { propertyName: string }) {
   }
 
   const ratingDescriptions: Record<number, string> = {
-    5: "5 Stars - Excellent stay",
-    4: "4 Stars - Very good",
-    3: "3 Stars - Average",
-    2: "2 Stars - Poor",
-    1: "1 Star - Terrible",
+    5: t("reviews.rating5"),
+    4: t("reviews.rating4"),
+    3: t("reviews.rating3"),
+    2: t("reviews.rating2"),
+    1: t("reviews.rating1"),
   };
 
   return (
     <section id="add-review-section" className="scroll-mt-24 rounded-2xl border border-[#dfe8e4] bg-white p-5 sm:p-7 shadow-[0_2px_12px_rgba(24,60,47,0.03)]">
-      <h2 className="text-[18px] font-bold leading-snug text-[#183c2f] sm:text-[20px]">Leave a Review</h2>
+      <h2 className="text-[18px] font-bold leading-snug text-[#183c2f] sm:text-[20px]">{t("reviews.formTitle")}</h2>
       <p className="mt-2 text-[14px] leading-relaxed text-[#656566]">
-        Completed your stay at <span className="font-semibold text-[#183c2f]">{propertyName}</span>? We&apos;d love to hear how your trip went! Please enter your booking confirmation number below. Reviews can only be submitted on or after your checkout date once your booking is completed. Your verified name and stay details will be automatically linked — no profile photo or sign-up needed.
+        {t("reviews.formDescription", { propertyName })}
       </p>
 
       {errorMessage && (
@@ -1381,7 +1381,7 @@ function AddReviewForm({ propertyName }: { propertyName: string }) {
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
             <div>
-              <p className="font-semibold">Review Notice</p>
+              <p className="font-semibold">{t("reviews.noticeTitle")}</p>
               <p className="mt-0.5 text-[13px] leading-relaxed text-amber-800">{errorMessage}</p>
             </div>
           </div>
@@ -1390,7 +1390,7 @@ function AddReviewForm({ propertyName }: { propertyName: string }) {
 
       {successMessage && (
         <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-4 text-[14px] text-green-800">
-          <p className="font-semibold">Review Received</p>
+          <p className="font-semibold">{t("reviews.receivedTitle")}</p>
           <p className="mt-0.5 text-[13px]">{successMessage}</p>
         </div>
       )}
@@ -1398,24 +1398,24 @@ function AddReviewForm({ propertyName }: { propertyName: string }) {
       <form onSubmit={handleSubmit} className="mt-6 grid gap-5">
         <div>
           <label className="block text-[14px] font-medium text-[#183c2f]">
-            Booking Confirmation Number <span className="text-red-500">*</span>
+            {t("reviews.bookingNumberLabel")} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={bookingNumber}
             onChange={(e) => setBookingNumber(e.target.value)}
-            placeholder="e.g. BK-XXXXXX"
+            placeholder={t("reviews.bookingNumberPlaceholder")}
             required
             className="mt-2 h-11 w-full rounded-xl border border-[#dfe8e4] bg-white px-4 text-[14px] text-[#183c2f] outline-none transition placeholder:text-[#aab4b0] focus:border-[#1F4D3D] focus:ring-2 focus:ring-[#1F4D3D]/10 sm:max-w-md"
           />
           <p className="mt-1 text-[12px] text-[#8a9a94]">
-            Found in your confirmation email. Reviews can only be submitted on or after your checkout date once your booking is completed.
+            {t("reviews.bookingNumberHint")}
           </p>
         </div>
 
         <div>
           <label className="block text-[14px] font-medium text-[#183c2f]">
-            Your Rating <span className="text-red-500">*</span>
+            {t("reviews.ratingLabel")} <span className="text-red-500">*</span>
           </label>
           <div className="mt-2 flex items-center gap-3">
             <div className="flex items-center gap-1">
@@ -1447,12 +1447,12 @@ function AddReviewForm({ propertyName }: { propertyName: string }) {
 
         <div>
           <label className="block text-[14px] font-medium text-[#183c2f]">
-            Your Feedback <span className="text-red-500">*</span>
+            {t("reviews.feedbackLabel")} <span className="text-red-500">*</span>
           </label>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            placeholder="Share details about the cleanliness, location, check-in process, and comfort..."
+            placeholder={t("reviews.feedbackPlaceholder")}
             required
             rows={4}
             className="mt-2 w-full rounded-xl border border-[#dfe8e4] bg-white p-3.5 text-[14px] text-[#183c2f] outline-none transition placeholder:text-[#aab4b0] focus:border-[#1F4D3D] focus:ring-2 focus:ring-[#1F4D3D]/10"
@@ -1468,10 +1468,10 @@ function AddReviewForm({ propertyName }: { propertyName: string }) {
             {isPending ? (
               <>
                 <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                Submitting...
+                {t("reviews.submitting")}
               </>
             ) : (
-              "Submit Review"
+              t("reviews.submit")
             )}
           </button>
         </div>
