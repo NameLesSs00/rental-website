@@ -27,13 +27,20 @@ export function saveSelectedCurrency(value: string) {
 
 export function useSelectedCurrency(urlCurrency?: string | null) {
   const normalizedUrlCurrency = urlCurrency ? normalizeCurrency(urlCurrency) : "";
-  const [currency, setCurrencyState] = useState(() => normalizedUrlCurrency || readSelectedCurrency());
+  const [currency, setCurrencyState] = useState(() => normalizedUrlCurrency || DEFAULT_CURRENCY);
 
   useEffect(() => {
-    if (!normalizedUrlCurrency) return;
-    window.setTimeout(() => {
-      setCurrencyState(saveSelectedCurrency(normalizedUrlCurrency));
-    }, 0);
+    if (normalizedUrlCurrency) {
+      window.setTimeout(() => {
+        setCurrencyState(saveSelectedCurrency(normalizedUrlCurrency));
+      }, 0);
+      return;
+    }
+
+    const stored = readSelectedCurrency();
+    if (stored) {
+      setCurrencyState(stored);
+    }
   }, [normalizedUrlCurrency]);
 
   useEffect(() => {

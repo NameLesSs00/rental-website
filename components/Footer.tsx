@@ -73,7 +73,7 @@ const footerItemMotion: Variants = {
 export default function Footer() {
   const shouldReduceMotion = useReducedMotion();
   const initialState = shouldReduceMotion ? false : "hidden";
-  const { t } = useI18n();
+  const { t, href } = useI18n();
   const quickLinks = [
     { label: t("common.home"), href: "/" },
     { label: t("common.rent"), href: "/rent" },
@@ -109,22 +109,42 @@ export default function Footer() {
           <ContactColumn shouldReduceMotion={!!shouldReduceMotion} />
         </motion.div>
 
-        <motion.p
-          variants={footerItemMotion}
-          className="mt-8 text-center text-[10px] font-light leading-normal lg:mt-12 lg:text-[12px]"
-        >
-          {t("footer.poweredBy")}{" "}
-          <motion.a
-            href="https://tech-gear.net/"
-            target="_blank"
-            rel="noopener noreferrer"
-            whileHover={shouldReduceMotion ? undefined : { y: -1 }}
-            className="inline-block hover:underline"
+        <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-center lg:mt-12 lg:flex-row">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] text-white/75 lg:text-[12px]">
+            <Link href={href("/privacy-policy")} className="transition hover:text-white hover:underline">
+              Privacy Policy
+            </Link>
+            <span className="text-white/40">•</span>
+            <Link href={href("/refund-policy")} className="transition hover:text-white hover:underline">
+              Refund Policy
+            </Link>
+            <span className="text-white/40">•</span>
+            <Link href={href("/cancellation-policy")} className="transition hover:text-white hover:underline">
+              Cancellation Policy
+            </Link>
+            <span className="text-white/40">•</span>
+            <Link href={href("/house-rules")} className="transition hover:text-white hover:underline">
+              {t("common.houseRules")}
+            </Link>
+          </div>
+
+          <motion.p
+            variants={footerItemMotion}
+            className="text-[10px] font-light leading-normal text-white/70 lg:text-[12px]"
           >
-            Tech Gear Solutions
-          </motion.a>
-          &nbsp; &copy; 2026 {t("footer.rights")}
-        </motion.p>
+            {t("footer.poweredBy")}{" "}
+            <motion.a
+              href="https://tech-gear.net/"
+              target="_blank"
+              rel="noopener noreferrer"
+              whileHover={shouldReduceMotion ? undefined : { y: -1 }}
+              className="inline-block hover:underline text-white/90"
+            >
+              Tech Gear Solutions
+            </motion.a>
+            &nbsp; &copy; 2026 {t("footer.rights")}
+          </motion.p>
+        </div>
       </div>
     </motion.footer>
   );

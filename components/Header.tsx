@@ -12,6 +12,7 @@ import { localeFlags, localeLabels, locales, localizePath, stripLocale, type Loc
 import { API_BASE_URL } from "@/lib/api/config";
 import { slugify } from "@/lib/utils/slugify";
 import { useI18n } from "./I18nProvider";
+import CurrencySwitcher from "./CurrencySwitcher";
 
 type NavItem = {
   href?: string;
@@ -116,7 +117,6 @@ export default function Header() {
     { href: "/transfer", label: t("nav.items.transfer") },
     { href: "/about", label: t("nav.items.about") },
     { href: "/contact", label: t("nav.items.contact") },
-    { href: "/blogs", label: t("nav.items.blogs") },
   ];
 
   useEffect(() => {
@@ -140,25 +140,29 @@ export default function Header() {
       >
       <motion.div
         variants={headerInnerMotion}
-        className="mx-auto flex h-14 w-full max-w-[1280px] items-center justify-between px-5 sm:px-10 lg:grid lg:h-[104px] lg:grid-cols-[1fr_auto_1fr] lg:px-6 xl:px-0"
+        className="mx-auto flex h-[76px] w-full max-w-[1280px] items-center justify-between px-5 sm:h-[84px] sm:px-8 lg:h-[96px] xl:h-[104px] lg:px-6 xl:px-0"
       >
-        <motion.div variants={headerItemMotion} whileHover={shouldReduceMotion ? undefined : { y: -2 }}>
+        <motion.div
+          variants={headerItemMotion}
+          className="shrink-0"
+          whileHover={shouldReduceMotion ? undefined : { y: -2 }}
+        >
           <Link href={href("/")} className="flex shrink-0 items-center" aria-label={t("nav.homeAria")}>
             <Image
               src="/logo-green.png"
               alt="Logo"
-              width={140}
-              height={80}
+              width={180}
+              height={180}
               priority
               unoptimized
-              className="h-14 w-auto object-contain lg:h-[90px]"
+              className="h-[62px] w-auto object-contain sm:h-[70px] lg:h-[80px] xl:h-[92px]"
             />
           </Link>
         </motion.div>
 
         <motion.nav
           variants={headerInnerMotion}
-          className="hidden items-center gap-[13px] text-[20px] font-medium text-[#12382e] lg:flex"
+          className="hidden flex-1 items-center justify-center gap-1 xl:gap-2.5 text-[14px] lg:text-[15px] xl:text-[17px] 2xl:text-[18px] font-medium text-[#12382e] lg:flex"
         >
           {navItems.map((item) => {
             if (item.subItems) {
@@ -171,11 +175,11 @@ export default function Header() {
                   variants={headerItemMotion}
                   onMouseEnter={() => setOpenDropdown(item.label)}
                   onMouseLeave={() => setOpenDropdown(null)}
-                  className="relative flex h-[104px] cursor-pointer items-center"
+                  className="relative flex h-[92px] xl:h-[104px] cursor-pointer items-center"
                 >
                   <motion.div
                     whileHover={shouldReduceMotion ? undefined : { y: -2 }}
-                    className={`relative flex h-full items-center whitespace-nowrap px-[13px] transition-colors hover:text-[#2f7b61] ${
+                    className={`relative flex h-full items-center whitespace-nowrap px-2 xl:px-3 transition-colors hover:text-[#2f7b61] ${
                       isActive ? "text-[#2f7b61]" : ""
                     }`}
                   >
@@ -193,7 +197,7 @@ export default function Header() {
                     {isActive && (
                       <motion.span
                         layoutId="public-header-active-underline"
-                        className="absolute bottom-[29px] left-1/2 h-[3px] w-[88px] -translate-x-1/2 rounded-full bg-[#1F4D3D]"
+                        className="absolute bottom-[20px] xl:bottom-[29px] left-1/2 h-[3px] w-3/4 max-w-[70px] xl:max-w-[88px] -translate-x-1/2 rounded-full bg-[#1F4D3D]"
                         transition={{ duration: 0.28, ease: smoothEase }}
                       />
                     )}
@@ -206,13 +210,13 @@ export default function Header() {
                         initial={initialState}
                         animate="visible"
                         exit="exit"
-                        className="absolute left-0 top-[90px] flex w-48 origin-top flex-col overflow-hidden rounded-xl border border-[#1F4D3D]/10 bg-white shadow-[0_12px_24px_rgba(31,77,61,0.08)]"
+                        className="absolute left-0 top-[80px] xl:top-[90px] flex w-48 origin-top flex-col overflow-hidden rounded-xl border border-[#1F4D3D]/10 bg-white shadow-[0_12px_24px_rgba(31,77,61,0.08)]"
                       >
                         {item.subItems.map((sub) => (
                           <motion.div key={sub.href} variants={dropdownItemMotion}>
                             <Link
                               href={href(sub.href)}
-                              className="block px-5 py-3 text-[16px] text-[#12382e] transition hover:bg-[#f4faf7] hover:text-[#2f7b61]"
+                              className="block px-5 py-3 text-[15px] text-[#12382e] transition hover:bg-[#f4faf7] hover:text-[#2f7b61]"
                             >
                               {sub.label}
                             </Link>
@@ -235,7 +239,7 @@ export default function Header() {
               >
                 <Link
                   href={href(item.href!)}
-                  className={`relative flex h-[104px] items-center whitespace-nowrap px-[13px] transition-colors hover:text-[#2f7b61] ${
+                  className={`relative flex h-[92px] xl:h-[104px] items-center whitespace-nowrap px-2 xl:px-3 transition-colors hover:text-[#2f7b61] ${
                     isActive ? "text-[#2f7b61]" : ""
                   }`}
                   aria-current={isActive ? "page" : undefined}
@@ -244,7 +248,7 @@ export default function Header() {
                   {isActive && (
                     <motion.span
                       layoutId="public-header-active-underline"
-                      className="absolute bottom-[29px] left-1/2 h-[3px] w-[88px] -translate-x-1/2 rounded-full bg-[#1F4D3D]"
+                      className="absolute bottom-[20px] xl:bottom-[29px] left-1/2 h-[3px] w-3/4 max-w-[70px] xl:max-w-[88px] -translate-x-1/2 rounded-full bg-[#1F4D3D]"
                       transition={{ duration: 0.28, ease: smoothEase }}
                     />
                   )}
@@ -254,7 +258,8 @@ export default function Header() {
           })}
         </motion.nav>
 
-        <motion.div variants={headerItemMotion} className="hidden justify-self-end lg:block">
+        <motion.div variants={headerItemMotion} className="hidden shrink-0 items-center gap-2 xl:gap-2.5 justify-end lg:flex">
+          <CurrencySwitcher />
           <LanguageSwitcher locale={locale} publicPathname={publicPathname} queryString={queryString} />
         </motion.div>
 
@@ -297,16 +302,16 @@ export default function Header() {
             exit="exit"
             className="fixed inset-0 z-[100] flex flex-col bg-white lg:hidden"
           >
-            <div className="flex h-14 shrink-0 items-center justify-between border-b border-[#1F4D3D]/10 px-5 sm:px-10">
-              <Link href={href("/")} className="flex items-center" onClick={closeMenu}>
+            <div className="flex h-[76px] shrink-0 items-center justify-between border-b border-[#1F4D3D]/10 px-5 sm:h-[84px] sm:px-8">
+              <Link href={href("/")} className="flex shrink-0 items-center" onClick={closeMenu}>
                 <Image
                   src="/logo-green.png"
                   alt="Logo"
-                  width={140}
-                  height={80}
+                  width={180}
+                  height={180}
                   priority
                   unoptimized
-                  className="h-14 w-auto object-contain"
+                  className="h-[62px] w-auto object-contain sm:h-[70px]"
                 />
               </Link>
               <button
@@ -320,7 +325,7 @@ export default function Header() {
                 </svg>
               </button>
             </div>
-            <nav className="mx-auto grid w-full max-w-[1280px] flex-1 content-start gap-1 overflow-y-auto px-6 py-5 sm:px-10" onClick={closeMenu}>
+            <nav className="mx-auto grid w-full max-w-[1280px] flex-1 content-start gap-1 overflow-y-auto px-6 py-5 sm:px-10">
               {navItems.map((item) => {
                 if (item.subItems) {
                   return (
@@ -333,6 +338,7 @@ export default function Header() {
                           <Link
                             key={sub.label}
                             href={href(sub.href)}
+                            onClick={closeMenu}
                             className="rounded-md px-2 py-2 text-[15px] font-medium text-[#1F4D3D] transition hover:bg-[#f4faf7]"
                           >
                             {sub.label}
@@ -347,6 +353,7 @@ export default function Header() {
                   <motion.div key={item.label} variants={dropdownItemMotion} whileTap={{ scale: 0.98 }}>
                     <Link
                       href={href(item.href!)}
+                      onClick={closeMenu}
                       className="block rounded-md px-2 py-3 text-base font-semibold text-[#1F4D3D] transition hover:bg-[#f4faf7]"
                     >
                       {item.label}
@@ -354,56 +361,24 @@ export default function Header() {
                   </motion.div>
                 );
               })}
-              <motion.div variants={dropdownItemMotion} className="mt-4 border-t border-[#1F4D3D]/10 pt-4">
-                <p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8a9a94]">
-                  {t("common.language")}
-                </p>
-                {locales.map((item) => (
-                  <Link
-                    key={item}
-                    href={
-                      pageEntityId && pageEntityType
-                        ? buildLocalizedEntityPath({
-                            targetLocale: item,
-                            entityType: pageEntityType,
-                            entityId: pageEntityId,
-                            translatedSlug: "",
-                            fallbackPathname: publicPathname,
-                            queryString,
-                          })
-                        : buildLocalizedPath(publicPathname, item, queryString)
-                    }
-                    onClick={(event) => {
-                      if (!pageEntityId || !pageEntityType) return;
-                      event.preventDefault();
-                      closeMenu();
-                      window.location.href = buildLocalizedEntityPath({
-                        targetLocale: item,
-                        entityType: pageEntityType,
-                        entityId: pageEntityId,
-                        translatedSlug: "",
-                        fallbackPathname: publicPathname,
-                        queryString: getLocationSearchSnapshot(),
-                      });
-                    }}
-                    className={`flex items-center gap-3 rounded-lg px-2 py-2.5 text-[14px] font-semibold transition ${
-                      item === locale
-                        ? "bg-[#f0f7f4] text-[#1F4D3D]"
-                        : "text-[#5d6965] hover:bg-[#f5f7f6] hover:text-[#1F4D3D]"
-                    }`}
-                    aria-current={item === locale ? "true" : undefined}
-                  >
-                    <Image
-                      src={localeFlags[item].src}
-                      alt={localeFlags[item].alt}
-                      width={22}
-                      height={16}
-                      className="h-4 w-[22px] rounded-[2px] object-cover shadow-[0_0_0_1px_rgba(31,77,61,0.12)]"
-                    />
-                    <span>{localeLabels[item]}</span>
-                    {item === locale && <Check className="ml-auto size-4 text-[#2e6f57]" aria-hidden="true" />}
-                  </Link>
-                ))}
+              <motion.div variants={dropdownItemMotion} className="mt-4 space-y-3 border-t border-[#1F4D3D]/10 pt-4">
+                <div>
+                  <p className="px-1 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8a9a94]">
+                    {t("common.language")}
+                  </p>
+                  <MobileLanguageSwitcher
+                    locale={locale}
+                    publicPathname={publicPathname}
+                    queryString={queryString}
+                    onCloseMenu={closeMenu}
+                  />
+                </div>
+                <div>
+                  <p className="px-1 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8a9a94]">
+                    {t("common.currency")}
+                  </p>
+                  <CurrencySwitcher variant="mobile" onCloseMenu={closeMenu} />
+                </div>
               </motion.div>
             </nav>
           </motion.div>
@@ -486,7 +461,7 @@ function LanguageSwitcher({
       <button
         type="button"
         onClick={() => setIsOpen((current) => !current)}
-        className="flex h-11 min-w-[156px] items-center justify-between gap-3 rounded-full border border-[#dfe8e4] bg-white px-3 text-[14px] font-semibold text-[#1F4D3D] shadow-[0_6px_16px_rgba(31,77,61,0.05)] transition hover:border-[#2e6f57]/35 hover:bg-[#f8faf9]"
+        className="flex h-10 xl:h-11 min-w-[134px] xl:min-w-[156px] items-center justify-between gap-2 xl:gap-3 rounded-full border border-[#dfe8e4] bg-white px-2.5 xl:px-3 text-[13px] xl:text-[14px] font-semibold text-[#1F4D3D] shadow-[0_6px_16px_rgba(31,77,61,0.05)] transition hover:border-[#2e6f57]/35 hover:bg-[#f8faf9]"
         aria-haspopup="menu"
         aria-expanded={isOpen}
       >
@@ -608,6 +583,119 @@ function LanguageSwitcher({
                     {isSelected && <Check className="size-4 text-[#2e6f57]" aria-hidden="true" />}
                   </Link>
                 </motion.div>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function MobileLanguageSwitcher({
+  locale,
+  publicPathname,
+  queryString,
+  onCloseMenu,
+}: {
+  locale: Locale;
+  publicPathname: string;
+  queryString: string;
+  onCloseMenu: () => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedLabel = localeLabels[locale];
+  const { pageEntityId, pageEntityType } = useHeaderStore();
+
+  return (
+    <div className="relative" onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="flex h-11 w-full items-center justify-between rounded-xl border border-[#dfe8e4] bg-white px-3.5 text-[14px] font-semibold text-[#1F4D3D] shadow-[0_2px_8px_rgba(31,77,61,0.04)] transition hover:border-[#2e6f57]/35"
+        aria-expanded={isOpen}
+      >
+        <div className="flex items-center gap-2.5">
+          <Image
+            src={localeFlags[locale].src}
+            alt={localeFlags[locale].alt}
+            width={22}
+            height={16}
+            className="h-4 w-[22px] rounded-[2px] object-cover shadow-[0_0_0_1px_rgba(31,77,61,0.12)]"
+          />
+          <span>{selectedLabel}</span>
+        </div>
+        <ChevronDown
+          className={`size-4 text-[#667c74] transition-transform duration-200 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+          aria-hidden="true"
+        />
+      </button>
+
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.22, ease: smoothEase }}
+            className="mt-1.5 overflow-hidden rounded-xl border border-[#dfe8e4] bg-white p-1 shadow-[0_8px_20px_rgba(31,77,61,0.08)]"
+          >
+            {locales.map((item) => {
+              const isSelected = item === locale;
+
+              return (
+                <Link
+                  key={item}
+                  href={
+                    pageEntityId && pageEntityType
+                      ? buildLocalizedEntityPath({
+                          targetLocale: item,
+                          entityType: pageEntityType,
+                          entityId: pageEntityId,
+                          translatedSlug: "",
+                          fallbackPathname: publicPathname,
+                          queryString,
+                        })
+                      : buildLocalizedPath(publicPathname, item, queryString)
+                  }
+                  onClick={(event) => {
+                    setIsOpen(false);
+                    if (!pageEntityId || !pageEntityType) {
+                      onCloseMenu();
+                      return;
+                    }
+                    event.preventDefault();
+                    onCloseMenu();
+                    window.location.href = buildLocalizedEntityPath({
+                      targetLocale: item,
+                      entityType: pageEntityType,
+                      entityId: pageEntityId,
+                      translatedSlug: "",
+                      fallbackPathname: publicPathname,
+                      queryString: getLocationSearchSnapshot(),
+                    });
+                  }}
+                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-[14px] font-semibold transition ${
+                    isSelected
+                      ? "bg-[#f0f7f4] text-[#1F4D3D]"
+                      : "text-[#5d6965] hover:bg-[#f5f7f6] hover:text-[#1F4D3D]"
+                  }`}
+                  aria-current={isSelected ? "true" : undefined}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Image
+                      src={localeFlags[item].src}
+                      alt={localeFlags[item].alt}
+                      width={22}
+                      height={16}
+                      className="h-4 w-[22px] rounded-[2px] object-cover shadow-[0_0_0_1px_rgba(31,77,61,0.12)]"
+                    />
+                    <span>{localeLabels[item]}</span>
+                  </div>
+                  {isSelected && <Check className="size-4 text-[#2e6f57]" aria-hidden="true" />}
+                </Link>
               );
             })}
           </motion.div>

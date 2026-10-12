@@ -35,7 +35,8 @@
     "nextView": "العرض التالي",
     "toggleNavigation": "تبديل التنقل",
     "maxCapacity": "السعة القصوى",
-    "language": "اللغة"
+    "language": "اللغة",
+    "currency": "العملة"
   },
   "nav": {
     "items": {

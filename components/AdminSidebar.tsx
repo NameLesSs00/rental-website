@@ -41,12 +41,25 @@ export default function AdminSidebar({ onNavigate }: { onNavigate?: () => void }
   const role = profile?.roles?.[0] || "User";
 
   return (
-    <aside className="flex h-full min-h-screen w-full flex-col bg-[#1b634f] px-4 pb-6 pt-8 text-white shadow-[18px_0_40px_rgba(31,77,61,0.12)]">
-      <Link href="/admin/dashboard" onClick={onNavigate} className="ml-7 flex items-center">
-        <Image src="/logo-white.png" alt="Logo" width={139} height={60} className="h-16 w-auto lg:h-[70px] object-contain" priority unoptimized />
+    <aside className="flex h-full min-h-screen w-full flex-col bg-[#1b634f] px-4 pb-6 pt-6 text-white shadow-[18px_0_40px_rgba(31,77,61,0.12)]">
+      <Link
+        href="/admin/dashboard"
+        onClick={onNavigate}
+        className="flex items-center justify-center px-2 py-1 transition-transform hover:scale-[1.02]"
+        aria-label="Admin Dashboard"
+      >
+        <Image
+          src="/logo-white.png"
+          alt="Hurghada Vacation Homes Logo"
+          width={220}
+          height={220}
+          className="h-28 w-auto object-contain sm:h-32 lg:h-[135px]"
+          priority
+          unoptimized
+        />
       </Link>
 
-      <nav className="mt-14 flex flex-1 flex-col overflow-y-auto">
+      <nav className="mt-6 flex flex-1 flex-col overflow-y-auto">
         <NavGroup items={mainNavItems} onNavigate={onNavigate} />
       </nav>
 

@@ -35,7 +35,8 @@
     "nextView": "Vue suivante",
     "toggleNavigation": "Ouvrir ou fermer la navigation",
     "maxCapacity": "Capacité maximale",
-    "language": "Langue"
+    "language": "Langue",
+    "currency": "Devise"
   },
   "nav": {
     "items": {

@@ -11,6 +11,9 @@ const routes = [
   { path: "/contact", priority: 0.7, changeFrequency: "monthly" },
   { path: "/faq", priority: 0.65, changeFrequency: "monthly" },
   { path: "/house-rules", priority: 0.6, changeFrequency: "monthly" },
+  { path: "/privacy-policy", priority: 0.5, changeFrequency: "monthly" },
+  { path: "/refund-policy", priority: 0.5, changeFrequency: "monthly" },
+  { path: "/cancellation-policy", priority: 0.5, changeFrequency: "monthly" },
 ] satisfies Array<{
   path: string;
   priority: number;

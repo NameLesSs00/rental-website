@@ -35,7 +35,8 @@
     "nextView": "Следующий вид",
     "toggleNavigation": "Открыть навигацию",
     "maxCapacity": "Максимальная вместимость",
-    "language": "Язык"
+    "language": "Язык",
+    "currency": "Валюта"
   },
   "nav": {
     "items": {
