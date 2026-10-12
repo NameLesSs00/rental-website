@@ -154,10 +154,11 @@ export default async function HouseRulesPage({ params }: PageProps<"/[locale]/ho
                 {messages.houseRules.serviceBody}
               </p>
               <a
-                href="tel:+201273613935"
+                href={`tel:${siteConfig.phone}`}
+                dir="ltr"
                 className="mt-5 inline-flex h-11 items-center justify-center rounded-full bg-[#2e6f57] px-6 text-[14px] font-semibold text-white transition hover:bg-[#255f49]"
               >
-                +20 127 361 3935
+                <bdi dir="ltr">{siteConfig.displayPhone}</bdi>
               </a>
             </aside>
           </div>
