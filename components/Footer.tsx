@@ -77,7 +77,12 @@ export default function Footer() {
   const quickLinks = [
     { label: t("common.home"), href: "/" },
     { label: t("common.rent"), href: "/rent" },
-    { label: t("nav.items.buy"), href: "/buy" },
+    // ========================================
+    // TEMPORARILY HIDDEN: Buy Properties Link
+    // ========================================
+    // To re-enable: Uncomment the line below AND remove the middleware blocking rules in middleware.ts
+    // { label: t("nav.items.buy"), href: "/buy" },
+    // ========================================
     { label: t("common.about"), href: "/about" },
     { label: t("common.contact"), href: "/contact" },
     { label: t("common.blogs"), href: "/blogs" },

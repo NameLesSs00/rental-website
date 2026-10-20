@@ -15,6 +15,35 @@ export function proxy(request: NextRequest) {
   const segments = pathname.split("/").filter(Boolean);
   const firstSegment = segments[0];
 
+  // ========================================
+  // TEMPORARILY BLOCKED: Buy Properties Routes
+  // ========================================
+  // To re-enable buy pages:
+  // 1. Comment out or remove this entire block (lines below)
+  // 2. Uncomment the buy links in components/Header.tsx
+  // 3. Uncomment the buy links in components/Footer.tsx
+  // 4. Uncomment the buy links in components/AdminSidebar.tsx
+  //
+  // Block public buy pages (with or without locale prefix)
+  if (
+    pathname.includes("/buy") ||
+    pathname.includes("/billing/buy") ||
+    pathname.startsWith("/property-buying")
+  ) {
+    return NextResponse.rewrite(new URL("/not-found", request.url));
+  }
+  
+  // Block admin buy property management pages
+  if (
+    pathname.startsWith("/admin/property-buying") ||
+    pathname === "/admin/property-buyings"
+  ) {
+    return NextResponse.rewrite(new URL("/not-found", request.url));
+  }
+  // ========================================
+  // END: Buy Properties Block
+  // ========================================
+
   if (pathname.startsWith("/admin")) {
     // Allow public auth pages through unconditionally
     if (
