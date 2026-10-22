@@ -7,7 +7,12 @@ const quickActions = [
   { label: "Bookings", href: "/admin/bookings", helper: "Review rental bookings" },
   { label: "Reports", href: "/admin/reports", helper: "Download arrival, departure, and in-house reports" },
   { label: "Reservations", href: "/admin/in-house", helper: "View reservation lists by date" },
-  { label: "Transfer Bookings", href: "/admin/transfer-bookings", helper: "Track transfer reservations" },
+  // ========================================
+  // TEMPORARILY HIDDEN: Transfer Bookings Link
+  // ========================================
+  // To re-enable: Uncomment the line below AND remove the middleware blocking rules in proxy.ts
+  // { label: "Transfer Bookings", href: "/admin/transfer-bookings", helper: "Track transfer reservations" },
+  // ========================================
   { label: "Rent Properties", href: "/admin/properties", helper: "Manage rental listings" },
   { label: "Info Area", href: "/admin/landmarks", helper: "Manage nearby places for rental listings" },
   { label: "Messages", href: "/admin/messages", helper: "Read customer messages" },

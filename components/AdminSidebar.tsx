@@ -13,7 +13,14 @@ const mainNavItems = [
   { label: "Reports", href: "/admin/reports", icon: "report" },
   { label: "Reviews", href: "/admin/reviews", icon: "star" },
   { label: "Currencies", href: "/admin/currencies", icon: "currency" },
-  { label: "Transfer Bookings", href: "/admin/transfer-bookings", icon: "route" },
+  // ========================================
+  // TEMPORARILY HIDDEN: Transfer Admin Links
+  // ========================================
+  // To re-enable: Uncomment the three lines below AND remove the middleware blocking rules in proxy.ts
+  // { label: "Transfer Bookings", href: "/admin/transfer-bookings", icon: "route" },
+  // { label: "Journey Locations", href: "/admin/locations", icon: "map-pin" },
+  // { label: "Transfer Journeys", href: "/admin/journeys", icon: "route" },
+  // ========================================
   { label: "Properties Views", href: "/admin/properties-locations", icon: "globe" },
   { label: "Rent Properties", href: "/admin/properties", icon: "home" },
   // ========================================
@@ -27,8 +34,6 @@ const mainNavItems = [
   { label: "Info Area", href: "/admin/landmarks", icon: "map-pin" },
   { label: "Rent Includes Categories", href: "/admin/property-categories", icon: "tag" },
   { label: "Rent Includes Items", href: "/admin/property-items", icon: "list" },
-  { label: "Journey Locations", href: "/admin/locations", icon: "map-pin" },
-  { label: "Transfer Journeys", href: "/admin/journeys", icon: "route" },
   { label: "Admins", href: "/admin/admins", icon: "users" },
   { label: "Messages", href: "/admin/messages", icon: "mail" },
   { label: "Blog", href: "/admin/blog", icon: "book" },

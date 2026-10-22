@@ -116,10 +116,14 @@ export default function Header() {
     // ========================================
     // TEMPORARILY HIDDEN: Buy Properties Link
     // ========================================
-    // To re-enable: Uncomment the line below AND remove the middleware blocking rules in middleware.ts
+    // To re-enable: Uncomment the line below AND remove the middleware blocking rules in proxy.ts
     // { href: "/buy", label: t("nav.items.buy") },
     // ========================================
-    { href: "/transfer", label: t("nav.items.transfer") },
+    // TEMPORARILY HIDDEN: Transfer Link
+    // ========================================
+    // To re-enable: Uncomment the line below AND remove the middleware blocking rules in proxy.ts
+    // { href: "/transfer", label: t("nav.items.transfer") },
+    // ========================================
     { href: "/about", label: t("nav.items.about") },
     { href: "/contact", label: t("nav.items.contact") },
   ];

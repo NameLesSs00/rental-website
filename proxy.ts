@@ -44,6 +44,37 @@ export function proxy(request: NextRequest) {
   // END: Buy Properties Block
   // ========================================
 
+  // ========================================
+  // TEMPORARILY BLOCKED: Transfer Routes
+  // ========================================
+  // To re-enable transfer pages:
+  // 1. Comment out or remove this entire block (lines below)
+  // 2. Uncomment the transfer link in components/Header.tsx
+  // 3. Uncomment the transfer links in components/AdminSidebar.tsx
+  // 4. Uncomment the transfer link in components/AdminDashboardContent.tsx
+  //
+  // Block public transfer pages (with or without locale prefix)
+  if (
+    pathname.includes("/transfer") ||
+    pathname.includes("/billing/transfer")
+  ) {
+    return NextResponse.rewrite(new URL("/not-found", request.url));
+  }
+  
+  // Block admin transfer management pages
+  if (
+    pathname.startsWith("/admin/transfer-bookings") ||
+    pathname === "/admin/journeys" ||
+    pathname.startsWith("/admin/journeys/") ||
+    pathname === "/admin/locations" ||
+    pathname.startsWith("/admin/locations/")
+  ) {
+    return NextResponse.rewrite(new URL("/not-found", request.url));
+  }
+  // ========================================
+  // END: Transfer Block
+  // ========================================
+
   if (pathname.startsWith("/admin")) {
     // Allow public auth pages through unconditionally
     if (
