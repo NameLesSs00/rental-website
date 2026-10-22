@@ -650,7 +650,13 @@ export function usePropertyDailyPrices({ propertyId, startDate, endDate }: Prope
         `/api/properties/${propertyId}/daily-prices`,
         { params: { startDate, endDate } }
       );
-      return data.data ?? { propertyId, prices: [] };
+      const resData = data.data;
+      const prices = resData?.prices ?? resData?.dailyPrices ?? [];
+      return {
+        propertyId: resData?.propertyId ?? propertyId,
+        prices,
+        dailyPrices: prices,
+      };
     },
     enabled: !!propertyId,
     staleTime: 30 * 1000,

@@ -136,7 +136,10 @@ export default function AdminCreateBookingContent() {
         const d = new Date(p.date);
         return d >= checkInDate && d < checkOutDate;
       })
-      .reduce((sum, p) => sum + p.price, 0);
+      .reduce((sum, p) => {
+        const amount = p.priceInfo?.amount ?? p.priceInfo?.baseAmount ?? p.price ?? 0;
+        return sum + amount;
+      }, 0);
     return total > 0 ? total : null;
   }, [dailyPricesData, checkIn, checkOut]);
 
@@ -151,10 +154,15 @@ export default function AdminCreateBookingContent() {
       const priceDate = new Date(price.date);
       return priceDate >= checkInDate && priceDate < checkOutDate;
     });
-    const firstPrice = stayPrices[0]?.price;
+    const firstPrice = stayPrices[0]
+      ? (stayPrices[0].priceInfo?.amount ?? stayPrices[0].priceInfo?.baseAmount ?? stayPrices[0].price)
+      : undefined;
 
     if (stayPrices.length !== stayNights || firstPrice === undefined) return null;
-    return stayPrices.every((price) => price.price === firstPrice) ? firstPrice : null;
+    return stayPrices.every((price) => {
+      const amount = price.priceInfo?.amount ?? price.priceInfo?.baseAmount ?? price.price;
+      return amount === firstPrice;
+    }) ? firstPrice : null;
   }, [dailyPricesData, checkIn, checkOut, validDates, stayNights]);
   const paidAmountNum = Number(payAmount) || 0;
   const remaining = computedTotal !== null ? Math.max(0, computedTotal - paidAmountNum) : null;

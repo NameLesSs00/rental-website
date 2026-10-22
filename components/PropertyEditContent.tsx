@@ -24,7 +24,7 @@ import { API_BASE_URL } from "@/lib/api/config";
 import Image from "next/image";
 import { BedType, PropertyType, type DailyPrice } from "@/lib/types/property";
 import type { AdminBookingListItem } from "@/lib/types/booking";
-import { formatUsd } from "@/lib/utils/currency";
+import { formatCurrency, formatUsd } from "@/lib/utils/currency";
 import { getPropertyLandmarks, sortLandmarks } from "@/lib/utils/landmarks";
 import { getSelectedPropertyCategoryItemIds } from "@/lib/utils/propertyCategoryValues";
 import TranslationFields from "@/components/admin/TranslationFields";
@@ -906,7 +906,9 @@ function PricesTab({ property }: { property: any }) {
   const [endDate, setEndDate] = useState(defaultViewEnd);
   const [calendarMonth, setCalendarMonth] = useState(getMonthStart(today));
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
-  const [price, setPrice] = useState(property.basePrice || 0);
+  const [price, setPrice] = useState(
+    property.basePriceInfo?.amount ?? property.basePriceInfo?.baseAmount ?? property.basePrice ?? 0
+  );
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const calendarStartDate = getMonthStart(calendarMonth);
@@ -1256,10 +1258,13 @@ function AdminDailyPricesCalendar({
           ))}
 
           {calendarDays.map(day => {
-            const priceInfo = priceByDate.get(day.date);
-            const hasPrice = Boolean(priceInfo);
+            const priceItem = priceByDate.get(day.date);
+            const hasPrice = Boolean(priceItem);
             const isSelected = selectedDates.includes(day.date);
-            const title = hasPrice ? `${day.date} - ${formatUsd(priceInfo?.price || 0)}` : `${day.date} - no price`;
+            const amount = priceItem?.priceInfo?.amount ?? priceItem?.priceInfo?.baseAmount ?? priceItem?.price ?? 0;
+            const currencyCode = priceItem?.priceInfo?.currency || priceItem?.priceInfo?.baseCurrency || "USD";
+            const formattedPrice = formatCurrency(amount, currencyCode, amount % 1 === 0 ? 0 : 2);
+            const title = hasPrice ? `${day.date} - ${formattedPrice}` : `${day.date} - no price`;
 
             return (
               <div key={day.date} className="group relative min-w-0">
@@ -1280,7 +1285,7 @@ function AdminDailyPricesCalendar({
                     {day.day}
                   </span>
                   <span className={isSelected ? "w-full truncate text-[11px] font-semibold text-[#2e6f57]" : hasPrice ? "w-full truncate text-[11px] font-semibold text-[#2e6f57]" : "w-full truncate text-[10px] text-[#a2b0aa]"}>
-                    {hasPrice ? formatUsd(priceInfo?.price || 0) : "No price"}
+                    {hasPrice ? formattedPrice : "No price"}
                   </span>
                 </button>
 

@@ -87,12 +87,14 @@ export interface PropertyImage {
 
 export interface DailyPrice {
   date: string;
-  price: number;
+  price?: number;
+  priceInfo?: PriceInfo;
 }
 
 export interface PropertyDailyPricesData {
   propertyId: string;
   prices: DailyPrice[];
+  dailyPrices?: DailyPrice[];
 }
 
 export interface BulkDailyPricesRequest {
@@ -220,7 +222,8 @@ export interface Property {
   address: PropertyAddress;
   listingDetails: PropertyListingDetails;
   images: PropertyImage[];
-  prices: DailyPrice[];
+  prices?: DailyPrice[];
+  dailyPrices?: DailyPrice[];
   sleepingArrangements: PropertySleepingArrangement[];
   categories: PropertyCategoryGroup[];
   propertyCategoryValueDtos?: PropertyCategoryValueDto[];

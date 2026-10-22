@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useLogin } from "@/lib/hooks/useAuth";
 import { useAuthStore } from "@/lib/stores/authStore";
-import axiosInstance from "@/lib/api/axiosInstance";
+import { validateTokens } from "@/lib/utils/tokenValidator";
 
 function LoginForm() {
   const [emailOrUserName, setEmailOrUserName] = useState("");
@@ -17,30 +17,47 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { mutate: login, isPending, isError, error, reset } = useLogin();
-  const { accessToken, refreshToken } = useAuthStore();
 
   useEffect(() => {
     let mounted = true;
-    if (accessToken) {
-      router.replace("/admin/dashboard");
-      return;
+    
+    async function checkAuth() {
+      const { accessToken, refreshToken, clearAuth } = useAuthStore.getState();
+      
+      // No tokens - show login form immediately
+      if (!accessToken && !refreshToken) {
+        if (mounted) setIsCheckingAuth(false);
+        return;
+      }
+      
+      // Validate tokens before redirecting
+      try {
+        const isValid = await validateTokens();
+        
+        if (!mounted) return;
+        
+        if (isValid) {
+          router.replace("/admin/dashboard");
+        } else {
+          // Clear invalid tokens and show login form
+          clearAuth();
+          setIsCheckingAuth(false);
+        }
+      } catch (error) {
+        // Network error or validation failed
+        if (mounted) {
+          clearAuth();
+          setIsCheckingAuth(false);
+        }
+      }
     }
-    if (refreshToken && !accessToken) {
-      axiosInstance
-        .get("/api/auth/profile")
-        .then(() => {
-          if (mounted) router.replace("/admin/dashboard");
-        })
-        .catch(() => {
-          if (mounted) setIsCheckingAuth(false);
-        });
-      return;
-    }
-    setIsCheckingAuth(false);
+    
+    checkAuth();
+    
     return () => {
       mounted = false;
     };
-  }, [accessToken, refreshToken, router]);
+  }, []); // Empty deps - run once on mount
   const successMessage =
     searchParams.get("reset") === "success"
       ? "Password reset successfully. You can now log in."
