@@ -16,6 +16,10 @@ export interface PaymentBookingContext {
   pickupTime?: string;
   passengers?: number;
   buyingId?: string;
+  amount?: number;
+  currency?: string;
+  checkoutUrl?: string;
+  paymentId?: string;
 }
 
 export const PAYMENT_BOOKING_CONTEXT_KEY = "payment_booking_context";

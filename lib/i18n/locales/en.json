@@ -396,13 +396,29 @@
   "payment": {
     "title": "Payment",
     "loadingTitle": "Confirming your payment",
-    "loadingBody": "Please wait while we confirm your payment with PayPal. Do not close or refresh this page.",
-    "sessionMissing": "Payment session not found. No PayPal order ID was provided.",
-    "captureFailed": "Payment capture failed. Please contact support.",
-    "genericFailed": "Payment capture failed.",
+    "loadingBody": "Please wait while we confirm your payment status. Do not close or refresh this page.",
+    "sessionMissing": "Payment session not found. No order ID was provided.",
+    "captureFailed": "Payment verification failed. Please contact support.",
+    "genericFailed": "Payment verification failed.",
     "whatsNext": "What's Next?",
-    "failedTitle": "Payment Failed",
-    "failedBody": "We could not confirm your payment status on this page. Please contact support with your PayPal order ID before trying again.",
+    "failedTitle": "Payment Unsuccessful",
+    "failedBody": "We could not confirm a successful payment for this booking. You can review your details and try again below.",
+    "expiryModal": {
+      "title": "Complete Your Payment",
+      "warning": "You have 5 minutes to complete your payment, or your booking reservation will be automatically cancelled.",
+      "timeRemaining": "Time remaining:",
+      "proceed": "Proceed to Secure Payment",
+      "holdNotice": "Your accommodation is temporarily held for you during this time."
+    },
+    "paymob": {
+      "payButton": "Book & Pay Now",
+      "securePayment": "Secured Online Payment"
+    },
+    "statusMessages": {
+      "declined": "Payment was declined by your bank or payment provider.",
+      "cancelled": "Payment was cancelled or was not completed.",
+      "tryAgain": "Try Payment Again"
+    },
     "detailLabels": {
       "bookingNumber": "Booking Number",
       "bookingType": "Booking Type",

@@ -12,6 +12,24 @@ export interface CreatePaypalOrderResponse {
   approvalUrl: string;
 }
 
+export interface InitializePaymobRequest {
+  bookingId: string;
+}
+
+export interface InitializePaymobResponseData {
+  paymentId: string;
+  bookingId: string;
+  bookingNumber: string;
+  payPalOrderId: string | null;
+  providerOrderId: string;
+  approveUrl: string;
+  checkoutUrl: string;
+  amount: number;
+  currency: string;
+  bookingStatus: string;
+  paymentStatus: string;
+}
+
 export interface CapturePaymentData {
   bookingId?: string;
   bookingExtensionId?: string | null;
@@ -69,6 +87,25 @@ export interface BookingPayment {
 }
 
 // ── Hooks ────────────────────────────────────────────────────────────────────
+
+/**
+ * Initialize Paymob payment for a booking and retrieve the Unified Checkout URL.
+ * Returns { approveUrl, checkoutUrl, amount, currency, ... }
+ */
+export function useInitializePaymobPayment() {
+  return useMutation({
+    mutationFn: async (payload: InitializePaymobRequest) => {
+      const { data } = await axiosInstance.post<PaymentApiResponse<InitializePaymobResponseData>>(
+        "/api/payments/initialize",
+        payload
+      );
+      if (!data.isSuccess || !data.data) {
+        throw new Error(data.errors?.[0] || data.message || "Could not initialize payment.");
+      }
+      return data.data;
+    },
+  });
+}
 
 /**
  * Step 1b: After booking is created, create a PayPal order.

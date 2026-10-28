@@ -383,13 +383,29 @@
   "payment": {
     "title": "Zahlung",
     "loadingTitle": "Ihre Zahlung wird bestätigt",
-    "loadingBody": "Bitte warten Sie, während wir Ihre Zahlung mit PayPal bestätigen. Schließen oder aktualisieren Sie diese Seite nicht.",
-    "sessionMissing": "Zahlungssitzung nicht gefunden. Es wurde keine PayPal-Bestell-ID angegeben.",
-    "captureFailed": "Zahlung konnte nicht erfasst werden. Bitte kontaktieren Sie den Support.",
-    "genericFailed": "Zahlung konnte nicht erfasst werden.",
+    "loadingBody": "Bitte warten Sie, während wir Ihren Zahlungsstatus bestätigen. Schließen oder aktualisieren Sie diese Seite nicht.",
+    "sessionMissing": "Zahlungssitzung nicht gefunden. Es wurde keine Bestell-ID angegeben.",
+    "captureFailed": "Zahlungsüberprüfung fehlgeschlagen. Bitte kontaktieren Sie den Support.",
+    "genericFailed": "Zahlungsüberprüfung fehlgeschlagen.",
     "whatsNext": "Wie geht es weiter?",
-    "failedTitle": "Zahlung fehlgeschlagen",
-    "failedBody": "Wir konnten den Zahlungsstatus auf dieser Seite nicht bestätigen. Kontaktieren Sie den Support mit Ihrer PayPal-Bestell-ID.",
+    "failedTitle": "Zahlung nicht erfolgreich",
+    "failedBody": "Wir konnten für diese Buchung keine erfolgreiche Zahlung bestätigen. Sie können Ihre Angaben überprüfen und es unten erneut versuchen.",
+    "expiryModal": {
+      "title": "Zahlung abschließen",
+      "warning": "Sie haben 5 Minuten Zeit, um Ihre Zahlung abzuschließen, andernfalls wird Ihre Reservierung automatisch storniert.",
+      "timeRemaining": "Verbleibende Zeit:",
+      "proceed": "Zur sicheren Zahlung",
+      "holdNotice": "Ihre Unterkunft wird während dieser Zeit vorübergehend für Sie reserviert."
+    },
+    "paymob": {
+      "payButton": "Jetzt buchen & bezahlen",
+      "securePayment": "Sichere Online-Zahlung"
+    },
+    "statusMessages": {
+      "declined": "Die Zahlung wurde von Ihrer Bank oder dem Zahlungsanbieter abgelehnt.",
+      "cancelled": "Die Zahlung wurde abgebrochen oder nicht abgeschlossen.",
+      "tryAgain": "Zahlung erneut versuchen"
+    },
     "detailLabels": {
       "bookingNumber": "Buchungsnummer",
       "bookingType": "Buchungstyp",

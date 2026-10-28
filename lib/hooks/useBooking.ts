@@ -122,6 +122,20 @@ export function useAdminPropertyBooking(id: string) {
   });
 }
 
+export function usePropertyBookingDetails(id: string) {
+  return useQuery({
+    queryKey: [BOOKING_KEY, "detail", id],
+    queryFn: async () => {
+      const { data } = await axiosInstance.get<AdminBookingApiResponse<AdminBookingDetails>>(
+        `/api/property-bookings/${id}`
+      );
+      return data.data;
+    },
+    enabled: !!id,
+    staleTime: 30 * 1000,
+  });
+}
+
 export function useMarkPropertyBookingAsPaidAll() {
   const queryClient = useQueryClient();
 

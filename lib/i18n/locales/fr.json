@@ -383,13 +383,29 @@
   "payment": {
     "title": "Paiement",
     "loadingTitle": "Confirmation de votre paiement",
-    "loadingBody": "Veuillez patienter pendant la confirmation du paiement avec PayPal. Ne fermez pas et ne rechargez pas cette page.",
-    "sessionMissing": "Session de paiement introuvable. Aucun identifiant de commande PayPal n'a été fourni.",
-    "captureFailed": "Échec de la capture du paiement. Veuillez contacter l'assistance.",
-    "genericFailed": "Échec de la capture du paiement.",
+    "loadingBody": "Veuillez patienter pendant que nous confirmons le statut de votre paiement. Ne fermez pas et ne rechargez pas cette page.",
+    "sessionMissing": "Session de paiement introuvable. Aucun identifiant de commande n'a été fourni.",
+    "captureFailed": "Échec de la vérification du paiement. Veuillez contacter l'assistance.",
+    "genericFailed": "Échec de la vérification du paiement.",
     "whatsNext": "Et ensuite ?",
-    "failedTitle": "Paiement échoué",
-    "failedBody": "Nous n'avons pas pu confirmer votre paiement sur cette page. Contactez l'assistance avec votre identifiant de commande PayPal avant de réessayer.",
+    "failedTitle": "Paiement non abouti",
+    "failedBody": "Nous n'avons pas pu confirmer la réussite du paiement pour cette réservation. Vous pouvez vérifier vos informations et réessayer ci-dessous.",
+    "expiryModal": {
+      "title": "Finaliser votre paiement",
+      "warning": "Vous disposez de 5 minutes pour effectuer votre paiement, sinon votre réservation sera automatiquement annulée.",
+      "timeRemaining": "Temps restant :",
+      "proceed": "Procéder au paiement sécurisé",
+      "holdNotice": "Votre hébergement est temporairement bloqué pour vous pendant ce délai."
+    },
+    "paymob": {
+      "payButton": "Réserver et payer maintenant",
+      "securePayment": "Paiement en ligne sécurisé"
+    },
+    "statusMessages": {
+      "declined": "Le paiement a été refusé par votre banque ou votre fournisseur de paiement.",
+      "cancelled": "Le paiement a été annulé ou n'a pas pu être finalisé.",
+      "tryAgain": "Réessayer le paiement"
+    },
     "detailLabels": {
       "bookingNumber": "Numéro de réservation",
       "bookingType": "Type de réservation",
