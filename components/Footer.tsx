@@ -167,7 +167,7 @@ function BrandColumn({ shouldReduceMotion }: { shouldReduceMotion: boolean }) {
           width={219}
           height={100}
           unoptimized
-          className="h-20 w-auto object-contain lg:h-[100px]"
+          className="h-[76px] w-auto object-contain lg:h-[92px]"
         />
       </motion.div>
       <motion.p

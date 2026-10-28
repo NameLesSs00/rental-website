@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import AdminSidebar from "./AdminSidebar";
 import RequireAuth from "./RequireAuth";
@@ -40,7 +42,16 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                 <span className="block h-0.5 w-4 rounded-full bg-current" />
               </span>
             </button>
-            <span className="text-[16px] font-semibold text-[#183c2f]">Dashboard</span>
+            <Link href="/admin/dashboard" className="flex items-center" aria-label="Admin Dashboard">
+              <Image
+                src="/logo-green.png"
+                alt="Hurghada Vacation Homes"
+                width={140}
+                height={115}
+                unoptimized
+                className="h-11 w-auto object-contain"
+              />
+            </Link>
             <span className="size-10" />
           </header>
 

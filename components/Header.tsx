@@ -164,7 +164,7 @@ export default function Header() {
               height={180}
               priority
               unoptimized
-              className="h-[62px] w-auto object-contain sm:h-[70px] lg:h-[80px] xl:h-[92px]"
+              className="h-[54px] w-auto object-contain sm:h-[62px] lg:h-[72px] xl:h-[80px]"
             />
           </Link>
         </motion.div>
@@ -320,7 +320,7 @@ export default function Header() {
                   height={180}
                   priority
                   unoptimized
-                  className="h-[62px] w-auto object-contain sm:h-[70px]"
+                  className="h-[54px] w-auto object-contain sm:h-[62px]"
                 />
               </Link>
               <button

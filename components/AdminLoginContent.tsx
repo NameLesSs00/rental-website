@@ -6,7 +6,7 @@ export default function AdminLoginContent() {
     <main className="grid min-h-screen place-items-center px-5 py-10">
       <section className="w-full max-w-[430px] rounded-3xl border border-[#dfe8e4] bg-white p-6 shadow-[0_24px_70px_rgba(31,77,61,0.12)] lg:p-8">
         <div className="flex justify-center">
-          <Image src="/logo-green.png" alt="Hurghada Vacation Homes" width={140} height={80} className="h-20 w-auto lg:h-[100px] object-contain" priority unoptimized />
+          <Image src="/logo-green.png" alt="Hurghada Vacation Homes" width={140} height={80} className="h-20 w-auto lg:h-[88px] object-contain" priority unoptimized />
         </div>
 
         <div className="mt-8 text-center">

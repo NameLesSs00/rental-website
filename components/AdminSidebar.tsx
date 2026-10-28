@@ -63,7 +63,7 @@ export default function AdminSidebar({ onNavigate }: { onNavigate?: () => void }
           alt="Hurghada Vacation Homes Logo"
           width={220}
           height={220}
-          className="h-28 w-auto object-contain sm:h-32 lg:h-[135px]"
+          className="h-24 w-auto object-contain sm:h-[104px] lg:h-[112px]"
           priority
           unoptimized
         />

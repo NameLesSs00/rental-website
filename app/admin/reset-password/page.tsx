@@ -60,7 +60,7 @@ function ResetPasswordForm() {
             alt="Hurghada Vacation Homes"
             width={140}
             height={80}
-            className="h-20 w-auto lg:h-[100px] object-contain"
+            className="h-20 w-auto lg:h-[88px] object-contain"
             priority
             unoptimized
           />
