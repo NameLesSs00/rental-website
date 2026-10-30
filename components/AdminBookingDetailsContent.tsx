@@ -28,8 +28,8 @@ function money(value?: number | null) {
   return formatUsd(value ?? 0);
 }
 
-function statusClass(statusName: string) {
-  const normalized = statusName.toLowerCase();
+function statusClass(statusName?: string | null) {
+  const normalized = String(statusName ?? "").toLowerCase();
   if (normalized.includes("partial")) return "bg-[#e8f1ff] text-[#2c5a96]";
   if (normalized.includes("paid")) return "bg-emerald-50 text-emerald-700";
   if (normalized.includes("pending") || normalized.includes("processing")) return "bg-amber-50 text-amber-700";
@@ -124,8 +124,16 @@ export default function AdminBookingDetailsContent({ id }: { id: string }) {
     );
   }
 
-  const isCancelled = booking.statusName.toLowerCase().includes("cancel");
+  const bookingStatusName = booking.statusName || String(booking.status ?? "Pending");
+  const isCancelled = bookingStatusName.toLowerCase().includes("cancel");
   const canCancel = !isCancelled && booking.bookingSource !== "Website";
+  const paymentStatusName =
+    booking.paymentStatusName ||
+    (paidAmount > 0 && remainingAmount <= 0
+      ? "Paid"
+      : paidAmount > 0 && remainingAmount > 0
+      ? "Partially Paid"
+      : payments[0]?.statusName || "Pending");
 
   return (
     <div className="w-full min-w-0">
@@ -158,9 +166,9 @@ export default function AdminBookingDetailsContent({ id }: { id: string }) {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <Detail label="Booking ID" value={bookingId} mono />
               <Detail label="Booking Number" value={booking.bookingNumber} mono />
-              <Detail label="Booking Status" value={booking.statusName} strong />
+              <Detail label="Booking Status" value={bookingStatusName} strong />
               <Detail label="Booking Source" value={booking.bookingSourceName || booking.bookingSource || "-"} />
-              <Detail label="Payment Status" value={booking.paymentStatusName} strong badgeClass={statusClass(booking.paymentStatusName)} />
+              <Detail label="Payment Status" value={paymentStatusName} strong badgeClass={statusClass(paymentStatusName)} />
               <Detail label="Created" value={formatDateTime(booking.createdAtUtc)} />
               <Detail label="Confirmed" value={formatDateTime(booking.confirmedAt)} />
               <Detail label="Completed" value={formatDateTime(booking.completedAt)} />
@@ -208,7 +216,7 @@ export default function AdminBookingDetailsContent({ id }: { id: string }) {
             requiredPaymentAmount={requiredPaymentAmount}
             paidAmount={paidAmount}
             remainingAmount={remainingAmount}
-            paymentStatusName={booking.paymentStatusName}
+            paymentStatusName={paymentStatusName}
             canMarkAsPaid={canMarkAsPaid}
             isMarkingPaid={isMarkingPaid}
             onMarkAsPaid={handleMarkAsPaid}

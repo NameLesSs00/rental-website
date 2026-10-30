@@ -10,7 +10,7 @@ type SlugSourceItem = {
 
 async function getSlugItems(type: "rent" | "buy", locale: Locale) {
   try {
-    const endpoint = type === "rent" ? "/api/properties/filter?pageSize=1000" : "/api/public/property-buyings?pageSize=1000";
+    const endpoint = type === "rent" ? "/api/properties?pageNumber=1&pageSize=100" : "/api/public/property-buyings?pageNumber=1&pageSize=100";
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
       cache: "no-store",
       headers: { "Accept-Language": locale, "X-Locale": locale },

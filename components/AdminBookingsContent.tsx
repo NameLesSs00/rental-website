@@ -60,16 +60,16 @@ function money(value: number) {
   return formatUsd(value);
 }
 
-function statusClass(statusName: string) {
-  const normalized = statusName.toLowerCase();
+function statusClass(statusName?: string | null) {
+  const normalized = String(statusName ?? "").toLowerCase();
   if (normalized.includes("confirm")) return "bg-emerald-50 text-emerald-700";
   if (normalized.includes("pending")) return "bg-amber-50 text-amber-700";
   if (normalized.includes("cancel")) return "bg-red-50 text-red-700";
   return "bg-[#f5f7f6] text-[#667c74]";
 }
 
-function paymentStatusClass(statusName = "") {
-  const normalized = statusName.toLowerCase();
+function paymentStatusClass(statusName?: string | null) {
+  const normalized = String(statusName ?? "").toLowerCase();
   if (normalized.includes("paid") && !normalized.includes("partial")) return "bg-emerald-50 text-emerald-700";
   if (normalized.includes("partial")) return "bg-[#e8f1ff] text-[#2c5a96]";
   if (normalized.includes("pending") || normalized.includes("processing")) return "bg-amber-50 text-amber-700";

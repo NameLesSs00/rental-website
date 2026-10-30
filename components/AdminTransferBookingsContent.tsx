@@ -49,8 +49,8 @@ function formatTime(value?: string | null) {
   return value.slice(0, 5);
 }
 
-function statusClass(statusName: string) {
-  const normalized = statusName.toLowerCase();
+function statusClass(statusName?: string | null) {
+  const normalized = String(statusName ?? "").toLowerCase();
   if (normalized.includes("confirm") || normalized.includes("paid")) return "bg-emerald-50 text-emerald-700";
   if (normalized.includes("pending") || statusName === "0") return "bg-amber-50 text-amber-700";
   if (normalized.includes("cancel")) return "bg-red-50 text-red-700";

@@ -15,6 +15,9 @@ export default function RequireAuth({
   children,
   redirectTo = "/admin/login",
 }: RequireAuthProps) {
+  const [hasHydrated, setHasHydrated] = useState(() =>
+    typeof window !== "undefined" ? useAuthStore.persist.hasHydrated() : false
+  );
   const [isValidating, setIsValidating] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
 
@@ -23,11 +26,27 @@ export default function RequireAuth({
   const { accessToken, refreshToken, clearAuth } = useAuthStore();
 
   useEffect(() => {
+    if (useAuthStore.persist.hasHydrated()) {
+      setHasHydrated(true);
+      return;
+    }
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      setHasHydrated(true);
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+
     let mounted = true;
 
     const validateAuth = async () => {
-      // Fast path: no tokens means immediate redirect
-      if (!accessToken || !refreshToken) {
+      const currentAccess = accessToken ?? useAuthStore.getState().accessToken;
+      const currentRefresh = refreshToken ?? useAuthStore.getState().refreshToken;
+
+      // Fast path: no tokens after hydration means immediate redirect
+      if (!currentAccess || !currentRefresh) {
         if (mounted) {
           router.replace(redirectTo);
         }
@@ -57,7 +76,7 @@ export default function RequireAuth({
     return () => {
       mounted = false;
     };
-  }, [pathname, accessToken, refreshToken, router, redirectTo, clearAuth]);
+  }, [hasHydrated, pathname, accessToken, refreshToken, router, redirectTo, clearAuth]);
 
   // Show loading spinner while validating
   if (isValidating) {

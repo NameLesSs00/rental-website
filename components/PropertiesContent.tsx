@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { toast } from "sonner";
 import {
   useAdminProperties,
   useDeleteProperty,
@@ -11,7 +12,6 @@ import {
   useUpdatePropertyStatus,
   type AdminPropertiesQueryParams,
 } from "@/lib/hooks/useProperties";
-import { useCategories } from "@/lib/hooks/useCategory";
 import ConfirmModal from "./ConfirmModal";
 import PropertyImagesModal from "./PropertyImagesModal";
 import { API_BASE_URL } from "@/lib/api/config";
@@ -21,7 +21,6 @@ import { getPropertyTypeLabel } from "@/lib/utils/propertyUtils";
 interface AdminPropertyFilters {
   searchTerm: string;
   propertyStatus: string;
-  city: string;
   isAvailable: string;
   isFeatured: string;
 }
@@ -29,7 +28,6 @@ interface AdminPropertyFilters {
 const defaultFilters: AdminPropertyFilters = {
   searchTerm: "",
   propertyStatus: "",
-  city: "",
   isAvailable: "",
   isFeatured: "",
 };
@@ -38,26 +36,25 @@ export default function PropertiesContent() {
   const [page, setPage] = useState(1);
   const [draftFilters, setDraftFilters] = useState<AdminPropertyFilters>(defaultFilters);
   const [appliedFilters, setAppliedFilters] = useState<AdminPropertyFilters>(defaultFilters);
-  const { data: categories } = useCategories();
 
   const queryParams: AdminPropertiesQueryParams = {
     pageNumber: page,
     pageSize: 10,
     searchTerm: appliedFilters.searchTerm || undefined,
     propertyStatus: appliedFilters.propertyStatus || undefined,
-    city: appliedFilters.city || undefined,
     isAvailable: appliedFilters.isAvailable === "" ? undefined : appliedFilters.isAvailable,
     isFeatured: appliedFilters.isFeatured === "" ? undefined : appliedFilters.isFeatured,
   };
 
   const { data: response, isLoading, isError } = useAdminProperties(queryParams);
-  const { mutate: updateAvailability } = useUpdatePropertyAvailability();
+  const { mutate: updateAvailability, isPending: isUpdatingAvailability } = useUpdatePropertyAvailability();
   const { mutate: updateFeatured } = useUpdatePropertyFeatured();
   const { mutate: updateStatus } = useUpdatePropertyStatus();
   const { mutate: deleteProperty } = useDeleteProperty();
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [propertyToDelete, setPropertyToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [deleteBlockedProperty, setDeleteBlockedProperty] = useState<{ id: string; name: string } | null>(null);
   const [imagesPropertyId, setImagesPropertyId] = useState<string | null>(null);
 
   const items = response?.items ?? [];
@@ -65,7 +62,6 @@ export default function PropertiesContent() {
   const isFiltered = Boolean(
     appliedFilters.searchTerm ||
     appliedFilters.propertyStatus ||
-    appliedFilters.city ||
     appliedFilters.isAvailable !== "" ||
     appliedFilters.isFeatured !== ""
   );
@@ -83,13 +79,42 @@ export default function PropertiesContent() {
   }
 
   function confirmDelete(id: string) {
+    const targetProperty = propertyToDelete;
     setDeletingId(id);
     deleteProperty(id, {
-      onSettled: () => {
-        setDeletingId(null);
+      onSuccess: () => {
+        toast.success("Property deleted successfully.");
         setPropertyToDelete(null);
       },
+      onError: () => {
+        toast.error(
+          "This property cannot be deleted because it has existing booking references. Please make it Unavailable instead."
+        );
+        setPropertyToDelete(null);
+        if (targetProperty) {
+          setDeleteBlockedProperty(targetProperty);
+        }
+      },
+      onSettled: () => {
+        setDeletingId(null);
+      },
     });
+  }
+
+  function handleMarkBlockedAsUnavailable() {
+    if (!deleteBlockedProperty) return;
+    updateAvailability(
+      { id: deleteBlockedProperty.id, isAvailable: false },
+      {
+        onSuccess: () => {
+          toast.success(`"${deleteBlockedProperty.name}" has been marked as Unavailable.`);
+          setDeleteBlockedProperty(null);
+        },
+        onError: () => {
+          toast.error("Could not update property availability.");
+        },
+      }
+    );
   }
 
   return (
@@ -160,25 +185,6 @@ export default function PropertiesContent() {
                 <option value={PropertyStatus.Clean}>Clean</option>
                 <option value={PropertyStatus.Dirty}>Dirty</option>
                 <option value={PropertyStatus.Maintenance}>Maintenance</option>
-              </select>
-            </label>
-          </div>
-
-          {/* Location / City */}
-          <div>
-            <label className="block">
-              <span className="mb-1.5 block text-[12px] font-medium text-[#667c74]">Location</span>
-              <select
-                value={draftFilters.city}
-                onChange={(e) => setDraftFilters({ ...draftFilters, city: e.target.value })}
-                className="h-10 w-full rounded-xl border border-[#dfe8e4] bg-white px-3 text-[13px] text-[#183c2f] outline-none transition focus:border-[#2e6f57]"
-              >
-                <option value="">All Locations</option>
-                {categories?.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
               </select>
             </label>
           </div>
@@ -430,6 +436,17 @@ export default function PropertiesContent() {
         onConfirm={() => propertyToDelete && confirmDelete(propertyToDelete.id)}
         onCancel={() => setPropertyToDelete(null)}
         isPending={deletingId === propertyToDelete?.id}
+      />
+
+      <ConfirmModal
+        isOpen={!!deleteBlockedProperty}
+        title="Cannot Delete Property"
+        message={`"${deleteBlockedProperty?.name}" cannot be deleted because there are existing bookings referencing it. You should mark it as Unavailable instead so it is hidden from listings.`}
+        confirmText="Mark as Unavailable"
+        cancelText="Close"
+        onConfirm={handleMarkBlockedAsUnavailable}
+        onCancel={() => setDeleteBlockedProperty(null)}
+        isPending={isUpdatingAvailability}
       />
 
       <PropertyImagesModal

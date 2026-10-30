@@ -160,23 +160,6 @@ export function useSearchProperties(params: { SearchTerm: string; PageNumber?: n
   });
 }
 
-const propertyCategoryCache = new Map<string, { id: string; name: string } | null>();
-
-async function getPropertyCategory(id: string): Promise<{ id: string; name: string } | null> {
-  if (propertyCategoryCache.has(id)) {
-    return propertyCategoryCache.get(id) ?? null;
-  }
-  try {
-    const { data } = await axiosInstance.get<PropertyApiResponse<Property>>(`/api/properties/${id}`);
-    const cat = data.data?.category ?? null;
-    propertyCategoryCache.set(id, cat ? { id: cat.id, name: cat.name } : null);
-    return propertyCategoryCache.get(id) ?? null;
-  } catch {
-    propertyCategoryCache.set(id, null);
-    return null;
-  }
-}
-
 export function useAdminProperties(params: AdminPropertiesQueryParams = {}) {
   return useQuery({
     queryKey: [KEY, "admin-list", params],
@@ -184,8 +167,23 @@ export function useAdminProperties(params: AdminPropertiesQueryParams = {}) {
       const pageNumber = params.pageNumber || 1;
       const pageSize = params.pageSize || 10;
       const searchTerm = params.searchTerm?.trim();
+      const hasFilters = Boolean(
+        searchTerm ||
+        params.propertyType ||
+        params.propertyStatus ||
+        (params.isAvailable !== undefined && params.isAvailable !== "") ||
+        (params.isFeatured !== undefined && params.isFeatured !== "")
+      );
 
-      // Fetch all properties to perform accurate, reliable local filtering
+      if (!hasFilters) {
+        const { data } = await axiosInstance.get<PropertyApiResponse<PaginatedResponse<PropertyListItem>>>(
+          "/api/properties",
+          { params: { pageNumber, pageSize } }
+        );
+        return data.data;
+      }
+
+      // Fetch properties list to perform local filtering without N+1 requests
       const { data: firstPage } = await axiosInstance.get<PropertyApiResponse<PaginatedResponse<PropertyListItem>>>(
         "/api/properties",
         { params: { pageNumber: 1, pageSize: 100 } }
@@ -212,21 +210,7 @@ export function useAdminProperties(params: AdminPropertiesQueryParams = {}) {
 
       let filtered = allItems;
 
-      // 1. Filter strictly based on Location Category from /api/Categories
-      if (params.city) {
-        const target = String(params.city).trim().toLowerCase();
-        const categories = await Promise.all(filtered.map((item) => getPropertyCategory(item.id)));
-        filtered = filtered.filter((_, index) => {
-          const propCat = categories[index];
-          if (!propCat) return false;
-          return (
-            propCat.id.toLowerCase() === target ||
-            propCat.name.toLowerCase() === target
-          );
-        });
-      }
-
-      // 2. Search Term
+      // 1. Search Term
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
         filtered = filtered.filter((p) => {
@@ -302,11 +286,40 @@ export function useProperties(params: PropertyQueryParams = {}) {
   return useQuery({
     queryKey: [KEY, "list", params],
     queryFn: async () => {
+      const requestedPageSize = params.pageSize ?? 10;
+      const safePageSize = Math.min(requestedPageSize, 100);
       const { data } = await axiosInstance.get<PropertyApiResponse<PaginatedResponse<PropertyListItem>>>(
         "/api/properties",
-        { params: { pageNumber: 1, pageSize: 10, ...params } }
+        { params: { pageNumber: 1, ...params, pageSize: safePageSize } }
       );
-      return data.data;
+      const firstPage = data.data;
+      if (
+        requestedPageSize >= 100 &&
+        (params.pageNumber ?? 1) === 1 &&
+        firstPage &&
+        firstPage.totalPages > 1
+      ) {
+        const restPages = await Promise.all(
+          Array.from({ length: firstPage.totalPages - 1 }, (_, i) => i + 2).map((p) =>
+            axiosInstance.get<PropertyApiResponse<PaginatedResponse<PropertyListItem>>>(
+              "/api/properties",
+              { params: { ...params, pageNumber: p, pageSize: 100 } }
+            )
+          )
+        );
+        const allItems = [
+          ...(firstPage.items ?? []),
+          ...restPages.flatMap((res) => res.data.data?.items ?? []),
+        ];
+        return {
+          ...firstPage,
+          items: allItems,
+          pageSize: allItems.length || safePageSize,
+          totalPages: 1,
+          hasNextPage: false,
+        };
+      }
+      return firstPage;
     },
     staleTime: 30 * 1000,
   });
@@ -321,8 +334,15 @@ export function usePublicRentProperties(params: PropertyQueryParams = {}) {
       const categoryId = getRentCategoryId(params);
       const bedroomNo = getRentBedroomNo(params);
       const baseParams = stripRentGroupParams({ pageNumber: 1, pageSize: 10, ...params });
+      if (Number(baseParams.pageSize) > 100) {
+        baseParams.pageSize = 100;
+      }
 
       if (!shouldUseFilterEndpoint && groupedTypes.length === 0) {
+        if (categoryId || bedroomNo !== null) {
+          baseParams.pageNumber = 1;
+          baseParams.pageSize = 100;
+        }
         const { data } = await axiosInstance.get<PropertyApiResponse<PaginatedResponse<PropertyListItem>>>(
           "/api/properties",
           { params: baseParams }
@@ -339,7 +359,7 @@ export function usePublicRentProperties(params: PropertyQueryParams = {}) {
 
       if (categoryId || bedroomNo !== null) {
         baseParams.pageNumber = 1;
-        baseParams.pageSize = 1000;
+        baseParams.pageSize = 100;
         if (categoryId) {
           delete baseParams.City;
           delete baseParams.city;
@@ -504,6 +524,9 @@ export function useDeleteProperty() {
   return useMutation({
     mutationFn: async (id: string) => {
       const { data } = await axiosInstance.delete<PropertyApiResponse<boolean>>(`/api/properties/${id}`);
+      if (data && data.isSuccess === false) {
+        throw new Error(data.errors?.[0] || data.message || "Could not delete property.");
+      }
       return data;
     },
     onSuccess: () => {

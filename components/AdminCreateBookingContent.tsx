@@ -75,7 +75,7 @@ export default function AdminCreateBookingContent() {
 
   const { data: propertiesResponse, isLoading: isLoadingProperties } = useProperties({
     pageNumber: 1,
-    pageSize: 1000,
+    pageSize: 100,
   });
 
   // Only fetch in-house data when dates are valid to avoid repeated bad requests
