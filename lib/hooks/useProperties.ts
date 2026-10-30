@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/lib/api/axiosInstance";
-import { HOUSE_RENT_PROPERTY_TYPES } from "@/lib/utils/propertyUtils";
+import { HOUSE_RENT_PROPERTY_TYPES, getPropertyTypeLabel } from "@/lib/utils/propertyUtils";
 import type {
   Property,
   PropertyListItem,
@@ -160,6 +160,23 @@ export function useSearchProperties(params: { SearchTerm: string; PageNumber?: n
   });
 }
 
+const propertyCategoryCache = new Map<string, { id: string; name: string } | null>();
+
+async function getPropertyCategory(id: string): Promise<{ id: string; name: string } | null> {
+  if (propertyCategoryCache.has(id)) {
+    return propertyCategoryCache.get(id) ?? null;
+  }
+  try {
+    const { data } = await axiosInstance.get<PropertyApiResponse<Property>>(`/api/properties/${id}`);
+    const cat = data.data?.category ?? null;
+    propertyCategoryCache.set(id, cat ? { id: cat.id, name: cat.name } : null);
+    return propertyCategoryCache.get(id) ?? null;
+  } catch {
+    propertyCategoryCache.set(id, null);
+    return null;
+  }
+}
+
 export function useAdminProperties(params: AdminPropertiesQueryParams = {}) {
   return useQuery({
     queryKey: [KEY, "admin-list", params],
@@ -168,112 +185,114 @@ export function useAdminProperties(params: AdminPropertiesQueryParams = {}) {
       const pageSize = params.pageSize || 10;
       const searchTerm = params.searchTerm?.trim();
 
-      if (searchTerm) {
-        const { data } = await axiosInstance.get<PropertyApiResponse<PaginatedResponse<PropertyListItem>>>(
-          "/api/properties/search",
-          {
-            params: {
-              SearchTerm: searchTerm,
-              PageNumber: pageNumber,
-              PageSize: pageSize,
-            },
-          }
-        );
-
-        let result = data.data;
-        if (!result) return result;
-
-        const hasExtraFilters =
-          Boolean(params.propertyType) ||
-          Boolean(params.propertyStatus) ||
-          Boolean(params.city) ||
-          (params.isAvailable !== undefined && params.isAvailable !== "") ||
-          (params.isFeatured !== undefined && params.isFeatured !== "");
-
-        if (hasExtraFilters && result.items) {
-          let filteredItems = [...result.items];
-
-          if (params.propertyType) {
-            filteredItems = filteredItems.filter(
-              (p) => String(p.propertyType) === String(params.propertyType)
-            );
-          }
-
-          if (params.propertyStatus) {
-            filteredItems = filteredItems.filter(
-              (p) =>
-                "propertyStatus" in p &&
-                String((p as unknown as { propertyStatus: unknown }).propertyStatus) === String(params.propertyStatus)
-            );
-          }
-
-          if (params.city) {
-            filteredItems = filteredItems.filter(
-              (p) => p.city?.toLowerCase() === String(params.city).toLowerCase()
-            );
-          }
-
-          if (params.isAvailable !== undefined && params.isAvailable !== "") {
-            const availBool = params.isAvailable === true || params.isAvailable === "true";
-            filteredItems = filteredItems.filter((p) => p.isAvailable === availBool);
-          }
-
-          if (params.isFeatured !== undefined && params.isFeatured !== "") {
-            const featBool = params.isFeatured === true || params.isFeatured === "true";
-            filteredItems = filteredItems.filter((p) => p.isFeatured === featBool);
-          }
-
-          result = {
-            ...result,
-            items: filteredItems,
-            totalCount: filteredItems.length,
-            totalPages: Math.max(1, Math.ceil(filteredItems.length / pageSize)),
-          };
-        }
-
-        return result;
-      }
-
-      const filterParams: Record<string, unknown> = {
-        PageNumber: pageNumber,
-        PageSize: pageSize,
-      };
-
-      let isFiltering = false;
-      if (params.propertyType) {
-        filterParams.PropertyType = Number(params.propertyType);
-        isFiltering = true;
-      }
-      if (params.propertyStatus) {
-        filterParams.PropertyStatus = Number(params.propertyStatus);
-        isFiltering = true;
-      }
-      if (params.city) {
-        filterParams.City = params.city;
-        isFiltering = true;
-      }
-      if (params.isAvailable !== undefined && params.isAvailable !== "") {
-        filterParams.IsAvailable = params.isAvailable === true || params.isAvailable === "true";
-        isFiltering = true;
-      }
-      if (params.isFeatured !== undefined && params.isFeatured !== "") {
-        filterParams.IsFeatured = params.isFeatured === true || params.isFeatured === "true";
-        isFiltering = true;
-      }
-
-      if (isFiltering) {
-        const { data } = await axiosInstance.get<PropertyApiResponse<PaginatedResponse<PropertyListItem>>>(
-          "/api/properties/filter",
-          { params: filterParams }
-        );
-        return data.data;
-      }
-
-      const { data } = await axiosInstance.get<PropertyApiResponse<PaginatedResponse<PropertyListItem>>>(
+      // Fetch all properties to perform accurate, reliable local filtering
+      const { data: firstPage } = await axiosInstance.get<PropertyApiResponse<PaginatedResponse<PropertyListItem>>>(
         "/api/properties",
-        { params: { pageNumber, pageSize } }
+        { params: { pageNumber: 1, pageSize: 100 } }
       );
-      return data.data;
+
+      let allItems: PropertyListItem[] = firstPage?.data?.items ? [...firstPage.data.items] : [];
+      const totalBackendPages = firstPage?.data?.totalPages ?? 1;
+
+      if (totalBackendPages > 1) {
+        const extraPages = await Promise.all(
+          Array.from({ length: totalBackendPages - 1 }, (_, i) => i + 2).map((p) =>
+            axiosInstance.get<PropertyApiResponse<PaginatedResponse<PropertyListItem>>>(
+              "/api/properties",
+              { params: { pageNumber: p, pageSize: 100 } }
+            )
+          )
+        );
+        for (const res of extraPages) {
+          if (res.data?.data?.items) {
+            allItems = allItems.concat(res.data.data.items);
+          }
+        }
+      }
+
+      let filtered = allItems;
+
+      // 1. Filter strictly based on Location Category from /api/Categories
+      if (params.city) {
+        const target = String(params.city).trim().toLowerCase();
+        const categories = await Promise.all(filtered.map((item) => getPropertyCategory(item.id)));
+        filtered = filtered.filter((_, index) => {
+          const propCat = categories[index];
+          if (!propCat) return false;
+          return (
+            propCat.id.toLowerCase() === target ||
+            propCat.name.toLowerCase() === target
+          );
+        });
+      }
+
+      // 2. Search Term
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        filtered = filtered.filter((p) => {
+          return (
+            (p.name && p.name.toLowerCase().includes(term)) ||
+            (p.code && p.code.toLowerCase().includes(term)) ||
+            (p.propertyNumber && p.propertyNumber.toLowerCase().includes(term))
+          );
+        });
+      }
+
+      // 3. Property Type
+      if (params.propertyType) {
+        filtered = filtered.filter(
+          (p) => String(p.propertyType) === String(params.propertyType)
+        );
+      }
+
+      // 4. Property Status
+      if (params.propertyStatus) {
+        const statusTarget = String(params.propertyStatus).toLowerCase();
+        filtered = filtered.filter((p) => {
+          const statusVal = String((p as unknown as { propertyStatus?: unknown }).propertyStatus ?? "").toLowerCase();
+          const statusName = String((p as unknown as { propertyStatusName?: unknown }).propertyStatusName ?? "").toLowerCase();
+
+          if (statusTarget === "1" || statusTarget === "clean") {
+            return statusVal === "1" || statusVal === "clean" || statusName === "clean";
+          }
+          if (statusTarget === "2" || statusTarget === "dirty") {
+            return statusVal === "2" || statusVal === "dirty" || statusName === "dirty";
+          }
+          if (statusTarget === "3" || statusTarget === "maintenance") {
+            return statusVal === "3" || statusVal === "maintenance" || statusName === "maintenance";
+          }
+          return statusVal === statusTarget || statusName === statusTarget;
+        });
+      }
+
+      // 5. Availability
+      if (params.isAvailable !== undefined && params.isAvailable !== "") {
+        const availBool = params.isAvailable === true || params.isAvailable === "true";
+        filtered = filtered.filter((p) => p.isAvailable === availBool);
+      }
+
+      // 6. Featured
+      if (params.isFeatured !== undefined && params.isFeatured !== "") {
+        const featBool = params.isFeatured === true || params.isFeatured === "true";
+        filtered = filtered.filter((p) => p.isFeatured === featBool);
+      }
+
+      // 7. Local pagination
+      const totalCount = filtered.length;
+      const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+      const validPageNumber = Math.min(Math.max(1, pageNumber), totalPages);
+      const startIndex = (validPageNumber - 1) * pageSize;
+      const paginatedItems = filtered.slice(startIndex, startIndex + pageSize);
+
+      return {
+        items: paginatedItems,
+        pageNumber: validPageNumber,
+        pageSize,
+        totalCount,
+        totalPages,
+        hasPreviousPage: validPageNumber > 1,
+        hasNextPage: validPageNumber < totalPages,
+      };
     },
     staleTime: 30 * 1000,
   });

@@ -175,7 +175,7 @@ export default function PropertiesContent() {
               >
                 <option value="">All Locations</option>
                 {categories?.map((cat) => (
-                  <option key={cat.id} value={cat.name}>
+                  <option key={cat.id} value={cat.id}>
                     {cat.name}
                   </option>
                 ))}
