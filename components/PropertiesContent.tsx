@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import {
   useAdminProperties,
   useDeleteProperty,
+  useRestoreProperty,
   useUpdatePropertyAvailability,
   useUpdatePropertyFeatured,
   useUpdatePropertyStatus,
@@ -23,6 +24,7 @@ interface AdminPropertyFilters {
   propertyStatus: string;
   isAvailable: string;
   isFeatured: string;
+  isDeleted: string;
 }
 
 const defaultFilters: AdminPropertyFilters = {
@@ -30,12 +32,15 @@ const defaultFilters: AdminPropertyFilters = {
   propertyStatus: "",
   isAvailable: "",
   isFeatured: "",
+  isDeleted: "false",
 };
 
 export default function PropertiesContent() {
   const [page, setPage] = useState(1);
   const [draftFilters, setDraftFilters] = useState<AdminPropertyFilters>(defaultFilters);
   const [appliedFilters, setAppliedFilters] = useState<AdminPropertyFilters>(defaultFilters);
+
+  const viewingDeleted = appliedFilters.isDeleted === "true";
 
   const queryParams: AdminPropertiesQueryParams = {
     pageNumber: page,
@@ -44,17 +49,20 @@ export default function PropertiesContent() {
     propertyStatus: appliedFilters.propertyStatus || undefined,
     isAvailable: appliedFilters.isAvailable === "" ? undefined : appliedFilters.isAvailable,
     isFeatured: appliedFilters.isFeatured === "" ? undefined : appliedFilters.isFeatured,
+    isDeleted: viewingDeleted,
   };
 
   const { data: response, isLoading, isError } = useAdminProperties(queryParams);
-  const { mutate: updateAvailability, isPending: isUpdatingAvailability } = useUpdatePropertyAvailability();
+  const { mutate: updateAvailability } = useUpdatePropertyAvailability();
   const { mutate: updateFeatured } = useUpdatePropertyFeatured();
   const { mutate: updateStatus } = useUpdatePropertyStatus();
   const { mutate: deleteProperty } = useDeleteProperty();
+  const { mutate: restoreProperty } = useRestoreProperty();
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
   const [propertyToDelete, setPropertyToDelete] = useState<{ id: string; name: string } | null>(null);
-  const [deleteBlockedProperty, setDeleteBlockedProperty] = useState<{ id: string; name: string } | null>(null);
+  const [propertyToRestore, setPropertyToRestore] = useState<{ id: string; name: string } | null>(null);
   const [imagesPropertyId, setImagesPropertyId] = useState<string | null>(null);
 
   const items = response?.items ?? [];
@@ -63,7 +71,8 @@ export default function PropertiesContent() {
     appliedFilters.searchTerm ||
     appliedFilters.propertyStatus ||
     appliedFilters.isAvailable !== "" ||
-    appliedFilters.isFeatured !== ""
+    appliedFilters.isFeatured !== "" ||
+    appliedFilters.isDeleted === "true"
   );
 
   function handleApplyFilters(e: React.FormEvent) {
@@ -79,21 +88,15 @@ export default function PropertiesContent() {
   }
 
   function confirmDelete(id: string) {
-    const targetProperty = propertyToDelete;
     setDeletingId(id);
     deleteProperty(id, {
       onSuccess: () => {
         toast.success("Property deleted successfully.");
         setPropertyToDelete(null);
       },
-      onError: () => {
-        toast.error(
-          "This property cannot be deleted because it has existing booking references. Please make it Unavailable instead."
-        );
+      onError: (err) => {
+        toast.error(err instanceof Error ? err.message : "Could not delete property.");
         setPropertyToDelete(null);
-        if (targetProperty) {
-          setDeleteBlockedProperty(targetProperty);
-        }
       },
       onSettled: () => {
         setDeletingId(null);
@@ -101,20 +104,21 @@ export default function PropertiesContent() {
     });
   }
 
-  function handleMarkBlockedAsUnavailable() {
-    if (!deleteBlockedProperty) return;
-    updateAvailability(
-      { id: deleteBlockedProperty.id, isAvailable: false },
-      {
-        onSuccess: () => {
-          toast.success(`"${deleteBlockedProperty.name}" has been marked as Unavailable.`);
-          setDeleteBlockedProperty(null);
-        },
-        onError: () => {
-          toast.error("Could not update property availability.");
-        },
-      }
-    );
+  function confirmRestore(id: string) {
+    setRestoringId(id);
+    restoreProperty(id, {
+      onSuccess: () => {
+        toast.success("Property restored successfully.");
+        setPropertyToRestore(null);
+      },
+      onError: (err) => {
+        toast.error(err instanceof Error ? err.message : "Could not restore property.");
+        setPropertyToRestore(null);
+      },
+      onSettled: () => {
+        setRestoringId(null);
+      },
+    });
   }
 
   return (
@@ -201,6 +205,27 @@ export default function PropertiesContent() {
                 <option value="">All</option>
                 <option value="true">Available</option>
                 <option value="false">Unavailable</option>
+              </select>
+            </label>
+          </div>
+
+          {/* Deleted Filter */}
+          <div>
+            <label className="block">
+              <span className="mb-1.5 block text-[12px] font-medium text-[#667c74]">Archive / Deleted</span>
+              <select
+                value={draftFilters.isDeleted}
+                onChange={(e) => {
+                  const nextIsDeleted = e.target.value;
+                  const nextFilters = { ...draftFilters, isDeleted: nextIsDeleted };
+                  setDraftFilters(nextFilters);
+                  setPage(1);
+                  setAppliedFilters((prev) => ({ ...prev, isDeleted: nextIsDeleted }));
+                }}
+                className="h-10 w-full rounded-xl border border-[#dfe8e4] bg-white px-3 text-[13px] text-[#183c2f] outline-none transition focus:border-[#2e6f57]"
+              >
+                <option value="false">Active Properties</option>
+                <option value="true">Deleted Properties</option>
               </select>
             </label>
           </div>
@@ -324,9 +349,16 @@ export default function PropertiesContent() {
                     
                     <td className="px-6 py-4">
                       <div>
-                        <Link href={`/admin/properties/${prop.id}`} className="font-semibold text-[#183c2f] hover:underline">
-                          {prop.name}
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link href={`/admin/properties/${prop.id}`} className="font-semibold text-[#183c2f] hover:underline">
+                            {prop.name}
+                          </Link>
+                          {viewingDeleted && (
+                            <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-600">
+                              Deleted
+                            </span>
+                          )}
+                        </div>
                         <p className="mt-0.5 text-[12px] text-[#8a9a94]">
                           {prop.code} &bull; {getPropertyTypeLabel(prop.propertyType)}
                         </p>
@@ -338,10 +370,11 @@ export default function PropertiesContent() {
                     
                     {/* Featured Toggle */}
                     <td className="px-6 py-4 text-center">
-                      <label className="relative inline-flex cursor-pointer items-center">
+                      <label className={`relative inline-flex items-center ${viewingDeleted ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
                         <input
                           type="checkbox"
                           className="peer sr-only"
+                          disabled={viewingDeleted}
                           checked={prop.isFeatured}
                           onChange={(e) => updateFeatured({ id: prop.id, isFeatured: e.target.checked })}
                         />
@@ -351,10 +384,11 @@ export default function PropertiesContent() {
 
                     {/* Available Toggle */}
                     <td className="px-6 py-4 text-center">
-                      <label className="relative inline-flex cursor-pointer items-center">
+                      <label className={`relative inline-flex items-center ${viewingDeleted ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
                         <input
                           type="checkbox"
                           className="peer sr-only"
+                          disabled={viewingDeleted}
                           checked={prop.isAvailable}
                           onChange={(e) => updateAvailability({ id: prop.id, isAvailable: e.target.checked })}
                         />
@@ -367,9 +401,10 @@ export default function PropertiesContent() {
                        {/* Note: List item JSON doesn't contain propertyStatus by default. If it exists, render it. */}
                        {("propertyStatus" in prop) ? (
                          <select
+                           disabled={viewingDeleted}
                            value={(prop as unknown as { propertyStatus?: number }).propertyStatus}
                            onChange={(e) => updateStatus({ id: prop.id, status: Number(e.target.value) })}
-                           className="rounded-lg border border-[#dfe8e4] bg-[#f5f7f6] px-2 py-1 text-[12px] font-medium text-[#183c2f] outline-none transition focus:border-[#2e6f57]"
+                           className="rounded-lg border border-[#dfe8e4] bg-[#f5f7f6] px-2 py-1 text-[12px] font-medium text-[#183c2f] outline-none transition focus:border-[#2e6f57] disabled:cursor-not-allowed disabled:opacity-50"
                          >
                            <option value={PropertyStatus.Clean}>Clean</option>
                            <option value={PropertyStatus.Dirty}>Dirty</option>
@@ -382,19 +417,31 @@ export default function PropertiesContent() {
                     
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Link
-                          href={`/admin/properties/${prop.id}`}
-                          className="flex h-8 items-center gap-1.5 rounded-lg border border-[#dfe8e4] bg-white px-3 text-[12px] font-medium text-[#2e6f57] transition hover:border-[#2e6f57] hover:bg-[#f5f7f6]"
-                        >
-                          Edit
-                        </Link>
-                        <button
-                          onClick={() => setPropertyToDelete({ id: prop.id, name: prop.name })}
-                          disabled={deletingId === prop.id}
-                          className="flex h-8 items-center gap-1.5 rounded-lg border border-[#fecaca] bg-white px-3 text-[12px] font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50"
-                        >
-                          {deletingId === prop.id ? "Deleting…" : "Delete"}
-                        </button>
+                        {viewingDeleted ? (
+                          <button
+                            onClick={() => setPropertyToRestore({ id: prop.id, name: prop.name })}
+                            disabled={restoringId === prop.id}
+                            className="flex h-8 items-center gap-1.5 rounded-lg border border-[#2e6f57] bg-[#2e6f57] px-3 text-[12px] font-medium text-white transition hover:bg-[#255f49] disabled:opacity-50"
+                          >
+                            {restoringId === prop.id ? "Restoring…" : "Restore"}
+                          </button>
+                        ) : (
+                          <>
+                            <Link
+                              href={`/admin/properties/${prop.id}`}
+                              className="flex h-8 items-center gap-1.5 rounded-lg border border-[#dfe8e4] bg-white px-3 text-[12px] font-medium text-[#2e6f57] transition hover:border-[#2e6f57] hover:bg-[#f5f7f6]"
+                            >
+                              Edit
+                            </Link>
+                            <button
+                              onClick={() => setPropertyToDelete({ id: prop.id, name: prop.name })}
+                              disabled={deletingId === prop.id}
+                              className="flex h-8 items-center gap-1.5 rounded-lg border border-[#fecaca] bg-white px-3 text-[12px] font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                            >
+                              {deletingId === prop.id ? "Deleting…" : "Delete"}
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -431,7 +478,7 @@ export default function PropertiesContent() {
       <ConfirmModal
         isOpen={!!propertyToDelete}
         title="Delete Property"
-        message={`Are you sure you want to delete "${propertyToDelete?.name}"? All associated images, prices, and settings will be permanently lost.`}
+        message={`Are you sure you want to delete "${propertyToDelete?.name}"? You can view and restore deleted properties later using the Archive / Deleted filter.`}
         confirmText="Delete Property"
         onConfirm={() => propertyToDelete && confirmDelete(propertyToDelete.id)}
         onCancel={() => setPropertyToDelete(null)}
@@ -439,14 +486,13 @@ export default function PropertiesContent() {
       />
 
       <ConfirmModal
-        isOpen={!!deleteBlockedProperty}
-        title="Cannot Delete Property"
-        message={`"${deleteBlockedProperty?.name}" cannot be deleted because there are existing bookings referencing it. You should mark it as Unavailable instead so it is hidden from listings.`}
-        confirmText="Mark as Unavailable"
-        cancelText="Close"
-        onConfirm={handleMarkBlockedAsUnavailable}
-        onCancel={() => setDeleteBlockedProperty(null)}
-        isPending={isUpdatingAvailability}
+        isOpen={!!propertyToRestore}
+        title="Restore Property"
+        message={`Are you sure you want to restore "${propertyToRestore?.name}" back to active properties?`}
+        confirmText="Restore Property"
+        onConfirm={() => propertyToRestore && confirmRestore(propertyToRestore.id)}
+        onCancel={() => setPropertyToRestore(null)}
+        isPending={restoringId === propertyToRestore?.id}
       />
 
       <PropertyImagesModal

@@ -90,6 +90,8 @@ function hasServerRentFilters(params: PropertyQueryParams) {
     "bedroomNo",
     "LocationName",
     "locationName",
+    "IsDeleted",
+    "isDeleted",
   ]);
 
   return Object.entries(params).some(([key, value]) => {
@@ -141,6 +143,7 @@ export interface AdminPropertiesQueryParams {
   city?: string;
   isAvailable?: boolean | string;
   isFeatured?: boolean | string;
+  isDeleted?: boolean | string;
   pageNumber?: number;
   pageSize?: number;
 }
@@ -167,6 +170,7 @@ export function useAdminProperties(params: AdminPropertiesQueryParams = {}) {
       const pageNumber = params.pageNumber || 1;
       const pageSize = params.pageSize || 10;
       const searchTerm = params.searchTerm?.trim();
+      const isDeleted = params.isDeleted === true || params.isDeleted === "true";
       const hasFilters = Boolean(
         searchTerm ||
         params.propertyType ||
@@ -178,7 +182,7 @@ export function useAdminProperties(params: AdminPropertiesQueryParams = {}) {
       if (!hasFilters) {
         const { data } = await axiosInstance.get<PropertyApiResponse<PaginatedResponse<PropertyListItem>>>(
           "/api/properties",
-          { params: { pageNumber, pageSize } }
+          { params: { pageNumber, pageSize, IsDeleted: isDeleted } }
         );
         return data.data;
       }
@@ -186,7 +190,7 @@ export function useAdminProperties(params: AdminPropertiesQueryParams = {}) {
       // Fetch properties list to perform local filtering without N+1 requests
       const { data: firstPage } = await axiosInstance.get<PropertyApiResponse<PaginatedResponse<PropertyListItem>>>(
         "/api/properties",
-        { params: { pageNumber: 1, pageSize: 100 } }
+        { params: { pageNumber: 1, pageSize: 100, IsDeleted: isDeleted } }
       );
 
       let allItems: PropertyListItem[] = firstPage?.data?.items ? [...firstPage.data.items] : [];
@@ -197,7 +201,7 @@ export function useAdminProperties(params: AdminPropertiesQueryParams = {}) {
           Array.from({ length: totalBackendPages - 1 }, (_, i) => i + 2).map((p) =>
             axiosInstance.get<PropertyApiResponse<PaginatedResponse<PropertyListItem>>>(
               "/api/properties",
-              { params: { pageNumber: p, pageSize: 100 } }
+              { params: { pageNumber: p, pageSize: 100, IsDeleted: isDeleted } }
             )
           )
         );
@@ -290,7 +294,7 @@ export function useProperties(params: PropertyQueryParams = {}) {
       const safePageSize = Math.min(requestedPageSize, 100);
       const { data } = await axiosInstance.get<PropertyApiResponse<PaginatedResponse<PropertyListItem>>>(
         "/api/properties",
-        { params: { pageNumber: 1, ...params, pageSize: safePageSize } }
+        { params: { pageNumber: 1, IsDeleted: false, ...params, pageSize: safePageSize } }
       );
       const firstPage = data.data;
       if (
@@ -303,7 +307,7 @@ export function useProperties(params: PropertyQueryParams = {}) {
           Array.from({ length: firstPage.totalPages - 1 }, (_, i) => i + 2).map((p) =>
             axiosInstance.get<PropertyApiResponse<PaginatedResponse<PropertyListItem>>>(
               "/api/properties",
-              { params: { ...params, pageNumber: p, pageSize: 100 } }
+              { params: { IsDeleted: false, ...params, pageNumber: p, pageSize: 100 } }
             )
           )
         );
@@ -333,7 +337,7 @@ export function usePublicRentProperties(params: PropertyQueryParams = {}) {
       const groupedTypes = getGroupedRentPropertyTypes(params);
       const categoryId = getRentCategoryId(params);
       const bedroomNo = getRentBedroomNo(params);
-      const baseParams = stripRentGroupParams({ pageNumber: 1, pageSize: 10, ...params });
+      const baseParams = stripRentGroupParams({ pageNumber: 1, pageSize: 10, IsDeleted: false, ...params });
       if (Number(baseParams.pageSize) > 100) {
         baseParams.pageSize = 100;
       }
@@ -531,6 +535,23 @@ export function useDeleteProperty() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [KEY] });
+    },
+  });
+}
+
+export function useRestoreProperty() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await axiosInstance.put<PropertyApiResponse<boolean>>(`/api/properties/${id}/restore`);
+      if (data && data.isSuccess === false) {
+        throw new Error(data.errors?.[0] || data.message || "Could not restore property.");
+      }
+      return data;
+    },
+    onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: [KEY] });
+      queryClient.invalidateQueries({ queryKey: [KEY, id] });
     },
   });
 }
