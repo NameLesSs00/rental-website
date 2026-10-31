@@ -6,7 +6,7 @@ import { useAdminPropertyBookings, useCancelAdminBooking } from "@/lib/hooks/use
 import { toast } from "sonner";
 import { BOOKING_SOURCES } from "@/lib/types/booking";
 import type { AdminBookingListQuery, BookingSource } from "@/lib/types/booking";
-import { formatUsd } from "@/lib/utils/currency";
+import { formatCurrency } from "@/lib/utils/currency";
 
 type FilterState = {
   SearchTerm: string;
@@ -56,8 +56,8 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat("en", { year: "numeric", month: "short", day: "2-digit" }).format(new Date(value));
 }
 
-function money(value: number) {
-  return formatUsd(value);
+function money(value: number, currency = "USD") {
+  return formatCurrency(value, currency, 2);
 }
 
 function statusClass(statusName?: string | null) {
@@ -279,7 +279,6 @@ export default function AdminBookingsContent() {
                 <th className="px-4 py-3 text-right">Paid</th>
                 <th className="px-4 py-3 text-right">Remaining</th>
                 <th className="px-4 py-3 text-center">Status</th>
-                <th className="px-4 py-3 text-center">Payment</th>
                 <th className="px-4 py-3">Created</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
@@ -287,20 +286,20 @@ export default function AdminBookingsContent() {
             <tbody className="divide-y divide-[#f0f4f2]">
               {isLoading ? (
                 <tr>
-                  <td colSpan={11} className="py-20 text-center text-[13px] text-[#8a9a94]">
+                  <td colSpan={10} className="py-20 text-center text-[13px] text-[#8a9a94]">
                     <span className="mr-2 inline-block size-4 animate-spin rounded-full border-2 border-[#dfe8e4] border-t-[#2e6f57]" />
                     Loading bookings...
                   </td>
                 </tr>
               ) : isError ? (
                 <tr>
-                  <td colSpan={11} className="py-20 text-center text-[#183c2f]">
+                  <td colSpan={10} className="py-20 text-center text-[#183c2f]">
                     Failed to load bookings.
                   </td>
                 </tr>
               ) : bookings.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="py-24 text-center">
+                  <td colSpan={10} className="py-24 text-center">
                     <p className="text-[15px] font-medium text-[#183c2f]">No bookings found</p>
                     <p className="mt-1 text-[13px] text-[#667c74]">Try adjusting your filters.</p>
                   </td>
@@ -326,17 +325,12 @@ export default function AdminBookingsContent() {
                         to {formatDate(booking.checkOut)}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-right font-semibold text-[#183c2f]">{money(booking.totalPrice)}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-[#183c2f]">{money(booking.paidAmount ?? 0)}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-[#183c2f]">{money(booking.remainingAmount ?? 0)}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-[#183c2f]">{money(booking.totalPrice, booking.currency)}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-[#183c2f]">{money(booking.paidAmount ?? 0, booking.currency)}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-[#183c2f]">{money(booking.remainingAmount ?? 0, booking.currency)}</td>
                     <td className="px-4 py-3 text-center">
                       <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${statusClass(booking.statusName)}`}>
                         {booking.statusName}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${paymentStatusClass(booking.paymentStatusName)}`}>
-                        {booking.paymentStatusName || "-"}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-[12px] text-[#667c74] whitespace-nowrap">{formatDate(booking.createdAtUtc)}</td>

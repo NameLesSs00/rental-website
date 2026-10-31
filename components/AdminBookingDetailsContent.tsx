@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useAdminPropertyBooking, useMarkPropertyBookingAsPaidAll, useCancelAdminBooking } from "@/lib/hooks/useBooking";
 import { useBookingPayments, useUpdateAdminPayment, usePaymentHistory } from "@/lib/hooks/usePayment";
 import type { BookingPayment, PaymentHistoryItem } from "@/lib/hooks/usePayment";
-import { formatUsd } from "@/lib/utils/currency";
+import { formatCurrency } from "@/lib/utils/currency";
 
 function formatDate(value?: string | null) {
   if (!value) return "-";
@@ -24,8 +24,8 @@ function formatDateTime(value?: string | null) {
   }).format(new Date(value));
 }
 
-function money(value?: number | null) {
-  return formatUsd(value ?? 0);
+function money(value?: number | null, currency = "USD") {
+  return formatCurrency(value ?? 0, currency, 2);
 }
 
 function statusClass(statusName?: string | null) {
@@ -89,6 +89,9 @@ export default function AdminBookingDetailsContent({ id }: { id: string }) {
   const paidAmount = booking.paidAmount ?? 0;
   const remainingAmount = booking.remainingAmount ?? Math.max(0, totalPrice - paidAmount);
   const canMarkAsPaid = remainingAmount > 0 && booking.bookingSource === "Website";
+  // Booking totals (right-side summary) are stored in USD; only individual
+  // payments carry their own currency (e.g. EGP via Paymob).
+  const bookingCurrency = booking.currency || "USD";
 
   function handleMarkAsPaid() {
     markAsPaidAll(bookingId, {
@@ -220,6 +223,7 @@ export default function AdminBookingDetailsContent({ id }: { id: string }) {
             canMarkAsPaid={canMarkAsPaid}
             isMarkingPaid={isMarkingPaid}
             onMarkAsPaid={handleMarkAsPaid}
+            currency={bookingCurrency}
           />
         </aside>
       </div>
@@ -332,6 +336,7 @@ function PaymentSummary({
   canMarkAsPaid,
   isMarkingPaid,
   onMarkAsPaid,
+  currency = "USD",
 }: {
   totalPrice: number;
   requiredPaymentAmount: number;
@@ -341,6 +346,7 @@ function PaymentSummary({
   canMarkAsPaid: boolean;
   isMarkingPaid: boolean;
   onMarkAsPaid: () => void;
+  currency?: string;
 }) {
   return (
     <section className="rounded-2xl border border-[#dfe8e4] bg-white p-6 shadow-[0_8px_24px_rgba(31,77,61,0.05)]">
@@ -357,10 +363,10 @@ function PaymentSummary({
       </div>
 
       <div className="grid gap-3">
-        <PaymentMetric label="Total Price" value={money(totalPrice)} strong />
-        <PaymentMetric label="Required Online Payment" value={money(requiredPaymentAmount)} />
-        <PaymentMetric label="Paid Amount" value={money(paidAmount)} />
-        <PaymentMetric label="Remaining Amount" value={money(remainingAmount)} strong={remainingAmount > 0} />
+        <PaymentMetric label="Total Price" value={money(totalPrice, currency)} strong />
+        <PaymentMetric label="Required Online Payment" value={money(requiredPaymentAmount, currency)} />
+        <PaymentMetric label="Paid Amount" value={money(paidAmount, currency)} />
+        <PaymentMetric label="Remaining Amount" value={money(remainingAmount, currency)} strong={remainingAmount > 0} />
       </div>
 
       {canMarkAsPaid && (
@@ -466,15 +472,18 @@ function PaymentsSection({
                       <td className="px-4 py-3 font-semibold text-[#183c2f]">{payment.paymentTypeName}</td>
                       <td className="px-4 py-3 font-semibold text-[#183c2f]">
                         {isEditing ? (
-                          <input
-                            type="number"
-                            value={editAmount.toString()}
-                            onChange={(e) => setEditAmount(e.target.value === "" ? "" : Number(e.target.value))}
-                            className="h-8 w-24 rounded-lg border border-[#dfe8e4] bg-white px-2 text-[13px] text-[#183c2f] outline-none transition focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]"
-                            autoFocus
-                          />
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="number"
+                              value={editAmount.toString()}
+                              onChange={(e) => setEditAmount(e.target.value === "" ? "" : Number(e.target.value))}
+                              className="h-8 w-24 rounded-lg border border-[#dfe8e4] bg-white px-2 text-[13px] text-[#183c2f] outline-none transition focus:border-[#2e6f57] focus:ring-1 focus:ring-[#2e6f57]"
+                              autoFocus
+                            />
+                            <span className="text-[12px] font-medium text-[#667c74]">{payment.currency || "USD"}</span>
+                          </div>
                         ) : (
-                          money(payment.amount)
+                          money(payment.amount, payment.currency || "USD")
                         )}
                       </td>
                       <td className="px-4 py-3 text-[#414847]">{payment.providerName}</td>
@@ -528,7 +537,7 @@ function PaymentsSection({
                     {isViewingHistory && (
                       <tr key={`history-${payment.id}`}>
                         <td colSpan={canEdit ? 10 : 9} className="bg-[#f8faf9] px-4 py-3">
-                          <PaymentHistoryRows paymentId={payment.id} />
+                          <PaymentHistoryRows paymentId={payment.id} currency={payment.currency} />
                         </td>
                       </tr>
                     )}
@@ -544,7 +553,7 @@ function PaymentsSection({
   );
 }
 
-function PaymentHistoryRows({ paymentId }: { paymentId: string }) {
+function PaymentHistoryRows({ paymentId, currency = "USD" }: { paymentId: string; currency?: string }) {
   const { data: history = [], isLoading, isError } = usePaymentHistory(paymentId);
 
   if (isLoading) return <p className="text-[12px] text-[#8a9a94]">Loading history...</p>;
@@ -556,7 +565,7 @@ function PaymentHistoryRows({ paymentId }: { paymentId: string }) {
       {history.map((item: PaymentHistoryItem) => (
         <div key={item.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg bg-white px-3 py-2 text-[12px]">
           <span className="font-semibold text-[#183c2f]">
-            {formatUsd(item.previousAmount)} → {formatUsd(item.newAmount)}
+            {money(item.previousAmount, currency)} → {money(item.newAmount, currency)}
           </span>
           <span className="text-[#667c74]">by <span className="font-medium text-[#414847]">{item.changedBy}</span></span>
           <span className="text-[#8a9a94]">

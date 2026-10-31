@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useCreateAdminPropertyBooking, useInHouseBookings } from "@/lib/hooks/useBooking";
-import { useBulkConfigureDailyPrices, useProperties, usePropertyDailyPrices } from "@/lib/hooks/useProperties";
+import { useBulkConfigureDailyPrices, useProperties, usePropertyAvailability, usePropertyDailyPrices } from "@/lib/hooks/useProperties";
 import { BOOKING_SOURCES } from "@/lib/types/booking";
 import type { BookingSource } from "@/lib/types/booking";
 import { formatUsd } from "@/lib/utils/currency";
@@ -120,10 +120,27 @@ export default function AdminCreateBookingContent() {
     return [selectedProperty, ...matches];
   }, [properties, propertySearch, selectedProperty]);
   const selectedUnitStatus = operationalData?.units.find((unit) => unit.unitId === propertyId);
+  const { data: availabilityData, isLoading: isLoadingAvailability } = usePropertyAvailability(
+    propertyId,
+    validDates ? checkIn : "",
+    validDates ? checkOut : ""
+  );
+  const conflictingBooking = useMemo(() => {
+    if (!validDates) return undefined;
+    return (availabilityData?.bookingCalendar ?? []).find((booking) => {
+      const from = booking.from?.slice(0, 10) ?? "";
+      const to = booking.to?.slice(0, 10) ?? "";
+      const isNotBookable = booking.isBookable === false || String(booking.isBookable).toLowerCase() === "false";
+      return isNotBookable && from < checkOut && to > checkIn;
+    });
+  }, [availabilityData, checkIn, checkOut, validDates]);
+  const isRangeBooked = Boolean(propertyId && conflictingBooking);
   const knownUnavailable =
-    selectedUnitStatus &&
-    selectedUnitStatus.status.toLowerCase() !== "available" &&
-    selectedUnitStatus.statusName.toLowerCase() !== "available";
+    isRangeBooked ||
+    (selectedUnitStatus &&
+      selectedUnitStatus.status.toLowerCase() !== "available" &&
+      selectedUnitStatus.statusName.toLowerCase() !== "available");
+  const isFormLocked = Boolean(propertyId && validDates && (knownUnavailable || isLoadingAvailability));
 
   // Compute total price from daily prices (sum of nights: checkIn up to but not including checkOut)
   const computedTotal = useMemo(() => {
@@ -367,6 +384,16 @@ export default function AdminCreateBookingContent() {
             </div>
           )}
 
+          {propertyId && validDates && knownUnavailable && (
+            <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] leading-5 text-red-600 sm:col-span-2 lg:col-span-4">
+              This property is already booked for the selected dates
+              {conflictingBooking
+                ? ` (${conflictingBooking.bookingNumber ?? "booking"}: ${conflictingBooking.from.slice(0, 10)} → ${conflictingBooking.to.slice(0, 10)})`
+                : ""}
+              . Choose different dates or another property to continue.
+            </div>
+          )}
+
           <DateField label="Check-in" value={checkIn} onChange={setCheckIn} />
           <DateField label="Check-out" value={checkOut} onChange={setCheckOut} />
 
@@ -397,6 +424,7 @@ export default function AdminCreateBookingContent() {
           </label>
         </section>
 
+        <fieldset disabled={isFormLocked} className="contents disabled:[&_input]:cursor-not-allowed disabled:[&_input]:bg-[#f1f4f3] disabled:[&_input]:opacity-60 disabled:[&_select]:cursor-not-allowed disabled:[&_select]:opacity-60 disabled:[&_button]:cursor-not-allowed disabled:[&_button]:opacity-60">
         {selectedProperty && (
           <section className="grid gap-4 rounded-xl border border-[#dfe8e4] bg-[#f8fbfa] p-4 lg:grid-cols-[minmax(0,1fr)_220px_auto] lg:items-end">
             <div>
@@ -483,6 +511,7 @@ export default function AdminCreateBookingContent() {
             )}
           </div>
         </section>
+        </fieldset>
 
         {formError && (
           <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] leading-5 text-red-600">
@@ -499,7 +528,7 @@ export default function AdminCreateBookingContent() {
           </Link>
           <button
             type="submit"
-            disabled={isPending}
+            disabled={isPending || isFormLocked}
             className="inline-flex h-11 items-center justify-center rounded-full bg-[#2e6f57] px-6 text-[14px] font-semibold text-white shadow-sm transition hover:bg-[#255f49] disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isPending ? "Creating..." : "Create Booking"}

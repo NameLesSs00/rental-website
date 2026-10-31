@@ -120,6 +120,7 @@ export interface AdminBookingListItem {
   requiredPaymentAmount?: number;
   paidAmount?: number;
   remainingAmount?: number;
+  currency?: string;
   status: number;
   statusName: string;
   paymentStatus?: number;
@@ -141,6 +142,7 @@ export interface AdminBookingDetails {
   requiredPaymentAmount?: number;
   paidAmount?: number;
   remainingAmount?: number;
+  currency?: string;
   cancellationReason?: string | null;
   cancelledAt?: string | null;
   hasExtensions?: boolean;

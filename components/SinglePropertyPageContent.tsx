@@ -42,6 +42,10 @@ type CalendarDay = {
 };
 
 type BookingCalendarItem = {
+  bookingId?: string;
+  bookingNumber?: string;
+  status?: number;
+  statusName?: string;
   from: string;
   to: string;
   isBookable?: boolean;
@@ -302,15 +306,24 @@ function PropertyDetailView({
   const bookings = (availabilityData?.bookingCalendar || []) as BookingCalendarItem[];
 
   const isDateBooked = (dateString: string) => {
-    const overlappingBooking = bookings.find((booking) => dateString >= booking.from && dateString < booking.to);
-    return Boolean(overlappingBooking && overlappingBooking.isBookable === false);
+    return bookings.some((booking) => {
+      const from = booking.from ? booking.from.slice(0, 10) : "";
+      const to = booking.to ? booking.to.slice(0, 10) : "";
+      const isNotBookable = booking.isBookable === false || String(booking.isBookable).toLowerCase() === "false";
+      return dateString >= from && dateString < to && isNotBookable;
+    });
   };
 
   const rangeHasBookedDate = (from: string, to: string, calendar = bookings) => {
     let cursor = from;
     while (cursor < to) {
-      const overlappingBooking = calendar.find((booking) => cursor >= booking.from && cursor < booking.to);
-      if (overlappingBooking && overlappingBooking.isBookable === false) return true;
+      const hasUnbookable = calendar.some((booking) => {
+        const bFrom = booking.from ? booking.from.slice(0, 10) : "";
+        const bTo = booking.to ? booking.to.slice(0, 10) : "";
+        const isNotBookable = booking.isBookable === false || String(booking.isBookable).toLowerCase() === "false";
+        return cursor >= bFrom && cursor < bTo && isNotBookable;
+      });
+      if (hasUnbookable) return true;
       cursor = addDays(cursor, 1);
     }
     return false;
@@ -1062,9 +1075,9 @@ function AvailabilityCalendarSection({
       </div>
 
       <div className="mt-6 flex flex-wrap gap-4 border-t border-[#edf2ef] pt-4 text-[11px] leading-4 text-[#6f8793]">
-        <Legend label={t("property.past")} className="bg-[#f1f5f8]" />
+        <Legend label={t("property.past")} className="bg-[#f1f5f8] opacity-60" />
         <Legend label={t("property.today")} className="border border-[#2e6f57] bg-white" />
-        <Legend label={t("property.booked")} className="bg-[#e9eef3]" />
+        <Legend label={t("property.booked")} className="border border-[#dfe7ee] bg-[#e9eef3] opacity-60" />
         <Legend label={t("property.selected")} className="bg-[#2e6f57]" />
       </div>
     </section>
@@ -1135,10 +1148,10 @@ function CalendarDayButton({
       : day.status === "available"
         ? "border-[#2e6f57] bg-[#f5f7f6] font-bold text-[#2e6f57] shadow-[0_1px_0_rgba(46,111,87,0.08)] hover:bg-[#eef7f3]"
         : day.status === "booked"
-          ? "border-[#dfe7ee] bg-[#edf2f6] text-[#7e8c98]"
+          ? "border-[#dfe7ee] bg-[#e9eef3] text-[#94a3b8] line-through opacity-60 cursor-not-allowed select-none"
           : day.status === "today"
             ? "border-[#2e6f57] bg-white text-[#2e6f57] hover:bg-[#eef7f3]"
-            : "border-[#dfe7ee] bg-white text-[#2f3a48]";
+            : "border-[#dfe7ee] bg-[#f1f5f8] text-[#9ca3af] opacity-50 cursor-not-allowed select-none";
 
   return (
     <button
