@@ -6,6 +6,8 @@ import { X, ShieldCheck, Clock, AlertCircle } from "lucide-react";
 import { useI18n } from "@/components/I18nProvider";
 import { PayPalProvider } from "./PayPalProvider";
 import { PayPalCheckout } from "./PayPalCheckout";
+import { PaymobCheckout } from "./PaymobCheckout";
+import { PaymentMethodSelector, type PaymentGatewayMethod } from "./PaymentMethodSelector";
 import type { CapturePaypalResponseData } from "@/lib/hooks/usePayment";
 import { formatCurrency } from "@/lib/utils/currency";
 
@@ -62,7 +64,7 @@ function ExpiryBar({ onExpire }: { onExpire: () => void }) {
     .padStart(2, "0")}`;
 
   return (
-    <div className="flex items-center justify-between border-b border-[#fef3d6] bg-[#fef9ec] px-6 py-2.5 text-[12px] text-[#8a6814]">
+    <div className="flex shrink-0 items-center justify-between border-b border-[#fef3d6] bg-[#fef9ec] px-6 py-2.5 text-[12px] text-[#8a6814]">
       <span className="flex items-center gap-1.5 font-medium">
         <Clock className="size-3.5 text-[#cfb072]" />
         {t("payment.expiryModal.timeRemaining")}
@@ -89,14 +91,28 @@ export function PayPalPaymentModal({
   const [isExpired, setIsExpired] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [captureResult, setCaptureResult] = useState<CapturePaypalResponseData | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentGatewayMethod>("paypal");
 
+  // Lock body scroll and listen for Escape key when sidebar is open
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") onClose();
+      };
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        document.body.style.overflow = "";
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+    } else {
+      document.body.style.overflow = "";
       setIsExpired(false);
       setIsSuccess(false);
       setCaptureResult(null);
+      setPaymentMethod("paypal");
     }
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   const handleExpire = React.useCallback(() => {
     setIsExpired(true);
@@ -129,21 +145,23 @@ export function PayPalPaymentModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-[100] overflow-hidden"
     >
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 z-[99] bg-black/60 backdrop-blur-xs transition-opacity duration-300"
         onClick={onClose}
       />
 
-      {/* Modal Container */}
-      <div
-        className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl transition-all"
+      {/* Slide-over Drawer Panel */}
+      <aside
+        className={`fixed inset-y-0 ${
+          isRtl ? "left-0" : "right-0"
+        } z-[100] flex w-full max-w-full flex-col bg-white shadow-2xl transition-transform duration-300 ease-out sm:max-w-[490px]`}
         dir={isRtl ? "rtl" : "ltr"}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#dfe8e4] bg-[#f8faf9] px-6 py-4">
+        {/* Fixed Header */}
+        <div className="flex shrink-0 items-center justify-between border-b border-[#dfe8e4] bg-[#f8faf9] px-6 py-4">
           <div className="flex items-center gap-2.5">
             <div className="flex size-9 items-center justify-center rounded-xl bg-[#2e6f57]/10 text-[#2e6f57]">
               <ShieldCheck className="size-5" />
@@ -167,11 +185,11 @@ export function PayPalPaymentModal({
           </button>
         </div>
 
-        {/* Expiry Bar */}
+        {/* Fixed Expiry Bar */}
         <ExpiryBar onExpire={handleExpire} />
 
-        {/* Content Body */}
-        <div className="space-y-4 p-6">
+        {/* Scrollable Content Body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 overscroll-contain">
           {/* Booking Summary Box */}
           <div className="rounded-xl border border-[#dfe8e4] bg-[#fbfdfc] p-4 text-[13px]">
             <div className="flex items-start justify-between gap-3">
@@ -278,24 +296,49 @@ export function PayPalPaymentModal({
               </button>
             </div>
           ) : (
-            <PayPalProvider currency={booking.currency}>
-              <div className="pt-1">
-                <PayPalCheckout
+            <div className="space-y-4">
+              {/* Payment Gateway Selector */}
+              <PaymentMethodSelector
+                selected={paymentMethod}
+                onSelect={setPaymentMethod}
+                currency={booking.currency}
+              />
+
+              {/* Dynamic Gateway View */}
+              {paymentMethod === "paypal" ? (
+                <PayPalProvider currency={booking.currency}>
+                  <div className="pt-1">
+                    <PayPalCheckout
+                      bookingId={booking.bookingId}
+                      onSuccess={handleSuccess}
+                      onError={(err) => console.error("PAYPAL MODAL ERROR:", err)}
+                    />
+                  </div>
+                </PayPalProvider>
+              ) : (
+                <PaymobCheckout
                   bookingId={booking.bookingId}
-                  onSuccess={handleSuccess}
-                  onError={(err) => console.error("PAYPAL MODAL ERROR:", err)}
+                  bookingNumber={booking.bookingNumber}
+                  amount={booking.amount}
+                  currency={booking.currency}
+                  kind={booking.kind}
+                  onError={(err) => console.error("PAYMOB MODAL ERROR:", err)}
                 />
-              </div>
-            </PayPalProvider>
+              )}
+            </div>
           )}
 
           {/* Security note */}
-          <div className="flex items-center justify-center gap-1.5 pt-1 text-center text-[11px] text-[#8a9a94]">
+          <div className="flex items-center justify-center gap-1.5 pt-2 pb-4 text-center text-[11px] text-[#8a9a94]">
             <ShieldCheck className="size-3.5 text-[#2e6f57]" />
-            <span>{t("payment.paypal.securePayment")}</span>
+            <span>
+              {paymentMethod === "paypal"
+                ? t("payment.paypal.securePayment")
+                : t("payment.paymob.securePayment")}
+            </span>
           </div>
         </div>
-      </div>
+      </aside>
     </div>
   );
 }

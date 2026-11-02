@@ -465,7 +465,16 @@
     },
     "cancelTitle": "Paiement annulé",
     "cancelBody": "Vous avez annulé le paiement. Aucun montant n'a été débité.",
-    "notifying": "Notification au serveur..."
+    "notifying": "Notification au serveur...",
+    "methods": {
+      "title": "Choisissez votre mode de paiement",
+      "paypalTitle": "Carte de crédit / débit",
+      "paypalSubtitle": "Visa, MasterCard, Amex internationales",
+      "paymobTitle": "Cartes locales et portefeuilles (Paymob)",
+      "paymobSubtitle": "Meeza, cartes EGP, Vodafone Cash, ValU",
+      "payWithPaymob": "Continuer vers Paymob",
+      "paymobRedirectNotice": "Vous serez redirigé en toute sécurité vers Paymob pour finaliser votre paiement."
+    }
   },
   "contact": {
     "metadataTitle": "Contacter Hurghada Vacation Homes",
@@ -676,15 +685,33 @@
     "heroAlt": "Appartement de vacances Hurghada Vacation Homes",
     "card1Title": "1. Informations collectées",
     "card1Items": [
-      ["Détails de réservation :", "Nom complet, adresse e-mail, numéro de téléphone et nombre de personnes pour la confirmation du séjour."],
-      ["Vérification d'identité :", "Copie du passeport ou de la pièce d'identité requise à l'arrivée conformément aux exigences de l'Autorité du Tourisme égyptienne et pour l'accès aux barrières du complexe."],
-      ["Dossiers de paiement :", "Identifiants de transaction et horodatages. Nous ne stockons aucun numéro complet de carte bancaire."]
+      [
+        "Détails de réservation :",
+        "Nom complet, adresse e-mail, numéro de téléphone et nombre de personnes pour la confirmation du séjour."
+      ],
+      [
+        "Vérification d'identité :",
+        "Copie du passeport ou de la pièce d'identité requise à l'arrivée conformément aux exigences de l'Autorité du Tourisme égyptienne et pour l'accès aux barrières du complexe."
+      ],
+      [
+        "Dossiers de paiement :",
+        "Identifiants de transaction et horodatages. Nous ne stockons aucun numéro complet de carte bancaire."
+      ]
     ],
     "card2Title": "2. Utilisation de vos données",
     "card2Items": [
-      ["Gestion des séjours :", "Organisation de l'arrivée (dès 14h00), du départ (avant 12h00) et remise des clés."],
-      ["Communication client :", "Envoi des instructions d'accès, codes de porte et assistance durant votre séjour."],
-      ["Services additionnels :", "Réservation de transferts aéroport, blanchisserie à la demande ou ménage supplémentaire sur demande."]
+      [
+        "Gestion des séjours :",
+        "Organisation de l'arrivée (dès 14h00), du départ (avant 12h00) et remise des clés."
+      ],
+      [
+        "Communication client :",
+        "Envoi des instructions d'accès, codes de porte et assistance durant votre séjour."
+      ],
+      [
+        "Services additionnels :",
+        "Réservation de transferts aéroport, blanchisserie à la demande ou ménage supplémentaire sur demande."
+      ]
     ],
     "card3Title": "3. Règlement intérieur & Sécurité",
     "card3Body": "Conformément au règlement intérieur de nos résidences, seuls les invités enregistrés sont autorisés dans les appartements. Les pièces d'identité garantissent la conformité avec la sécurité du complexe, empêchent les fêtes ou visiteurs non autorisés et préservent la tranquillité du voisinage.",
@@ -704,9 +731,18 @@
     "heroAlt": "Hébergement de vacances Hurghada Vacation Homes",
     "card1Title": "1. Situations éligibles au remboursement",
     "card1Items": [
-      ["Annulations dans les délais :", "Remboursement intégral ou partiel selon notre calendrier d'annulation (14 jours ou plus pour 100 %, 7 à 13 jours pour 50 %)."],
-      ["Conditions inhabitables :", "En cas de panne majeure (plomberie, électricité, structure) non résolue sans délai, les voyageurs sont remboursés intégralement."],
-      ["Paiements en double ou excédentaires :", "Régularisés immédiatement après confirmation auprès de la passerelle de paiement."]
+      [
+        "Annulations dans les délais :",
+        "Remboursement intégral ou partiel selon notre calendrier d'annulation (14 jours ou plus pour 100 %, 7 à 13 jours pour 50 %)."
+      ],
+      [
+        "Conditions inhabitables :",
+        "En cas de panne majeure (plomberie, électricité, structure) non résolue sans délai, les voyageurs sont remboursés intégralement."
+      ],
+      [
+        "Paiements en double ou excédentaires :",
+        "Régularisés immédiatement après confirmation auprès de la passerelle de paiement."
+      ]
     ],
     "card2Title": "2. État des lieux au départ",
     "card2Intro": "Lors du départ (avant 12h00), notre équipe inspecte l'appartement pour vérifier le respect du règlement. Les dégradations suivantes entraîneront des déductions sur la caution :",
@@ -718,9 +754,18 @@
     ],
     "card3Title": "3. Éléments non remboursables",
     "card3Items": [
-      ["Nuitées consommées :", "Les jours de séjour effectués et les dates passées ne sont jamais remboursables."],
-      ["Services payants effectués :", "Les services de blanchisserie livrés, les transferts exécutés et les ménages réalisés ne sont pas remboursables."],
-      ["Infractions au règlement :", "Les réservations interrompues pour fêtes non autorisées, visiteurs clandestins ou animaux sans autorisation ne donnent droit à aucun remboursement."]
+      [
+        "Nuitées consommées :",
+        "Les jours de séjour effectués et les dates passées ne sont jamais remboursables."
+      ],
+      [
+        "Services payants effectués :",
+        "Les services de blanchisserie livrés, les transferts exécutés et les ménages réalisés ne sont pas remboursables."
+      ],
+      [
+        "Infractions au règlement :",
+        "Les réservations interrompues pour fêtes non autorisées, visiteurs clandestins ou animaux sans autorisation ne donnent droit à aucun remboursement."
+      ]
     ],
     "card4Title": "4. Délais et modes de traitement",
     "card4Body": "Les remboursements approuvés sont effectués sur le moyen de paiement d'origine utilisé lors de la réservation (PayPal ou carte bancaire). Après validation administrative, les fonds apparaissent généralement sur votre compte sous 5 à 10 jours ouvrés selon votre banque.",
@@ -738,9 +783,18 @@
     "heroAlt": "Logement à louer Hurghada Vacation Homes",
     "card1Title": "1. Délais standards d'annulation",
     "card1Items": [
-      ["14 jours ou plus avant l'arrivée :", "Les annulations effectuées au moins 14 jours avant l'heure d'arrivée (14h00) sont éligibles à un remboursement intégral de l'acompte."],
-      ["7 à 13 jours avant l'arrivée :", "Les annulations effectuées entre 7 et 13 jours avant donnent droit à 50 % de remboursement de l'acompte."],
-      ["Moins de 7 jours / Non-présentation :", "Les annulations à moins de 7 jours ou les non-présentations sans préavis ne sont pas remboursables."]
+      [
+        "14 jours ou plus avant l'arrivée :",
+        "Les annulations effectuées au moins 14 jours avant l'heure d'arrivée (14h00) sont éligibles à un remboursement intégral de l'acompte."
+      ],
+      [
+        "7 à 13 jours avant l'arrivée :",
+        "Les annulations effectuées entre 7 et 13 jours avant donnent droit à 50 % de remboursement de l'acompte."
+      ],
+      [
+        "Moins de 7 jours / Non-présentation :",
+        "Les annulations à moins de 7 jours ou les non-présentations sans préavis ne sont pas remboursables."
+      ]
     ],
     "card2Title": "2. Infractions au règlement intérieur",
     "card2Intro": "Tout voyageur s'engage à respecter notre règlement intérieur dès sa réservation. L'annulation immédiate sans remboursement s'applique en cas de manquements graves tels que :",

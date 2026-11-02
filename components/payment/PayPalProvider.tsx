@@ -18,7 +18,7 @@ export function PayPalProvider({ children, currency }: PayPalProviderProps) {
       clientId: PAYPAL_CLIENT_ID,
       currency: currency || PAYPAL_CURRENCY,
       intent: "capture" as const,
-      components: "card-fields",
+      components: "buttons,card-fields",
       locale: getPayPalLocale(locale),
     }),
     [currency, locale]

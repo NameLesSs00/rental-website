@@ -478,7 +478,16 @@
     },
     "cancelTitle": "Payment Cancelled",
     "cancelBody": "You cancelled the payment process. No charges have been made to your account.",
-    "notifying": "Notifying server..."
+    "notifying": "Notifying server...",
+    "methods": {
+      "title": "Select Payment Method",
+      "paypalTitle": "Credit / Debit Card",
+      "paypalSubtitle": "International Visa, MasterCard, Amex",
+      "paymobTitle": "Local Cards & Wallets (Paymob)",
+      "paymobSubtitle": "Meeza, EGP Cards, Vodafone Cash, ValU",
+      "payWithPaymob": "Continue to Paymob",
+      "paymobRedirectNotice": "You will be securely redirected to Paymob to complete your payment with local Egyptian cards or wallets."
+    }
   },
   "contact": {
     "metadataTitle": "Contact Hurghada Vacation Homes",
@@ -737,15 +746,33 @@
     "heroAlt": "Hurghada Vacation Homes guest apartment",
     "card1Title": "1. Information We Collect",
     "card1Items": [
-      ["Booking Details:", "Full name, email address, phone number, and number of guests for reservation confirmations."],
-      ["Identity Verification:", "Passport or national ID copies required upon arrival to comply with Egyptian Tourism Authority rules and resort gate access."],
-      ["Payment Records:", "Transaction IDs and payment confirmation timestamps. We do not store raw credit card numbers."]
+      [
+        "Booking Details:",
+        "Full name, email address, phone number, and number of guests for reservation confirmations."
+      ],
+      [
+        "Identity Verification:",
+        "Passport or national ID copies required upon arrival to comply with Egyptian Tourism Authority rules and resort gate access."
+      ],
+      [
+        "Payment Records:",
+        "Transaction IDs and payment confirmation timestamps. We do not store raw credit card numbers."
+      ]
     ],
     "card2Title": "2. How We Use Your Data",
     "card2Items": [
-      ["Reservation Management:", "Scheduling check-in (from 2:00 PM), check-out (before 12:00 PM), and key handovers."],
-      ["Guest Communication:", "Providing arrival instructions, apartment access codes, and assistance during your stay."],
-      ["Additional Services:", "Arranging optional airport transfers, on-demand laundry, or extra apartment cleaning upon request."]
+      [
+        "Reservation Management:",
+        "Scheduling check-in (from 2:00 PM), check-out (before 12:00 PM), and key handovers."
+      ],
+      [
+        "Guest Communication:",
+        "Providing arrival instructions, apartment access codes, and assistance during your stay."
+      ],
+      [
+        "Additional Services:",
+        "Arranging optional airport transfers, on-demand laundry, or extra apartment cleaning upon request."
+      ]
     ],
     "card3Title": "3. House Rules & Security",
     "card3Body": "In accordance with our property house rules, only registered guests are permitted inside the apartments. Guest identification records ensure compliance with resort safety protocols, prevent unauthorized visitors or parties, and guarantee a peaceful community environment for all neighbors.",
@@ -765,9 +792,18 @@
     "heroAlt": "Hurghada Vacation Homes hospitality property",
     "card1Title": "1. Eligible Refund Scenarios",
     "card1Items": [
-      ["Timely Cancellations:", "Full or partial refunds issued in accordance with our Cancellation Policy timelines (14+ days for full refund, 7–13 days for 50%)."],
-      ["Uninhabitable Conditions:", "If a property experiences major plumbing, electrical, or structural failures that cannot be repaired promptly, guests are refunded in full."],
-      ["Overpayments or Duplicate Charges:", "Reconciled immediately upon identification with the payment gateway."]
+      [
+        "Timely Cancellations:",
+        "Full or partial refunds issued in accordance with our Cancellation Policy timelines (14+ days for full refund, 7–13 days for 50%)."
+      ],
+      [
+        "Uninhabitable Conditions:",
+        "If a property experiences major plumbing, electrical, or structural failures that cannot be repaired promptly, guests are refunded in full."
+      ],
+      [
+        "Overpayments or Duplicate Charges:",
+        "Reconciled immediately upon identification with the payment gateway."
+      ]
     ],
     "card2Title": "2. Check-out Property Inspection",
     "card2Intro": "During check-out (before 12:00 PM noon), our local team inspects the apartment to ensure compliance with House Rules. The following damages will result in deductions from the security deposit:",
@@ -779,9 +815,18 @@
     ],
     "card3Title": "3. Non-Refundable Items",
     "card3Items": [
-      ["Consumed Nights:", "Completed accommodation days and past dates are non-refundable."],
-      ["Completed Paid Services:", "Rendered laundry services, executed airport transfers, and completed cleaning requests are non-refundable once delivered."],
-      ["Rule Violations:", "Bookings terminated on-site due to unauthorized parties, illegal visitors, or pet violations do not qualify for any refund."]
+      [
+        "Consumed Nights:",
+        "Completed accommodation days and past dates are non-refundable."
+      ],
+      [
+        "Completed Paid Services:",
+        "Rendered laundry services, executed airport transfers, and completed cleaning requests are non-refundable once delivered."
+      ],
+      [
+        "Rule Violations:",
+        "Bookings terminated on-site due to unauthorized parties, illegal visitors, or pet violations do not qualify for any refund."
+      ]
     ],
     "card4Title": "4. Processing Timeline & Methods",
     "card4Body": "Approved refunds are processed through the original payment method used during booking (PayPal account or bank card). Once initiated by our administrative team, funds typically appear in your account within 5 to 10 business days, depending on your bank or payment provider's settlement schedule.",
@@ -799,9 +844,18 @@
     "heroAlt": "Hurghada Vacation Homes rental property",
     "card1Title": "1. Standard Cancellation Windows",
     "card1Items": [
-      ["14+ Days Prior:", "Cancellations made at least 14 days before the scheduled check-in date (2:00 PM) are eligible for a full refund of the deposit paid."],
-      ["7 to 13 Days Prior:", "Cancellations made between 7 and 13 days prior are eligible for a 50% refund of the deposit."],
-      ["Less than 7 Days / No-Show:", "Cancellations made within 7 days of arrival or failure to check in without notice are non-refundable."]
+      [
+        "14+ Days Prior:",
+        "Cancellations made at least 14 days before the scheduled check-in date (2:00 PM) are eligible for a full refund of the deposit paid."
+      ],
+      [
+        "7 to 13 Days Prior:",
+        "Cancellations made between 7 and 13 days prior are eligible for a 50% refund of the deposit."
+      ],
+      [
+        "Less than 7 Days / No-Show:",
+        "Cancellations made within 7 days of arrival or failure to check in without notice are non-refundable."
+      ]
     ],
     "card2Title": "2. House Rules Violations",
     "card2Intro": "Guests agree to respect our official House Rules upon booking. Immediate reservation cancellation without refund applies if a guest commits serious breaches during their stay, including:",

@@ -2,6 +2,8 @@
 
 import React, { useRef, useState, useEffect } from "react";
 import {
+  PayPalButtons,
+  FUNDING,
   PayPalCardFieldsProvider,
   PayPalNameField,
   PayPalNumberField,
@@ -16,7 +18,7 @@ import {
   type CapturePaypalResponseData,
 } from "@/lib/hooks/usePayment";
 import { useI18n } from "@/components/I18nProvider";
-import { Lock, CreditCard, AlertCircle } from "lucide-react";
+import { Lock, CreditCard } from "lucide-react";
 
 export interface PayPalCheckoutProps {
   bookingId: string;
@@ -24,6 +26,20 @@ export interface PayPalCheckoutProps {
   onCancel?: () => void;
   onError?: (error: Error) => void;
 }
+
+const isWindowClosedError = (err: unknown): boolean => {
+  if (!err) return false;
+  const msg =
+    typeof err === "object" && "message" in err
+      ? String((err as { message: unknown }).message)
+      : String(err);
+  return (
+    msg.includes("Target window is closed") ||
+    msg.includes("Window was closed") ||
+    msg.includes("popup close") ||
+    msg.includes("closed")
+  );
+};
 
 function CardSubmitButton({
   isCapturing,
@@ -69,7 +85,7 @@ function CardSubmitButton({
       type="button"
       onClick={handlePayClick}
       disabled={isBusy}
-      className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#2e6f57] text-[15px] font-bold text-white shadow-md transition-all hover:bg-[#255f49] hover:shadow-lg active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+      className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#2e6f57] text-[15px] font-bold text-white shadow-md transition-all hover:bg-[#255f49] hover:shadow-lg active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
     >
       {isBusy ? (
         <>
@@ -89,37 +105,82 @@ function CardSubmitButton({
 export function PayPalCheckout({
   bookingId,
   onSuccess,
+  onCancel,
   onError,
 }: PayPalCheckoutProps) {
   const { t } = useI18n();
-  const [{ isPending, isRejected, isResolved }] = usePayPalScriptReducer();
+  const [{ isPending, isRejected }] = usePayPalScriptReducer();
   const [localError, setLocalError] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const isCapturingRef = useRef(false);
-  const [isEligible, setIsEligible] = useState<boolean | null>(null);
 
   const { mutateAsync: initializePaypal } = useInitializePaypalPayment();
   const { mutateAsync: capturePaypal } = useCapturePaypalPayment();
 
-  useEffect(() => {
-    if (isResolved && typeof window !== "undefined") {
-      try {
-        const paypalWindow = window as unknown as {
-          paypal?: {
-            CardFields?: () => { isEligible: () => boolean };
-          };
-        };
-        const eligible = Boolean(paypalWindow.paypal?.CardFields?.().isEligible());
-        setIsEligible(eligible);
-        if (!eligible) {
-          console.warn("[PayPal] CardFields is not eligible for this client/session.");
-        }
-      } catch (e) {
-        console.error("[PayPal] Error checking CardFields eligibility:", e);
-        setIsEligible(false);
+  const handleCreateOrder = async () => {
+    setLocalError(null);
+    try {
+      console.log("[PayPal] Initializing payment for booking:", bookingId);
+      const res = await initializePaypal({ bookingId });
+      console.log("[PayPal] Initialized order response:", res);
+      if (!res.orderId) {
+        throw new Error("No PayPal Order ID was returned by the server.");
       }
+      return res.orderId;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : t("booking.errors.paymentStartFailed");
+      setLocalError(message);
+      onError?.(err instanceof Error ? err : new Error(message));
+      throw err;
     }
-  }, [isResolved]);
+  };
+
+  const handleApprove = async (data: { orderID: string }) => {
+    if (isCapturingRef.current) return;
+    isCapturingRef.current = true;
+    setIsCapturing(true);
+    setLocalError(null);
+
+    try {
+      console.log("[PayPal] onApprove received data:", data);
+      const capturePayload = {
+        orderId: data.orderID,
+        bookingId,
+      };
+      console.log("[PayPal] Sending capture request with payload:", capturePayload);
+      const captureRes = await capturePaypal(capturePayload);
+      console.log("[PayPal] Capture successful:", captureRes);
+      onSuccess(captureRes);
+    } catch (err: unknown) {
+      isCapturingRef.current = false;
+      setIsCapturing(false);
+      console.error("[PayPal] Capture request failed:", err);
+      const message = err instanceof Error ? err.message : t("payment.paypal.captureFailed");
+      setLocalError(message);
+      onError?.(err instanceof Error ? err : new Error(message));
+    }
+  };
+
+  const handleCancel = () => {
+    setLocalError(t("payment.paypal.cancelled"));
+    onCancel?.();
+  };
+
+  const handleError = (err: unknown) => {
+    console.error("PAYPAL SDK ERROR:", err);
+    setIsCapturing(false);
+    isCapturingRef.current = false;
+    if (isWindowClosedError(err)) {
+      setLocalError(t("payment.paypal.cancelled"));
+      return;
+    }
+    const message =
+      err && typeof err === "object" && "message" in err
+        ? String((err as { message: unknown }).message)
+        : t("payment.paypal.captureFailed");
+    setLocalError(message);
+    onError?.(new Error(message));
+  };
 
   if (isRejected) {
     return (
@@ -149,25 +210,6 @@ export function PayPalCheckout({
     );
   }
 
-  if (isEligible === false) {
-    return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-[13px] text-amber-900">
-        <div className="flex items-start gap-2.5">
-          <AlertCircle className="size-5 shrink-0 text-amber-600" />
-          <div>
-            <h4 className="font-bold">Card Fields Not Eligible</h4>
-            <p className="mt-1 text-[12px] leading-relaxed text-amber-800">
-              PayPal evaluated direct card fields as not eligible for this account/session.
-              In PayPal Developer, Advanced Card Payments requires generating a client token on the backend
-              (<code className="font-mono text-[11px]">/v1/identity/generate-token</code>) or activating
-              Advanced Credit and Debit Cards in your sandbox app settings.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="relative w-full">
       {isCapturing && (
@@ -185,60 +227,47 @@ export function PayPalCheckout({
         </div>
       )}
 
-      <PayPalCardFieldsProvider
-        createOrder={async () => {
-          setLocalError(null);
-          try {
-            console.log("[PayPal] Initializing payment for booking:", bookingId);
-            const res = await initializePaypal({ bookingId });
-            console.log("[PayPal] Initialized order response:", res);
-            if (!res.orderId) {
-              throw new Error("No PayPal Order ID was returned by the server.");
-            }
-            return res.orderId;
-          } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : t("booking.errors.paymentStartFailed");
-            setLocalError(message);
-            onError?.(err instanceof Error ? err : new Error(message));
-            throw err;
-          }
-        }}
-        onApprove={async (data) => {
-          if (isCapturingRef.current) return;
-          isCapturingRef.current = true;
-          setIsCapturing(true);
-          setLocalError(null);
+      {/* 1. Yellow PayPal Button (Direct PayPal window popup) */}
+      <div className="space-y-1.5">
+        <label className="block text-[12px] font-semibold text-[#183c2f]">
+          Quick Checkout with PayPal
+        </label>
+        <div className="w-full overflow-hidden rounded-xl border border-[#e8dcb5] bg-[#fffbf0] p-1 shadow-xs">
+          <PayPalButtons
+            fundingSource={FUNDING.PAYPAL}
+            style={{
+              layout: "horizontal",
+              color: "gold",
+              shape: "rect",
+              height: 44,
+              tagline: false,
+              label: "paypal",
+            }}
+            disabled={isCapturing}
+            forceReRender={[bookingId]}
+            createOrder={handleCreateOrder}
+            onApprove={handleApprove}
+            onCancel={handleCancel}
+            onError={handleError}
+          />
+        </div>
+      </div>
 
-          try {
-            console.log("[PayPal] onApprove received data:", data);
-            const capturePayload = {
-              orderId: data.orderID,
-              bookingId,
-            };
-            console.log("[PayPal] Sending capture request with payload:", capturePayload);
-            const captureRes = await capturePaypal(capturePayload);
-            console.log("[PayPal] Capture successful:", captureRes);
-            onSuccess(captureRes);
-          } catch (err: unknown) {
-            isCapturingRef.current = false;
-            setIsCapturing(false);
-            console.error("[PayPal] Capture request failed:", err);
-            const message = err instanceof Error ? err.message : t("payment.paypal.captureFailed");
-            setLocalError(message);
-            onError?.(err instanceof Error ? err : new Error(message));
-          }
-        }}
-        onError={(err) => {
-          console.error("PAYPAL SDK ERROR:", err);
-          setIsCapturing(false);
-          isCapturingRef.current = false;
-          const message =
-            err && typeof err === "object" && "message" in err
-              ? String(err.message)
-              : t("payment.paypal.captureFailed");
-          setLocalError(message);
-          onError?.(new Error(message));
-        }}
+      {/* 2. Subtle Divider */}
+      <div className="relative my-4 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-[#e2e8f0]" />
+        </div>
+        <span className="relative bg-white px-3 text-[11px] font-semibold uppercase tracking-wider text-[#8a9a94]">
+          or pay with card
+        </span>
+      </div>
+
+      {/* 3. Card Fields */}
+      <PayPalCardFieldsProvider
+        createOrder={handleCreateOrder}
+        onApprove={handleApprove}
+        onError={handleError}
         style={{
           input: {
             "font-size": "15px",
@@ -263,7 +292,7 @@ export function PayPalCheckout({
           },
         }}
       >
-        <form onSubmit={(e) => e.preventDefault()} className="space-y-4 pt-1">
+        <form onSubmit={(e) => e.preventDefault()} className="space-y-3.5">
           {/* Cardholder Name */}
           <div>
             <label className="mb-1.5 flex items-center justify-between text-[13px] font-semibold text-[#183c2f]">
