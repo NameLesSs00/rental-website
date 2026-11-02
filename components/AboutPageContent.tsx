@@ -184,7 +184,7 @@ function AboutImage({ shouldReduceMotion, viewport }: MotionProps) {
         fill
         priority
         sizes="(min-width: 1024px) 623px, 100vw"
-        className="object-cover object-center transition duration-700 lg:scale-[1.35]"
+        className="object-cover object-center transition duration-700"
       />
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#183c2f]/70 to-transparent p-5 text-white lg:p-8">
         <p className="max-w-sm text-[18px] font-semibold leading-7 lg:text-[24px]">
@@ -287,7 +287,7 @@ function AboutCta({ shouldReduceMotion, viewport }: MotionProps) {
       className="relative min-h-[280px] overflow-hidden bg-[#1f4d3d] lg:min-h-[460px]"
     >
       <Image
-        src="/about/cta-map-pin.png"
+        src="/about/about-cta.jpeg"
         alt=""
         fill
         sizes="100vw"

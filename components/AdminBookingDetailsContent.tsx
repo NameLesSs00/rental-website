@@ -7,6 +7,7 @@ import { useAdminPropertyBooking, useMarkPropertyBookingAsPaidAll, useCancelAdmi
 import { useBookingPayments, useUpdateAdminPayment, usePaymentHistory } from "@/lib/hooks/usePayment";
 import type { BookingPayment, PaymentHistoryItem } from "@/lib/hooks/usePayment";
 import { formatCurrency } from "@/lib/utils/currency";
+import { formatBookingSource } from "@/lib/types/booking";
 
 function formatDate(value?: string | null) {
   if (!value) return "-";
@@ -170,7 +171,7 @@ export default function AdminBookingDetailsContent({ id }: { id: string }) {
               <Detail label="Booking ID" value={bookingId} mono />
               <Detail label="Booking Number" value={booking.bookingNumber} mono />
               <Detail label="Booking Status" value={bookingStatusName} strong />
-              <Detail label="Booking Source" value={booking.bookingSourceName || booking.bookingSource || "-"} />
+              <Detail label="Booking Source" value={formatBookingSource(booking.bookingSourceName || booking.bookingSource)} />
               <Detail label="Payment Status" value={paymentStatusName} strong badgeClass={statusClass(paymentStatusName)} />
               <Detail label="Created" value={formatDateTime(booking.createdAtUtc)} />
               <Detail label="Confirmed" value={formatDateTime(booking.confirmedAt)} />

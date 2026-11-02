@@ -18,6 +18,13 @@ export const BOOKING_SOURCES = ["Website", "AirPnP", "Booking", "Hotelcom", "Exp
 
 export type BookingSource = (typeof BOOKING_SOURCES)[number];
 
+export function formatBookingSource(source?: string | null): string {
+  if (!source) return "-";
+  if (source === "Other") return "Individual";
+  if (source === "AirPnP") return "Airbnb";
+  return source;
+}
+
 export interface RentBookingRequest {
   propertyId: string;
   fullName: string;
@@ -95,6 +102,7 @@ export interface AdminBookingListQuery {
   BookingNumber?: string;
   PropertyId?: string;
   PropertyNumber?: string;
+  PropertyNumbers?: string[];
   CustomerName?: string;
   CustomerEmail?: string;
   BookingSource?: BookingSource;

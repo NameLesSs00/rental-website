@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAdminPropertyBookings, useCancelAdminBooking } from "@/lib/hooks/useBooking";
+import { useProperties } from "@/lib/hooks/useProperties";
 import { toast } from "sonner";
-import { BOOKING_SOURCES } from "@/lib/types/booking";
+import { BOOKING_SOURCES, formatBookingSource } from "@/lib/types/booking";
 import type { AdminBookingListQuery, BookingSource } from "@/lib/types/booking";
 import { formatCurrency } from "@/lib/utils/currency";
 
@@ -34,11 +35,61 @@ const defaultFilters: FilterState = {
   IsDescending: true,
 };
 
-function compactQuery(filters: FilterState, page: number): AdminBookingListQuery {
+function matchesProperty(property: { propertyNumber?: string; code?: string; name?: string }, term: string) {
+  const t = term.trim().toLowerCase();
+  const fields = [property.propertyNumber, property.code, property.name].filter(Boolean).map((s) => s!.toLowerCase());
+
+  // 1. Direct substring match anywhere
+  if (fields.some((f) => f.includes(t))) return true;
+
+  // 2. Subsequence match on digits (e.g. '306' in '3106' or '3206')
+  const digits = t.replace(/\D/g, "");
+  if (digits.length >= 2) {
+    const regex = new RegExp(digits.split("").join(".*"));
+    if (fields.some((f) => regex.test(f.replace(/\D/g, "")))) return true;
+  }
+  return false;
+}
+
+function compactQuery(
+  filters: FilterState,
+  page: number,
+  properties: Array<{ propertyNumber?: string; code?: string; name?: string }> = []
+): AdminBookingListQuery {
+  let propertyNumbers: string[] | undefined = undefined;
+  let singlePropertyNumber: string | undefined = undefined;
+  let fallbackBookingNumber: string | undefined = undefined;
+
+  const rawPropInput = filters.PropertyNumber.trim();
+  if (rawPropInput) {
+    const matched = properties.filter((p) => matchesProperty(p, rawPropInput));
+    if (matched.length > 0) {
+      propertyNumbers = Array.from(new Set(matched.map((p) => p.propertyNumber!).filter(Boolean)));
+    } else {
+      // If it doesn't match any property, check if the input is a booking number (e.g. "172", "BK-000172", "BK-172")
+      // so users who enter a booking number into the Property No. field still get their booking
+      const cleanDigits = rawPropInput.replace(/^#/, "").replace(/^bk[-_ ]?/i, "");
+      if (/^\d+$/.test(cleanDigits) && !filters.BookingNumber.trim()) {
+        fallbackBookingNumber = cleanDigits;
+      } else {
+        singlePropertyNumber = rawPropInput;
+      }
+    }
+  }
+
+  // Also normalize BookingNumber if user entered e.g. "BK-172", "#172", or "172"
+  let cleanBookingNumber: string | undefined = undefined;
+  const rawBookingInput = filters.BookingNumber.trim();
+  if (rawBookingInput) {
+    const digitsOnly = rawBookingInput.replace(/^#/, "").replace(/^bk[-_ ]?/i, "");
+    cleanBookingNumber = /^\d+$/.test(digitsOnly) ? digitsOnly : rawBookingInput;
+  }
+
   return {
     SearchTerm: filters.SearchTerm || undefined,
-    BookingNumber: filters.BookingNumber || undefined,
-    PropertyNumber: filters.PropertyNumber || undefined,
+    BookingNumber: cleanBookingNumber || fallbackBookingNumber || undefined,
+    PropertyNumber: singlePropertyNumber,
+    PropertyNumbers: propertyNumbers,
     CustomerName: filters.CustomerName || undefined,
     CustomerEmail: filters.CustomerEmail || undefined,
     BookingSource: filters.BookingSource ? (filters.BookingSource as BookingSource) : undefined,
@@ -81,7 +132,11 @@ export default function AdminBookingsContent() {
   const [page, setPage] = useState(1);
   const [draftFilters, setDraftFilters] = useState(defaultFilters);
   const [filters, setFilters] = useState(defaultFilters);
-  const query = compactQuery(filters, page);
+
+  const { data: propertiesResponse } = useProperties({ pageNumber: 1, pageSize: 100 });
+  const properties = propertiesResponse?.items ?? [];
+
+  const query = compactQuery(filters, page, properties);
   const { data: response, isLoading, isError } = useAdminPropertyBookings(query);
   const bookings = response?.items ?? [];
 
@@ -168,7 +223,7 @@ export default function AdminBookingsContent() {
           label="Property No."
           value={draftFilters.PropertyNumber}
           onChange={(value) => updateFilter("PropertyNumber", value)}
-          placeholder="PR-000001"
+          placeholder="PR-000001, 306, unit..."
         />
         <FilterInput
           label="Customer"
@@ -207,7 +262,7 @@ export default function AdminBookingsContent() {
             <option value="">All</option>
             {BOOKING_SOURCES.map((source) => (
               <option key={source} value={source}>
-                {source}
+                {formatBookingSource(source)}
               </option>
             ))}
           </select>
@@ -315,7 +370,7 @@ export default function AdminBookingsContent() {
                     </td>
                     <td className="px-4 py-3 text-[#414847]">{booking.fullName}</td>
                     <td className="px-4 py-3 text-[12px] text-[#667c74]">
-                      {booking.bookingSourceName || booking.bookingSource || "-"}
+                      {formatBookingSource(booking.bookingSourceName || booking.bookingSource)}
                     </td>
                     <td className="px-4 py-3 text-[12px] whitespace-nowrap">
                       <div className="font-semibold text-[#183c2f] leading-tight">

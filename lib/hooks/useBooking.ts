@@ -77,10 +77,58 @@ export function useAdminPropertyBookings(params: AdminBookingListQuery = {}) {
   return useQuery({
     queryKey: [BOOKING_KEY, "admin", "property", params],
     queryFn: async () => {
+      const { PropertyNumbers, ...restParams } = params;
+
+      // When multiple property numbers match (e.g. searching '306' matching both Unit 3106 and 3206)
+      if (PropertyNumbers && PropertyNumbers.length > 1) {
+        const results = await Promise.all(
+          PropertyNumbers.map((propNum) =>
+            axiosInstance.get<
+              AdminBookingApiResponse<PaginatedBookingResponse<AdminBookingListItem>>
+            >("/api/property-bookings", {
+              params: { PageNumber: 1, PageSize: 50, ...restParams, PropertyNumber: propNum },
+            })
+          )
+        );
+
+        const allItems: AdminBookingListItem[] = [];
+        const seenIds = new Set<string>();
+        for (const res of results) {
+          for (const item of res.data.data?.items || []) {
+            if (!seenIds.has(item.id)) {
+              seenIds.add(item.id);
+              allItems.push(item);
+            }
+          }
+        }
+
+        const page = restParams.PageNumber || 1;
+        const pageSize = restParams.PageSize || 10;
+        const startIndex = (page - 1) * pageSize;
+        const pagedItems = allItems.slice(startIndex, startIndex + pageSize);
+
+        return {
+          items: pagedItems,
+          pageNumber: page,
+          pageSize,
+          totalCount: allItems.length,
+          totalPages: Math.max(1, Math.ceil(allItems.length / pageSize)),
+          hasPreviousPage: page > 1,
+          hasNextPage: startIndex + pageSize < allItems.length,
+        };
+      }
+
+      const effectivePropertyNumber = PropertyNumbers?.[0] || restParams.PropertyNumber;
+
       const { data } = await axiosInstance.get<
         AdminBookingApiResponse<PaginatedBookingResponse<AdminBookingListItem>>
       >("/api/property-bookings", {
-        params: { PageNumber: 1, PageSize: 10, ...params },
+        params: {
+          PageNumber: 1,
+          PageSize: 10,
+          ...restParams,
+          PropertyNumber: effectivePropertyNumber || undefined,
+        },
       });
       return data.data;
     },

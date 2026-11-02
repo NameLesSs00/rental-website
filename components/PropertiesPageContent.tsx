@@ -261,6 +261,7 @@ function PropertiesHero() {
         sizes="100vw"
         className="pointer-events-none object-cover opacity-20 mix-blend-plus-lighter"
       />
+      {/* Chair illustration commented out per request
       <motion.div
         initial={{ x: isRtl ? -100 : 100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
@@ -276,6 +277,7 @@ function PropertiesHero() {
           className="object-contain object-center"
         />
       </motion.div>
+      */}
       <div className="relative z-10 mx-auto w-full max-w-[1536px] px-5 lg:px-10">
         <motion.div
           initial={{ y: 20, opacity: 0 }}
@@ -456,14 +458,17 @@ function FilterForm({
           className="block"
           selectClassName={inputCls}
         />
-        <div>
-          <span className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wide text-[#656566]">{t("rent.priceNight")}</span>
-          <div className="flex items-center gap-2">
-            <input type="number" name="minPrice" defaultValue={minPriceVal} placeholder={t("rent.min")} min="0" onWheel={(e) => (e.target as HTMLElement).blur()} className={inputCls} />
-            <span className="shrink-0 text-[#bbb]">-</span>
-            <input type="number" name="maxPrice" defaultValue={maxPriceVal} placeholder={t("rent.max")} min="0" onWheel={(e) => (e.target as HTMLElement).blur()} className={inputCls} />
+        {/* Min/Max price filter hidden from UI per user request */}
+        {false && (
+          <div>
+            <span className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wide text-[#656566]">{t("rent.priceNight")}</span>
+            <div className="flex items-center gap-2">
+              <input type="number" name="minPrice" defaultValue={minPriceVal} placeholder={t("rent.min")} min="0" onWheel={(e) => (e.target as HTMLElement).blur()} className={inputCls} />
+              <span className="shrink-0 text-[#bbb]">-</span>
+              <input type="number" name="maxPrice" defaultValue={maxPriceVal} placeholder={t("rent.max")} min="0" onWheel={(e) => (e.target as HTMLElement).blur()} className={inputCls} />
+            </div>
           </div>
-        </div>
+        )}
         <label className="block">
           <span className="mb-1.5 block text-[12px] font-semibold uppercase tracking-wide text-[#656566]">{t("rent.adults")}</span>
           <input type="number" name="minCapacity" defaultValue={minCapacityVal} placeholder={t("rent.any")} min="1" onWheel={(e) => (e.target as HTMLElement).blur()} className={inputCls} />

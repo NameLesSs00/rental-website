@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useCreateAdminPropertyBooking, useInHouseBookings } from "@/lib/hooks/useBooking";
 import { useBulkConfigureDailyPrices, useProperties, usePropertyAvailability, usePropertyDailyPrices } from "@/lib/hooks/useProperties";
-import { BOOKING_SOURCES } from "@/lib/types/booking";
+import { BOOKING_SOURCES, formatBookingSource } from "@/lib/types/booking";
 import type { BookingSource } from "@/lib/types/booking";
 import { formatUsd } from "@/lib/utils/currency";
 
@@ -406,7 +406,7 @@ export default function AdminCreateBookingContent() {
             >
               {adminBookingSources.map((source) => (
                 <option key={source} value={source}>
-                  {source}
+                  {formatBookingSource(source)}
                 </option>
               ))}
             </select>

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useDownloadReport, useReportPreview, useCancelledBookingsPreview } from "@/lib/hooks/useReports";
 import { formatUsd } from "@/lib/utils/currency";
+import { formatBookingSource } from "@/lib/types/booking";
 import type { FormEvent } from "react";
 import type {
   ReportDownloadRequest,
@@ -301,7 +302,7 @@ export default function ReportsContent() {
                           <td className="px-5 py-4 text-[#667c74]">{item.propertyName}</td>
                           <td className="px-5 py-4 text-[13px] text-[#667c74]">{formatDate(item.checkIn)} - {formatDate(item.checkOut)}</td>
                           <td className="px-5 py-4 text-right font-semibold text-[#183c2f]">{item.nights}</td>
-                          <td className="px-5 py-4 text-[#667c74]">{item.bookingSourceName || "-"}</td>
+                          <td className="px-5 py-4 text-[#667c74]">{formatBookingSource(item.bookingSourceName)}</td>
                           <td className="px-5 py-4 text-right text-[#183c2f]">{formatUsd(item.paidAmount)}</td>
                           <td className="px-5 py-4 text-right text-[#183c2f]">{formatUsd(item.remainingAmount)}</td>
                           <td className="px-5 py-4 text-[13px] text-[#667c74]">{item.cancellationReason || "-"}</td>

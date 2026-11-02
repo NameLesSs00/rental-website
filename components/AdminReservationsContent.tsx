@@ -5,6 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { useInHouseBookings } from "@/lib/hooks/useBooking";
 import { useDownloadReport } from "@/lib/hooks/useReports";
+import { formatBookingSource } from "@/lib/types/booking";
 
 function getDateOffset(days: number) {
   const date = new Date();
@@ -423,7 +424,7 @@ export default function AdminReservationsContent() {
                               </span>
                               <span className="text-[#dfe8e4]">•</span>
                               <span className="rounded-md bg-[#eff8f3] px-2 py-0.5 text-[11px] font-semibold text-[#2e6f57]">
-                                {booking.bookingSourceName || booking.bookingSource}
+                                {formatBookingSource(booking.bookingSourceName || booking.bookingSource)}
                               </span>
                             </div>
                           ))}

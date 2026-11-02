@@ -103,15 +103,19 @@ export default async function HouseRulesPage({ params }: PageProps<"/[locale]/ho
             </p>
           </div>
 
-          <div className="relative min-h-[260px] overflow-hidden rounded-2xl bg-[#dfe8e4] shadow-[0_22px_50px_rgba(31,77,61,0.12)] sm:min-h-[360px] lg:min-h-[420px]">
-            <Image
-              src="/rent/hero-house.png"
-              alt={messages.houseRules.heroAlt}
-              fill
-              priority
-              sizes="(min-width: 1024px) 520px, 100vw"
-              className="object-cover object-center"
-            />
+          <div className="flex items-center justify-center lg:justify-end">
+            <div className="relative flex aspect-square w-full max-w-[320px] items-center justify-center rounded-3xl border border-[#2e6f57]/15 bg-gradient-to-br from-white via-[#f4f8f6] to-[#e6f0eb] p-8 shadow-[0_20px_50px_rgba(46,111,87,0.08)] sm:max-w-[360px] sm:p-10 lg:max-w-[380px]">
+              <div className="relative aspect-square w-full max-w-[220px] sm:max-w-[250px] lg:max-w-[270px]">
+                <Image
+                  src="/Rules.png"
+                  alt={messages.houseRules.heroAlt}
+                  fill
+                  priority
+                  sizes="(min-width: 1024px) 270px, 220px"
+                  className="object-contain object-center drop-shadow-[0_6px_16px_rgba(46,111,87,0.12)]"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>
