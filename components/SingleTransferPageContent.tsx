@@ -4,7 +4,7 @@ import { type Dispatch, type SetStateAction, useState } from "react";
 import Image from "next/image";
 import { useJourneyById } from "@/lib/hooks/useJourney";
 import { useCreateTransferBooking } from "@/lib/hooks/useBooking";
-import { useInitializePaymobPayment } from "@/lib/hooks/usePayment";
+import PayPalPaymentModal, { type PendingBookingPayment } from "@/components/payment/PayPalPaymentModal";
 import { API_BASE_URL } from "@/lib/api/config";
 import { savePaymentBookingContext } from "@/lib/utils/paymentBookingContext";
 import { formatUsd } from "@/lib/utils/currency";
@@ -48,7 +48,8 @@ export default function SingleTransferPageContent({ id }: SingleTransferPageCont
   const { t } = useI18n();
   const { data: journey, isLoading, isError } = useJourneyById(id);
   const { mutate: createTransferBooking, isPending: isCreatingBooking } = useCreateTransferBooking();
-  const { mutate: initializePayment, isPending: isInitializingPayment } = useInitializePaymobPayment();
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [pendingBooking, setPendingBooking] = useState<PendingBookingPayment | null>(null);
   const setPageEntity = useHeaderStore((state) => state.setPageEntity);
 
   useEffect(() => {
@@ -56,7 +57,7 @@ export default function SingleTransferPageContent({ id }: SingleTransferPageCont
     return () => setPageEntity(null, null);
   }, [id, setPageEntity]);
 
-  const isPending = isCreatingBooking || isInitializingPayment;
+  const isPending = isCreatingBooking;
 
   const [transferData, setTransferData] = useState<TransferBookingForm>({
     fullName: "",
@@ -118,42 +119,36 @@ export default function SingleTransferPageContent({ id }: SingleTransferPageCont
       {
         onSuccess: (res) => {
           const bookingId = res.data.bookingId;
-          initializePayment(
-            { bookingId },
-            {
-              onSuccess: (initRes) => {
-                const checkoutUrl = initRes.checkoutUrl || initRes.approveUrl;
-                savePaymentBookingContext({
-                  kind: "transfer",
-                  bookingId,
-                  bookingNumber: res.data.bookingNumber,
-                  journeyId: id,
-                  journeyName: journey.name,
-                  pickupDate: transferData.pickupDate,
-                  pickupTime: transferData.pickupTime,
-                  passengers: Number(transferData.passengers),
-                  amount: initRes.amount,
-                  currency: initRes.currency,
-                  checkoutUrl,
-                  paymentId: initRes.paymentId,
-                });
+          const transferAmount = (journey?.basePrice ?? 0) * (transferData.tripType === 2 ? 2 : 1);
 
-                toast.warning(t("payment.expiryModal.warning"), {
-                  duration: 4000,
-                  icon: "⏳",
-                  description: `${t("payment.detailLabels.bookingNumber")}: ${res.data.bookingNumber} • ${initRes.currency} ${initRes.amount.toFixed(2)}`,
-                });
+          savePaymentBookingContext({
+            kind: "transfer",
+            bookingId,
+            bookingNumber: res.data.bookingNumber,
+            journeyId: id,
+            journeyName: journey?.name || "Transfer",
+            pickupDate: transferData.pickupDate,
+            pickupTime: transferData.pickupTime,
+            passengers: Number(transferData.passengers),
+            amount: transferAmount,
+            currency: "USD",
+          });
 
-                setTimeout(() => {
-                  window.location.href = checkoutUrl;
-                }, 1200);
-              },
-              onError: (err) => {
-                console.error("Failed to initialize payment:", err);
-                toast.error(t("transfer.errors.paymentStart"));
-              },
-            }
-          );
+          setPendingBooking({
+            kind: "transfer",
+            bookingId,
+            bookingNumber: res.data.bookingNumber,
+            title: journey?.name || t("transfer.title"),
+            subtitle: transferData.tripType === 2 ? "Round Trip" : "One Way",
+            amount: transferAmount,
+            currency: "USD",
+            transferDetails: {
+              pickupDate: transferData.pickupDate,
+              pickupTime: transferData.pickupTime,
+              passengers: Number(transferData.passengers),
+            },
+          });
+          setIsPaymentModalOpen(true);
         },
         onError: (err) => {
           console.error("Failed to create transfer booking:", err);
@@ -263,6 +258,12 @@ export default function SingleTransferPageContent({ id }: SingleTransferPageCont
           </div>
         </div>
       </section>
+
+      <PayPalPaymentModal
+        isOpen={isPaymentModalOpen}
+        booking={pendingBooking}
+        onClose={() => setIsPaymentModalOpen(false)}
+      />
     </main>
   );
 }

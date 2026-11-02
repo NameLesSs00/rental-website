@@ -12,6 +12,49 @@ export interface CreatePaypalOrderResponse {
   approvalUrl: string;
 }
 
+export interface InitializePaypalRequest {
+  bookingId: string;
+}
+
+export interface InitializePaypalResponseData {
+  paymentId: string;
+  bookingId: string;
+  provider: string;
+  orderId: string;
+  amount: number;
+  currency: string;
+  status: string;
+}
+
+export interface CapturePaypalRequest {
+  orderId: string;
+}
+
+export interface CapturePaypalResponseData {
+  paymentId: string;
+  bookingId: string;
+  provider: string;
+  payPalOrderId: string;
+  payPalCaptureId: string;
+  amount: number;
+  currency: string;
+  paymentStatus: string;
+  bookingStatus: string;
+  transactionId?: string;
+  paymentStatusName?: string;
+  bookingNumber?: string;
+  bookingType?: string;
+  bookingCategory?: string;
+  paymentType?: string | number;
+  paymentTypeName?: string;
+  type?: string | number;
+  bookingExtensionId?: string | null;
+  propertyName?: string;
+  checkIn?: string;
+  checkOut?: string;
+  guests?: number;
+}
+
 export interface InitializePaymobRequest {
   bookingId: string;
 }
@@ -88,9 +131,102 @@ export interface BookingPayment {
 
 // ── Hooks ────────────────────────────────────────────────────────────────────
 
+function extractApiError(err: unknown, fallback: string): string {
+  const errorObj = err as {
+    response?: {
+      data?:
+        | {
+            detail?: string;
+            title?: string;
+            message?: string;
+            errors?: string[] | Record<string, string[]>;
+          }
+        | string;
+    };
+    message?: string;
+  };
+  const data = errorObj.response?.data;
+  if (typeof data === "string" && data.trim()) return data;
+  if (data && typeof data === "object") {
+    if (data.detail) return data.detail;
+    if (Array.isArray(data.errors) && data.errors.length > 0) return data.errors[0];
+    if (data.title) return data.title;
+    if (data.message) return data.message;
+  }
+  return errorObj.message || fallback;
+}
+
+/**
+ * Initialize PayPal payment for a booking using the backend endpoint.
+ * POST /api/payments/paypal/initialize
+ * Returns { paymentId, bookingId, provider, orderId, amount, currency, status }
+ */
+export function useInitializePaypalPayment() {
+  return useMutation({
+    mutationFn: async (payload: InitializePaypalRequest): Promise<InitializePaypalResponseData> => {
+      try {
+        const res = await axiosInstance.post<
+          InitializePaypalResponseData | PaymentApiResponse<InitializePaypalResponseData>
+        >("/api/payments/paypal/initialize", payload);
+        const data = res.data;
+        if (!data) throw new Error("No response from payment server.");
+
+        if ("isSuccess" in data) {
+          if (!data.isSuccess || !data.data) {
+            throw new Error(data.errors?.[0] || data.message || "Failed to initialize PayPal payment.");
+          }
+          return data.data;
+        }
+        return data as InitializePaypalResponseData;
+      } catch (err) {
+        throw new Error(extractApiError(err, "Failed to initialize PayPal payment."));
+      }
+    },
+  });
+}
+
+/**
+ * Capture PayPal order after user approves the payment via SDK.
+ * POST /api/payments/paypal/capture
+ * Body: { orderId: string }
+ */
+export function useCapturePaypalPayment() {
+  return useMutation({
+    mutationFn: async (
+      orderIdOrPayload: string | CapturePaypalRequest
+    ): Promise<CapturePaypalResponseData> => {
+      const payload: CapturePaypalRequest =
+        typeof orderIdOrPayload === "string" ? { orderId: orderIdOrPayload } : orderIdOrPayload;
+
+      try {
+        const res = await axiosInstance.post<
+          CapturePaypalResponseData | PaymentApiResponse<CapturePaypalResponseData>
+        >("/api/payments/paypal/capture", payload);
+        const data = res.data;
+        if (!data) throw new Error("No response from payment server.");
+
+        const raw = "isSuccess" in data ? (data.isSuccess && data.data ? data.data : null) : (data as CapturePaypalResponseData);
+        if (!raw) {
+          const errMessage = ("isSuccess" in data && data.errors?.[0]) || ("isSuccess" in data && data.message) || "Failed to capture PayPal payment.";
+          throw new Error(errMessage);
+        }
+        return {
+          ...raw,
+          transactionId: raw.payPalCaptureId || raw.payPalOrderId || raw.transactionId || "",
+          paymentStatusName: raw.paymentStatus || raw.paymentStatusName || "Paid",
+          bookingNumber: raw.bookingNumber || "",
+        };
+      } catch (err) {
+        throw new Error(extractApiError(err, "Failed to capture PayPal payment."));
+      }
+    },
+  });
+}
+
 /**
  * Initialize Paymob payment for a booking and retrieve the Unified Checkout URL.
  * Returns { approveUrl, checkoutUrl, amount, currency, ... }
+ * @deprecated Use useInitializePaypalPayment instead.
  */
 export function useInitializePaymobPayment() {
   return useMutation({
@@ -152,25 +288,6 @@ export function useBookingPayments(bookingId: string) {
   });
 }
 
-/**
- * Step 2: After PayPal redirects to /payment/success?token=ORDER_ID,
- * call this with the token to capture the payment.
- */
-export function useCapturePaypalPayment() {
-  return useMutation({
-    mutationFn: async (orderId: string) => {
-      const { data } = await axiosInstance.post<PaymentApiResponse>(
-        "/api/payments/paypal/capture",
-        "",
-        {
-          params: { orderId },
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        }
-      );
-      return data;
-    },
-  });
-}
 
 /**
  * Fallback: If capture fails or user cancels, call this to notify the backend.

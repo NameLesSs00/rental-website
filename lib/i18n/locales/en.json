@@ -414,6 +414,15 @@
       "payButton": "Book & Pay Now",
       "securePayment": "Secured Online Payment"
     },
+    "paypal": {
+      "payButton": "Book & Pay with PayPal",
+      "securePayment": "Secured by PayPal",
+      "loading": "Loading PayPal...",
+      "sdkFailed": "Could not load PayPal. Please check your internet connection or try again.",
+      "processing": "Processing your payment...",
+      "captureFailed": "Could not finalize payment. Please try again.",
+      "cancelled": "Payment was cancelled. You can try again whenever you are ready."
+    },
     "statusMessages": {
       "declined": "Payment was declined by your bank or payment provider.",
       "cancelled": "Payment was cancelled or was not completed.",

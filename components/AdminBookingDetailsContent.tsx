@@ -90,8 +90,8 @@ export default function AdminBookingDetailsContent({ id }: { id: string }) {
   const paidAmount = booking.paidAmount ?? 0;
   const remainingAmount = booking.remainingAmount ?? Math.max(0, totalPrice - paidAmount);
   const canMarkAsPaid = remainingAmount > 0 && booking.bookingSource === "Website";
-  // Booking totals (right-side summary) are stored in USD; only individual
-  // payments carry their own currency (e.g. EGP via Paymob).
+  // Booking totals (right-side summary) are stored in USD; individual
+  // payments carry their own currency (e.g. USD via PayPal).
   const bookingCurrency = booking.currency || "USD";
 
   function handleMarkAsPaid() {
@@ -489,7 +489,7 @@ function PaymentsSection({
                       </td>
                       <td className="px-4 py-3 text-[#414847]">{payment.providerName}</td>
                       <td className="px-4 py-3 font-mono text-[12px] text-[#414847]">{payment.payPalOrderId || "-"}</td>
-                      <td className="px-4 py-3 font-mono text-[12px] text-[#414847]">{payment.transactionId || "-"}</td>
+                      <td className="px-4 py-3 font-mono text-[12px] text-[#414847]">{payment.transactionId || payment.payPalCaptureId || "-"}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex rounded-full px-2.5 py-1 text-[12px] font-semibold ${statusClass(payment.statusName)}`}>
                           {payment.statusName}

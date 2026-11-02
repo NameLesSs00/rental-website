@@ -401,6 +401,15 @@
       "payButton": "Réserver et payer maintenant",
       "securePayment": "Paiement en ligne sécurisé"
     },
+    "paypal": {
+      "payButton": "Réserver et payer avec PayPal",
+      "securePayment": "Sécurisé par PayPal",
+      "loading": "Chargement de PayPal...",
+      "sdkFailed": "Impossible de charger PayPal. Veuillez réessayer.",
+      "processing": "Traitement de votre paiement...",
+      "captureFailed": "Impossible de finaliser le paiement. Veuillez réessayer.",
+      "cancelled": "Paiement annulé. Vous pouvez réessayer à tout moment."
+    },
     "statusMessages": {
       "declined": "Le paiement a été refusé par votre banque ou votre fournisseur de paiement.",
       "cancelled": "Le paiement a été annulé ou n'a pas pu être finalisé.",

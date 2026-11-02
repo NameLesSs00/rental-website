@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { useCapturePaypalPayment, CapturePaymentData } from "@/lib/hooks/usePayment";
+import { useCapturePaypalPayment, type CapturePaymentData, type CapturePaypalResponseData } from "@/lib/hooks/usePayment";
 import axiosInstance from "@/lib/api/axiosInstance";
 import type { AdminBookingApiResponse, AdminBookingDetails } from "@/lib/types/booking";
 import {
@@ -85,7 +85,7 @@ function normalizeBookingType(value: unknown): BookingKind | null {
 }
 
 function resolveBookingKind(
-  paymentData?: CapturePaymentData | null,
+  paymentData?: CapturePaymentData | CapturePaypalResponseData | null,
   context?: PaymentBookingContext | null
 ): BookingKind {
   const explicitType =
@@ -116,20 +116,25 @@ function PaymentSuccessContent() {
   const { t, tArray, href, isRtl } = useI18n();
   const searchParams = useSearchParams();
 
+  // PayPal SDK direct params
+  const urlBookingId = searchParams.get("bookingId");
+  const urlOrderId = searchParams.get("orderId");
+  const urlCaptureId = searchParams.get("captureId");
+
   // Paymob redirect query params
   const paymobSuccess = searchParams.get("success");
   const paymobTxnId = searchParams.get("id");
   const paymobOrderId = searchParams.get("order");
   const paymobAmountCents = searchParams.get("amount_cents");
-  const paymobCurrency = searchParams.get("currency") || "EGP";
+  const paymobCurrency = searchParams.get("currency");
   const paymobMessage = searchParams.get("data.message");
 
-  // Legacy PayPal params
-  const legacyToken = searchParams.get("token") || searchParams.get("orderId");
+  // Legacy PayPal params (or redirect with token/orderId)
+  const legacyToken = searchParams.get("token") || (!urlCaptureId && !urlBookingId ? urlOrderId : null);
 
   const [bookingContext] = useState<PaymentBookingContext | null>(() => readPaymentBookingContext());
   const [bookingDetails, setBookingDetails] = useState<AdminBookingDetails | null>(null);
-  const [paymentData, setPaymentData] = useState<CapturePaymentData | null>(null);
+  const [paymentData, setPaymentData] = useState<CapturePaymentData | CapturePaypalResponseData | null>(null);
 
   const [state, setPageState] = useState<PageState>("loading");
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -141,7 +146,39 @@ function PaymentSuccessContent() {
     if (hasExecutedRef.current) return;
     hasExecutedRef.current = true;
 
-    // ── Scenario A: Paymob Gateway Redirect ──────────────────────────────────
+    // ── Scenario A: PayPal SDK Completed Capture ──────────────────────────────
+    if (urlCaptureId || (urlBookingId && urlOrderId)) {
+      const targetBookingId = urlBookingId || bookingContext?.bookingId;
+      if (targetBookingId && bookingContext?.kind !== "transfer") {
+        axiosInstance
+          .get<AdminBookingApiResponse<AdminBookingDetails>>(`/api/property-bookings/${targetBookingId}`)
+          .then((res) => {
+            if (res.data?.data) {
+              setBookingDetails(res.data.data);
+            }
+          })
+          .catch((err) => {
+            console.warn("Could not fetch server booking details", err);
+          })
+          .finally(() => {
+            localStorage.removeItem("paypal_order_id");
+            if (bookingContext?.propertyId) {
+              try {
+                localStorage.removeItem(`rent_booking_draft_${bookingContext.propertyId}`);
+              } catch {
+                // Ignore
+              }
+            }
+            setPageState("success");
+          });
+      } else {
+        localStorage.removeItem("paypal_order_id");
+        setPageState("success");
+      }
+      return;
+    }
+
+    // ── Scenario B: Paymob Gateway Redirect ──────────────────────────────────
     if (paymobSuccess !== null) {
       if (paymobSuccess === "true") {
         // Payment succeeded
@@ -188,20 +225,13 @@ function PaymentSuccessContent() {
     if (legacyToken) {
       capturePaypalPayment(legacyToken, {
         onSuccess: (res) => {
-          if (res.isSuccess && res.data) {
-            localStorage.removeItem("paypal_order_id");
-            clearPaymentBookingContext();
-            setPaymentData(res.data);
-            setPageState("success");
-          } else {
-            const errMsg = res.errors?.[0] ?? t("payment.genericFailed");
-            setErrorMessage(errMsg);
-            setPageState("error");
-          }
+          localStorage.removeItem("paypal_order_id");
+          clearPaymentBookingContext();
+          setPaymentData(res);
+          setPageState("success");
         },
         onError: (err: unknown) => {
-          const apiError = err as { response?: { data?: { errors?: string[]; message?: string } } };
-          const msg = apiError.response?.data?.errors?.[0] || apiError.response?.data?.message;
+          const msg = err instanceof Error ? err.message : t("payment.captureFailed");
           setErrorMessage(msg || t("payment.captureFailed"));
           setPageState("error");
         },
@@ -253,7 +283,11 @@ function PaymentSuccessContent() {
     const paidAmountValue = paymobAmountCents
       ? Number(paymobAmountCents) / 100
       : bookingDetails?.paidAmount ?? paymentData?.amount ?? bookingContext?.amount ?? 0;
-    const paidCurrencyValue = paymobCurrency || bookingDetails?.price ? "EGP" : paymentData?.currency || bookingContext?.currency || "EGP";
+    const paidCurrencyValue =
+      bookingDetails?.currency ||
+      paymentData?.currency ||
+      bookingContext?.currency ||
+      (paymobCurrency && paymobCurrency !== "EGP" ? paymobCurrency : "USD");
 
     const details: DetailRow[] = [
       {
@@ -278,7 +312,7 @@ function PaymentSuccessContent() {
       },
       {
         label: t("payment.detailLabels.transactionId"),
-        value: paymobTxnId || paymentData?.transactionId || paymobOrderId || "-",
+        value: urlCaptureId || paymobTxnId || paymentData?.transactionId || urlOrderId || paymobOrderId || "-",
         mono: true,
       },
       optionalDetail(

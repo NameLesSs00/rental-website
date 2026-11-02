@@ -401,6 +401,15 @@
       "payButton": "Jetzt buchen & bezahlen",
       "securePayment": "Sichere Online-Zahlung"
     },
+    "paypal": {
+      "payButton": "Buchen & mit PayPal bezahlen",
+      "securePayment": "Gesichert durch PayPal",
+      "loading": "PayPal wird geladen...",
+      "sdkFailed": "PayPal konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
+      "processing": "Zahlung wird verarbeitet...",
+      "captureFailed": "Zahlung konnte nicht abgeschlossen werden. Bitte erneut versuchen.",
+      "cancelled": "Zahlung abgebrochen. Sie können es jederzeit erneut versuchen."
+    },
     "statusMessages": {
       "declined": "Die Zahlung wurde von Ihrer Bank oder dem Zahlungsanbieter abgelehnt.",
       "cancelled": "Die Zahlung wurde abgebrochen oder nicht abgeschlossen.",

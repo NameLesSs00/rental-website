@@ -16,7 +16,7 @@ import {
 } from "@/lib/hooks/useProperties";
 import { API_BASE_URL } from "@/lib/api/config";
 import { useCreateRentBooking } from "@/lib/hooks/useBooking";
-import { useInitializePaymobPayment } from "@/lib/hooks/usePayment";
+import PayPalPaymentModal, { type PendingBookingPayment } from "@/components/payment/PayPalPaymentModal";
 import { usePropertyCategories } from "@/lib/hooks/usePropertyCategory";
 import { usePropertyCategoryItems } from "@/lib/hooks/usePropertyCategoryItem";
 import { useLandmarks } from "@/lib/hooks/useAttributeGroupItem";
@@ -289,8 +289,10 @@ function PropertyDetailView({
     }
   }, [bookingForm, checkIn, checkOut, hasAcceptedRules, hasRestoredDraft, propertyId]);
 
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [pendingBooking, setPendingBooking] = useState<PendingBookingPayment | null>(null);
+
   const { mutate: createRentBooking, isPending: isCreatingBooking } = useCreateRentBooking();
-  const { mutate: initializePayment, isPending: isInitializingPayment } = useInitializePaymobPayment();
   const {
     mutateAsync: checkDailyPrices,
     data: priceCheck,
@@ -298,7 +300,7 @@ function PropertyDetailView({
     reset: resetPriceCheck,
   } = useCheckPropertyDailyPrices();
   const { mutateAsync: checkAvailabilityRange, isPending: isCheckingAvailability } = useCheckPropertyAvailabilityRange();
-  const isPending = isCreatingBooking || isInitializingPayment || isCheckingPrice || isCheckingAvailability;
+  const isPending = isCreatingBooking || isCheckingPrice || isCheckingAvailability;
 
   const startDate = todayString;
   const endDate = formatLocalDate(new Date(currentYear, currentMonth + monthsToShow, 0));
@@ -523,48 +525,40 @@ function PropertyDetailView({
             return;
           }
 
-          initializePayment(
-            { bookingId: res.data.bookingId },
-            {
-              onSuccess: (initRes) => {
-                const checkoutUrl = initRes.checkoutUrl || initRes.approveUrl;
-                try {
-                  localStorage.removeItem(`rent_booking_draft_${propertyId}`);
-                } catch {
-                  // Ignore
-                }
-                savePaymentBookingContext({
-                  kind: "rent",
-                  bookingId: res.data.bookingId,
-                  bookingNumber: res.data.bookingNumber,
-                  propertyId,
-                  propertyName,
-                  checkIn,
-                  checkOut,
-                  guests: bookingForm.person,
-                  amount: initRes.amount,
-                  currency: initRes.currency,
-                  checkoutUrl,
-                  paymentId: initRes.paymentId,
-                });
+          try {
+            localStorage.removeItem(`rent_booking_draft_${propertyId}`);
+          } catch {
+            // Ignore
+          }
 
-                toast.warning(t("payment.expiryModal.warning"), {
-                  duration: 4000,
-                  icon: "⏳",
-                  description: `${t("payment.detailLabels.bookingNumber")}: ${res.data.bookingNumber} • ${initRes.currency} ${initRes.amount.toFixed(2)}`,
-                });
+          const bookingAmount = priceCheck?.totalPrice ?? 0;
+          const bookingCurrency = currencyCode || "USD";
 
-                setTimeout(() => {
-                  window.location.href = checkoutUrl;
-                }, 1200);
-              },
-              onError: (error) => {
-                const message = getApiErrorMessage(error, t("booking.errors.paymentStartFailed"));
-                setFormError(message);
-                toast.error(message);
-              },
-            }
-          );
+          savePaymentBookingContext({
+            kind: "rent",
+            bookingId: res.data.bookingId,
+            bookingNumber: res.data.bookingNumber,
+            propertyId,
+            propertyName,
+            checkIn,
+            checkOut,
+            guests: bookingForm.person,
+            amount: bookingAmount,
+            currency: bookingCurrency,
+          });
+
+          setPendingBooking({
+            kind: "rent",
+            bookingId: res.data.bookingId,
+            bookingNumber: res.data.bookingNumber,
+            title: propertyName,
+            subtitle: [property.address?.city, property.address?.country].filter(Boolean).join(", "),
+            amount: bookingAmount,
+            currency: bookingCurrency,
+            stayDates: { checkIn, checkOut },
+            guests: bookingForm.person,
+          });
+          setIsPaymentModalOpen(true);
         },
         onError: (error) => {
           const message = getApiErrorMessage(error, t("booking.errors.createFailed"));
@@ -800,6 +794,12 @@ function PropertyDetailView({
           </button>
         </div>
       </div>
+
+      <PayPalPaymentModal
+        isOpen={isPaymentModalOpen}
+        booking={pendingBooking}
+        onClose={() => setIsPaymentModalOpen(false)}
+      />
     </main>
   );
 }
