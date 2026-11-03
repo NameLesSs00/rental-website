@@ -45,6 +45,7 @@ export function PaymobCheckout({
         kind,
         amount,
         currency,
+        gateway: "paymob",
       });
 
       const res = await initializePaymob({ bookingId });

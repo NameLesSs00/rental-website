@@ -33,11 +33,15 @@ const isWindowClosedError = (err: unknown): boolean => {
     typeof err === "object" && "message" in err
       ? String((err as { message: unknown }).message)
       : String(err);
+  const lower = msg.toLowerCase();
   return (
-    msg.includes("Target window is closed") ||
-    msg.includes("Window was closed") ||
-    msg.includes("popup close") ||
-    msg.includes("closed")
+    lower.includes("window is closed") ||
+    lower.includes("target window is closed") ||
+    lower.includes("window was closed") ||
+    lower.includes("can not determine type") ||
+    lower.includes("postrobot") ||
+    lower.includes("popup close") ||
+    lower.includes("closed")
   );
 };
 
@@ -109,10 +113,29 @@ export function PayPalCheckout({
   onError,
 }: PayPalCheckoutProps) {
   const { t } = useI18n();
-  const [{ isPending, isRejected }] = usePayPalScriptReducer();
+  const [{ isPending, isRejected, isResolved }] = usePayPalScriptReducer();
   const [localError, setLocalError] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const isCapturingRef = useRef(false);
+  const [isCardFieldsEligible, setIsCardFieldsEligible] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (isResolved && typeof window !== "undefined") {
+      try {
+        const paypalWindow = window as unknown as {
+          paypal?: {
+            CardFields?: () => { isEligible: () => boolean };
+          };
+        };
+        const eligible = Boolean(paypalWindow.paypal?.CardFields?.().isEligible());
+        setIsCardFieldsEligible(eligible);
+        console.log("[PayPal] CardFields eligibility evaluated to:", eligible);
+      } catch (e) {
+        console.warn("[PayPal] CardFields is not available or not eligible:", e);
+        setIsCardFieldsEligible(false);
+      }
+    }
+  }, [isResolved]);
 
   const { mutateAsync: initializePaypal } = useInitializePaypalPayment();
   const { mutateAsync: capturePaypal } = useCapturePaypalPayment();
@@ -145,7 +168,6 @@ export function PayPalCheckout({
       console.log("[PayPal] onApprove received data:", data);
       const capturePayload = {
         orderId: data.orderID,
-        bookingId,
       };
       console.log("[PayPal] Sending capture request with payload:", capturePayload);
       const captureRes = await capturePaypal(capturePayload);
@@ -167,13 +189,15 @@ export function PayPalCheckout({
   };
 
   const handleError = (err: unknown) => {
-    console.error("PAYPAL SDK ERROR:", err);
     setIsCapturing(false);
     isCapturingRef.current = false;
     if (isWindowClosedError(err)) {
+      console.warn("[PayPal] User closed the PayPal window before completion:", err);
       setLocalError(t("payment.paypal.cancelled"));
+      onCancel?.();
       return;
     }
+    console.error("PAYPAL SDK ERROR:", err);
     const message =
       err && typeof err === "object" && "message" in err
         ? String((err as { message: unknown }).message)
@@ -263,100 +287,126 @@ export function PayPalCheckout({
         </span>
       </div>
 
-      {/* 3. Card Fields */}
-      <PayPalCardFieldsProvider
-        createOrder={handleCreateOrder}
-        onApprove={handleApprove}
-        onError={handleError}
-        style={{
-          input: {
-            "font-size": "15px",
-            "font-family": "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-            color: "#183c2f",
-            border: "1px solid #d4dfda",
-            borderRadius: "10px",
-            padding: "11px 15px",
-            "line-height": "1.4",
-            outline: "none",
-            transition: "all 0.2s ease-in-out",
-          },
-          ":focus": {
-            border: "1px solid #2e6f57",
-            boxShadow: "0 0 0 3px rgba(46, 111, 87, 0.12)",
-            color: "#183c2f",
-          },
-          ".invalid": {
-            border: "1px solid #dc2626",
-            boxShadow: "0 0 0 3px rgba(220, 38, 38, 0.12)",
-            color: "#dc2626",
-          },
-        }}
-      >
-        <form onSubmit={(e) => e.preventDefault()} className="space-y-3.5">
-          {/* Cardholder Name */}
-          <div>
-            <label className="mb-1.5 flex items-center justify-between text-[13px] font-semibold text-[#183c2f]">
-              <span>Cardholder Name</span>
-            </label>
-            <PayPalNameField
-              placeholder="e.g. John Doe"
-              className="h-[46px] w-full"
+      {/* 3. Card Option (Custom Fields if eligible, or Standalone Card Button fallback) */}
+      {isCardFieldsEligible === false ? (
+        <div className="space-y-2">
+          <div className="w-full overflow-hidden rounded-xl border border-[#dfe8e4] bg-[#f8faf9] p-1 shadow-xs">
+            <PayPalButtons
+              fundingSource={FUNDING.CARD}
+              style={{
+                layout: "horizontal",
+                color: "black",
+                shape: "rect",
+                height: 44,
+                tagline: false,
+              }}
+              disabled={isCapturing}
+              forceReRender={[bookingId]}
+              createOrder={handleCreateOrder}
+              onApprove={handleApprove}
+              onCancel={handleCancel}
+              onError={handleError}
             />
           </div>
-
-          {/* Card Number */}
-          <div>
-            <label className="mb-1.5 flex items-center justify-between text-[13px] font-semibold text-[#183c2f]">
-              <span className="flex items-center gap-1.5">
-                <CreditCard className="size-4 text-[#2e6f57]" />
-                Card Number
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="rounded bg-[#f0f4f2] px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-[#2e6f57]">VISA</span>
-                <span className="rounded bg-[#f0f4f2] px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-[#c25e00]">MC</span>
-              </span>
-            </label>
-            <PayPalNumberField
-              placeholder="4032 0000 0000 0001"
-              className="h-[46px] w-full"
-            />
-          </div>
-
-          {/* Expiry and CVV side by side */}
-          <div className="grid grid-cols-2 gap-3.5">
+          <p className="text-center text-[11px] text-[#667c74]">
+            Pay securely with any Debit or Credit card (Visa, MasterCard, Amex).
+          </p>
+        </div>
+      ) : (
+        <PayPalCardFieldsProvider
+          createOrder={handleCreateOrder}
+          onApprove={handleApprove}
+          onError={handleError}
+          style={{
+            input: {
+              "font-size": "15px",
+              "font-family": "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+              color: "#183c2f",
+              border: "1px solid #d4dfda",
+              borderRadius: "10px",
+              padding: "11px 15px",
+              "line-height": "1.4",
+              outline: "none",
+              transition: "all 0.2s ease-in-out",
+            },
+            ":focus": {
+              border: "1px solid #2e6f57",
+              boxShadow: "0 0 0 3px rgba(46, 111, 87, 0.12)",
+              color: "#183c2f",
+            },
+            ".invalid": {
+              border: "1px solid #dc2626",
+              boxShadow: "0 0 0 3px rgba(220, 38, 38, 0.12)",
+              color: "#dc2626",
+            },
+          }}
+        >
+          <form onSubmit={(e) => e.preventDefault()} className="space-y-3.5">
+            {/* Cardholder Name */}
             <div>
-              <label className="mb-1.5 block text-[13px] font-semibold text-[#183c2f]">
-                Expiration Date
+              <label className="mb-1.5 flex items-center justify-between text-[13px] font-semibold text-[#183c2f]">
+                <span>Cardholder Name</span>
               </label>
-              <PayPalExpiryField
-                placeholder="MM / YY"
+              <PayPalNameField
+                placeholder="e.g. John Doe"
                 className="h-[46px] w-full"
               />
             </div>
+
+            {/* Card Number */}
             <div>
-              <label className="mb-1.5 block text-[13px] font-semibold text-[#183c2f]">
-                Security Code
+              <label className="mb-1.5 flex items-center justify-between text-[13px] font-semibold text-[#183c2f]">
+                <span className="flex items-center gap-1.5">
+                  <CreditCard className="size-4 text-[#2e6f57]" />
+                  Card Number
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="rounded bg-[#f0f4f2] px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-[#2e6f57]">VISA</span>
+                  <span className="rounded bg-[#f0f4f2] px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-[#c25e00]">MC</span>
+                </span>
               </label>
-              <PayPalCVVField
-                placeholder="CVV"
+              <PayPalNumberField
+                placeholder="4032 0000 0000 0001"
                 className="h-[46px] w-full"
               />
             </div>
-          </div>
 
-          <CardSubmitButton
-            isCapturing={isCapturing}
-            onStartCapturing={() => {
-              setIsCapturing(true);
-              setLocalError(null);
-            }}
-            onError={(msg) => {
-              setIsCapturing(false);
-              setLocalError(msg);
-            }}
-          />
-        </form>
-      </PayPalCardFieldsProvider>
+            {/* Expiry and CVV side by side */}
+            <div className="grid grid-cols-2 gap-3.5">
+              <div>
+                <label className="mb-1.5 block text-[13px] font-semibold text-[#183c2f]">
+                  Expiration Date
+                </label>
+                <PayPalExpiryField
+                  placeholder="MM / YY"
+                  className="h-[46px] w-full"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-[13px] font-semibold text-[#183c2f]">
+                  Security Code
+                </label>
+                <PayPalCVVField
+                  placeholder="CVV"
+                  className="h-[46px] w-full"
+                />
+              </div>
+            </div>
+
+            <CardSubmitButton
+              isCapturing={isCapturing}
+              onStartCapturing={() => {
+                setIsCapturing(true);
+                setLocalError(null);
+              }}
+              onError={(msg) => {
+                setIsCapturing(false);
+                setLocalError(msg);
+              }}
+            />
+          </form>
+        </PayPalCardFieldsProvider>
+      )}
     </div>
   );
 }

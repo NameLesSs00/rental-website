@@ -195,8 +195,9 @@ export function useCapturePaypalPayment() {
     mutationFn: async (
       orderIdOrPayload: string | CapturePaypalRequest
     ): Promise<CapturePaypalResponseData> => {
-      const payload: CapturePaypalRequest =
-        typeof orderIdOrPayload === "string" ? { orderId: orderIdOrPayload } : orderIdOrPayload;
+      const orderId =
+        typeof orderIdOrPayload === "string" ? orderIdOrPayload : orderIdOrPayload.orderId;
+      const payload: CapturePaypalRequest = { orderId };
 
       try {
         const res = await axiosInstance.post<

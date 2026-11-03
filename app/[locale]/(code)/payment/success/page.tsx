@@ -279,15 +279,15 @@ function PaymentSuccessContent() {
           }
         : bookingCopy[bookingKind];
 
-    // Compute display amount
+    // Compute display amount & currency (Paymob in EGP vs PayPal in USD)
+    const isPaymobFlow = paymobSuccess !== null || bookingContext?.gateway === "paymob";
     const paidAmountValue = paymobAmountCents
       ? Number(paymobAmountCents) / 100
       : bookingDetails?.paidAmount ?? paymentData?.amount ?? bookingContext?.amount ?? 0;
-    const paidCurrencyValue =
-      bookingDetails?.currency ||
-      paymentData?.currency ||
-      bookingContext?.currency ||
-      (paymobCurrency && paymobCurrency !== "EGP" ? paymobCurrency : "USD");
+    
+    const paidCurrencyValue = isPaymobFlow
+      ? (paymobCurrency?.toUpperCase() || bookingContext?.currency || "EGP")
+      : (paymentData?.currency || bookingDetails?.currency || bookingContext?.currency || "USD");
 
     const details: DetailRow[] = [
       {
@@ -307,7 +307,7 @@ function PaymentSuccessContent() {
       },
       {
         label: t("payment.detailLabels.amountPaid"),
-        value: `${paidCurrencyValue} ${paidAmountValue.toFixed(2)}`,
+        value: formatCurrency(paidAmountValue, paidCurrencyValue, 2),
         strong: true,
       },
       {

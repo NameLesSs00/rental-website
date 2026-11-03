@@ -1,4 +1,5 @@
 export type PaymentBookingKind = "rent" | "transfer" | "buy";
+export type PaymentGateway = "paypal" | "paymob";
 
 export interface PaymentBookingContext {
   kind: PaymentBookingKind;
@@ -20,6 +21,7 @@ export interface PaymentBookingContext {
   currency?: string;
   checkoutUrl?: string;
   paymentId?: string;
+  gateway?: PaymentGateway;
 }
 
 export const PAYMENT_BOOKING_CONTEXT_KEY = "payment_booking_context";
