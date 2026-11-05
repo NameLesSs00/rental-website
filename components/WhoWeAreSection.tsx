@@ -122,7 +122,7 @@ function VideoPreview() {
       whileInView={{ opacity: 1, scale: 1, x: 0 }}
       viewport={{ once: true, amount: 0.4 }}
       transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-      className="relative aspect-[338/234] w-full overflow-hidden rounded-2xl bg-[#d8d1c6] lg:aspect-[522/361] lg:rounded-3xl"
+      className="relative aspect-[338/234] w-full overflow-hidden rounded-2xl bg-[#d8d1c6] shadow-[0_8px_32px_rgba(31,77,61,0.08)] lg:aspect-[522/361] lg:rounded-3xl"
     >
       <Image
         src="/homepage/about/who-we-are.jpeg"
@@ -131,22 +131,6 @@ function VideoPreview() {
         sizes="(min-width: 1024px) 522px, 100vw"
         className="object-cover object-center"
       />
-      <div className="absolute inset-0 bg-black/10" />
-      <motion.button
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-        type="button"
-        aria-label={t("home.who.playVideo")}
-        className="absolute left-1/2 top-1/2 grid size-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/90 shadow-[0_8px_32px_rgba(0,0,0,0.15)] backdrop-blur-md transition hover:bg-white lg:size-[74px]"
-      >
-        <Image
-          src="/homepage/about/icons/play.svg"
-          alt=""
-          width={40}
-          height={40}
-          className="ml-0.5 size-6 lg:size-10"
-        />
-      </motion.button>
     </motion.div>
   );
 }
