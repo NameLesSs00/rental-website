@@ -220,7 +220,9 @@
       "emptyTitle": "No reviews yet",
       "emptyBody": "Be the first to share your experience!",
       "averageRating": "{rating} average rating",
-      "verifiedReviews": "{count} verified reviews"
+      "verifiedReviews": "{count} verified reviews",
+      "googleBadge": "Based on {count} Google reviews",
+      "readAll": "Read all reviews on Google"
     }
   },
   "rent": {

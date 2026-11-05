@@ -75,6 +75,10 @@ export function proxy(request: NextRequest) {
   // END: Transfer Block
   // ========================================
 
+  if (pathname.startsWith("/api")) {
+    return NextResponse.next();
+  }
+
   if (pathname.startsWith("/admin")) {
     // Allow public auth pages through unconditionally
     if (
@@ -112,6 +116,6 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/admin/:path*",
-    "/((?!_next|favicon.ico|robots.txt|sitemap.xml|.*\\..*).*)",
+    "/((?!api|_next|favicon.ico|robots.txt|sitemap.xml|.*\\..*).*)",
   ],
 };

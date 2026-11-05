@@ -220,7 +220,9 @@
       "emptyTitle": "Пока нет отзывов",
       "emptyBody": "Станьте первым, кто поделится впечатлением!",
       "averageRating": "Средняя оценка {rating}",
-      "verifiedReviews": "{count} проверенных отзывов"
+      "verifiedReviews": "{count} проверенных отзывов",
+      "googleBadge": "На основе {count} отзывов Google",
+      "readAll": "Читать все отзывы в Google"
     }
   },
   "rent": {

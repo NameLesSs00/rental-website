@@ -4,7 +4,7 @@ import BlogInsightsSection from "@/components/BlogInsightsSection";
 import CategoriesSection from "@/components/CategoriesSection";
 import FacilitiesSection from "@/components/FacilitiesSection";
 import FaqSection from "@/components/FaqSection";
-import ReviewsSection from "@/components/ReviewsSection";
+import GoogleReviewsSection from "@/components/GoogleReviewsSection";
 import FeaturedPropertiesSection from "@/components/FeaturedPropertiesSection";
 import HeroSection from "@/components/HeroSection";
 import HowItWorksSection from "@/components/HowItWorksSection";
@@ -47,7 +47,7 @@ export default function Home() {
       <WhoWeAreSection />
       <FaqSection />
       <HowItWorksSection />
-      <ReviewsSection />
+      <GoogleReviewsSection />
       <RentalCtaSection />
     </>
   );
