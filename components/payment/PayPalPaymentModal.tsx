@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { X, ShieldCheck, Clock, AlertCircle } from "lucide-react";
+import { X, ShieldCheck, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useI18n } from "@/components/I18nProvider";
 import { PayPalProvider } from "./PayPalProvider";
 import { PayPalCheckout } from "./PayPalCheckout";
@@ -17,8 +16,11 @@ export interface PendingBookingPayment {
   bookingNumber: string;
   title: string;
   subtitle?: string;
+  /** Deposit amount in the user's selected display currency (used for Paymob & display) */
   amount: number;
   currency: string;
+  /** Deposit amount always in USD (used for PayPal, which only supports USD) */
+  amountUsd: number;
   stayDates?: {
     checkIn: string;
     checkOut: string;
@@ -86,8 +88,7 @@ export function PayPalPaymentModal({
   onClose,
   onPaymentSuccess,
 }: PayPalPaymentModalProps) {
-  const { t, href, isRtl } = useI18n();
-  const router = useRouter();
+  const { t, tArray, isRtl } = useI18n();
   const [isExpired, setIsExpired] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [captureResult, setCaptureResult] = useState<CapturePaypalResponseData | null>(null);
@@ -124,22 +125,28 @@ export function PayPalPaymentModal({
       console.log("[PayPal] Payment captured successfully:", captureData);
       setIsSuccess(true);
       setCaptureResult(captureData);
-
-      if (onPaymentSuccess) {
-        onPaymentSuccess(captureData);
-      } else {
-        // Redirection to the success page is temporarily stopped/commented out for testing:
-        // router.push(
-        //   href(
-        //     `/payment/success?bookingId=${booking.bookingId}&orderId=${captureData.payPalOrderId || ""}&captureId=${captureData.payPalCaptureId || ""}`
-        //   )
-        // );
-      }
+      onPaymentSuccess?.(captureData);
     },
     [booking, onPaymentSuccess]
   );
 
   if (!isOpen || !booking) return null;
+
+  const localizedKind = tArray<string>(`payment.kinds.${booking.kind}`);
+  const successCopy =
+    localizedKind.length >= 4
+      ? {
+          label: localizedKind[0],
+          title: localizedKind[1],
+          message: localizedKind[2],
+          next: localizedKind[3],
+        }
+      : {
+          label: booking.kind === "transfer" ? "Transfer" : "Rental",
+          title: booking.kind === "transfer" ? "Transfer Booking Confirmed!" : "Rental Booking Confirmed!",
+          message: "Your booking has been successfully completed.",
+          next: "We will confirm your stay details by email. Please keep your phone available in case we need to contact you before check-in.",
+        };
 
   return (
     <div
@@ -164,11 +171,11 @@ export function PayPalPaymentModal({
         <div className="flex shrink-0 items-center justify-between border-b border-[#dfe8e4] bg-[#f8faf9] px-6 py-4">
           <div className="flex items-center gap-2.5">
             <div className="flex size-9 items-center justify-center rounded-xl bg-[#2e6f57]/10 text-[#2e6f57]">
-              <ShieldCheck className="size-5" />
+              {isSuccess ? <CheckCircle2 className="size-5" /> : <ShieldCheck className="size-5" />}
             </div>
             <div>
               <h2 className="text-[16px] font-bold text-[#183c2f]">
-                {t("payment.expiryModal.title")}
+                {isSuccess ? successCopy.title : t("payment.expiryModal.title")}
               </h2>
               <p className="text-[12px] font-medium text-[#667c74]">
                 {t("payment.detailLabels.bookingNumber")}: #{booking.bookingNumber}
@@ -185,147 +192,267 @@ export function PayPalPaymentModal({
           </button>
         </div>
 
-        {/* Fixed Expiry Bar */}
-        <ExpiryBar onExpire={handleExpire} />
+        {/* Fixed Expiry Bar (hidden once paid) */}
+        {!isSuccess && <ExpiryBar onExpire={handleExpire} />}
 
         {/* Scrollable Content Body */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 overscroll-contain">
-          {/* Booking Summary Box */}
-          <div className="rounded-xl border border-[#dfe8e4] bg-[#fbfdfc] p-4 text-[13px]">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h3 className="font-bold text-[#183c2f]">{booking.title}</h3>
-                {booking.subtitle && (
-                  <p className="mt-0.5 text-[12px] text-[#667c74]">{booking.subtitle}</p>
-                )}
-              </div>
-              <div className="text-right rtl:text-left">
-                <span className="text-[11px] uppercase tracking-wider text-[#8a9a94]">
-                  {t("payment.detailLabels.amountPaid")}
-                </span>
-                <p className="text-[16px] font-extrabold text-[#183c2f]">
-                  {formatCurrency(booking.amount, booking.currency, 2)}
+          {isSuccess ? (
+            <div className="space-y-5 py-2">
+              {/* Success Hero */}
+              <div className="flex flex-col items-center text-center">
+                <div className="relative grid size-20 shrink-0 place-items-center">
+                  <span className="absolute size-20 rounded-full bg-[#eef7f3] opacity-70" />
+                  <span className="relative grid size-14 place-items-center rounded-full bg-[#dfeee7]">
+                    <span className="grid size-10 place-items-center rounded-full bg-[#2e6f57] shadow-md shadow-[#2e6f57]/20">
+                      <svg className="size-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </span>
+                  </span>
+                </div>
+                <h3 className="mt-3 text-[20px] font-bold text-[#183c2f]">
+                  {successCopy.title}
+                </h3>
+                <p className="mt-1 text-[13px] text-[#667c74]">
+                  {successCopy.message}
                 </p>
               </div>
-            </div>
 
-            {/* Stay Dates / Details */}
-            {booking.stayDates && (
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[#edf2ef] pt-2.5 text-[12px] text-[#40544c]">
-                <span>
-                  <strong>{t("payment.detailLabels.checkIn")}:</strong> {booking.stayDates.checkIn}
-                </span>
-                <span>•</span>
-                <span>
-                  <strong>{t("payment.detailLabels.checkOut")}:</strong> {booking.stayDates.checkOut}
-                </span>
-                {typeof booking.guests === "number" && (
-                  <>
-                    <span>•</span>
-                    <span>
-                      <strong>{t("payment.detailLabels.guests")}:</strong> {booking.guests}
-                    </span>
-                  </>
-                )}
-              </div>
-            )}
-
-            {booking.transferDetails && (
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[#edf2ef] pt-2.5 text-[12px] text-[#40544c]">
-                <span>
-                  <strong>{t("payment.detailLabels.pickupDate")}:</strong>{" "}
-                  {booking.transferDetails.pickupDate} {booking.transferDetails.pickupTime}
-                </span>
-                <span>•</span>
-                <span>
-                  <strong>{t("payment.detailLabels.passengers")}:</strong>{" "}
-                  {booking.transferDetails.passengers}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Payment Success View (while redirect is commented out) */}
-          {isSuccess ? (
-            <div className="rounded-xl border border-green-200 bg-green-50 p-5 text-center">
-              <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-green-100 text-green-700">
-                <ShieldCheck className="size-6" />
-              </div>
-              <h4 className="mt-3 text-[16px] font-bold text-green-900">
-                Payment Captured Successfully!
-              </h4>
-              <p className="mt-1 text-[13px] text-green-700">
-                Payment has been successfully processed on the backend.
-                <br />
-                <span className="text-[12px] text-green-600">(Success redirect is paused for testing)</span>
-              </p>
-              {captureResult && (
-                <div className="mt-3 rounded-lg bg-white/90 p-3 text-left font-mono text-[11px] text-[#183c2f] rtl:text-right">
-                  <p><strong>Order ID:</strong> {captureResult.payPalOrderId || captureResult.transactionId}</p>
-                  {captureResult.payPalCaptureId && (
-                    <p><strong>Capture ID:</strong> {captureResult.payPalCaptureId}</p>
+              {/* Details Summary Card (matching Success Page) */}
+              <div className="rounded-2xl border border-[#dfe8e4] bg-[#fbfdfc] p-5 shadow-xs space-y-4">
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-4 text-[13px]">
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#667c74]">
+                      {t("payment.detailLabels.bookingNumber")}
+                    </dt>
+                    <dd className="mt-1 font-mono text-[13px] font-semibold text-[#2e6f57]">
+                      #{booking.bookingNumber}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#667c74]">
+                      {t("payment.detailLabels.bookingType")}
+                    </dt>
+                    <dd className="mt-1 font-bold text-[#183c2f]">
+                      {successCopy.label}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#667c74]">
+                      {t("payment.detailLabels.paymentStatus")}
+                    </dt>
+                    <dd className="mt-1 font-bold text-[#2e6f57]">
+                      {captureResult?.paymentStatus || "Paid"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#667c74]">
+                      {t("payment.detailLabels.amountPaid")}
+                    </dt>
+                    <dd className="mt-1 font-bold text-[#183c2f]">
+                      {formatCurrency(booking.amountUsd, "USD", 2)}
+                    </dd>
+                  </div>
+                  <div className="col-span-2">
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#667c74]">
+                      {t("payment.detailLabels.transactionId")}
+                    </dt>
+                    <dd className="mt-1 break-all font-mono text-[12px] font-semibold text-[#2e6f57]">
+                      {captureResult?.payPalCaptureId || captureResult?.payPalOrderId || captureResult?.transactionId || "-"}
+                    </dd>
+                  </div>
+                  <div className="col-span-2 border-t border-[#edf2ef] pt-3">
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#667c74]">
+                      {booking.kind === "transfer" ? t("payment.detailLabels.transfer") : t("payment.detailLabels.property")}
+                    </dt>
+                    <dd className="mt-1 font-semibold text-[#183c2f]">
+                      {booking.title}
+                    </dd>
+                  </div>
+                  {booking.stayDates && (
+                    <>
+                      <div>
+                        <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#667c74]">
+                          {t("payment.detailLabels.checkIn")}
+                        </dt>
+                        <dd className="mt-1 font-medium text-[#414847]">
+                          {booking.stayDates.checkIn}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#667c74]">
+                          {t("payment.detailLabels.checkOut")}
+                        </dt>
+                        <dd className="mt-1 font-medium text-[#414847]">
+                          {booking.stayDates.checkOut}
+                        </dd>
+                      </div>
+                      {typeof booking.guests === "number" && (
+                        <div>
+                          <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#667c74]">
+                            {t("payment.detailLabels.guests")}
+                          </dt>
+                          <dd className="mt-1 font-medium text-[#414847]">
+                            {booking.guests}
+                          </dd>
+                        </div>
+                      )}
+                    </>
                   )}
-                  {captureResult.paymentStatus && (
-                    <p><strong>Status:</strong> {captureResult.paymentStatus}</p>
+                  {booking.transferDetails && (
+                    <>
+                      <div>
+                        <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#667c74]">
+                          {t("payment.detailLabels.pickupDate")}
+                        </dt>
+                        <dd className="mt-1 font-medium text-[#414847]">
+                          {booking.transferDetails.pickupDate} {booking.transferDetails.pickupTime}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#667c74]">
+                          {t("payment.detailLabels.passengers")}
+                        </dt>
+                        <dd className="mt-1 font-medium text-[#414847]">
+                          {booking.transferDetails.passengers}
+                        </dd>
+                      </div>
+                    </>
                   )}
+                </dl>
+
+                {/* What's Next Box */}
+                <div className="flex items-start gap-3 rounded-xl border border-[#dfe8e4] bg-white p-3.5">
+                  <ShieldCheck className="mt-0.5 size-4 shrink-0 text-[#2e6f57]" />
+                  <div className="min-w-0">
+                    <h4 className="text-[13px] font-bold text-[#183c2f]">{t("payment.whatsNext")}</h4>
+                    <p className="mt-0.5 text-[12px] leading-relaxed text-[#667c74]">{successCopy.next}</p>
+                  </div>
                 </div>
-              )}
-              <button
-                type="button"
-                onClick={onClose}
-                className="mt-4 inline-flex items-center justify-center rounded-xl bg-[#2e6f57] px-5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#255f49]"
-              >
-                Close
-              </button>
-            </div>
-          ) : isExpired ? (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-center">
-              <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-red-100 text-red-600">
-                <AlertCircle className="size-5" />
               </div>
-              <h4 className="mt-2 text-[14px] font-bold text-red-800">Reservation Expired</h4>
-              <p className="mt-1 text-[12px] text-red-600">
-                The 5-minute temporary hold has elapsed. Please try booking again.
-              </p>
+
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-3 inline-flex items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-[12px] font-bold text-white transition hover:bg-red-700"
+                className="flex h-11 w-full items-center justify-center rounded-xl bg-[#2e6f57] px-6 text-[14px] font-semibold text-white shadow transition hover:bg-[#255f49]"
               >
-                Close
+                {t("common.close") || "Done"}
               </button>
             </div>
           ) : (
-            <div className="space-y-4">
-              {/* Payment Gateway Selector */}
-              <PaymentMethodSelector
-                selected={paymentMethod}
-                onSelect={setPaymentMethod}
-                currency={booking.currency}
-              />
-
-              {/* Dynamic Gateway View */}
-              {paymentMethod === "paypal" ? (
-                <PayPalProvider currency={booking.currency}>
-                  <div className="pt-1">
-                    <PayPalCheckout
-                      bookingId={booking.bookingId}
-                      onSuccess={handleSuccess}
-                      onError={(err) => console.error("PAYPAL MODAL ERROR:", err)}
-                    />
+            <>
+              {/* Booking Summary Box */}
+              <div className="rounded-xl border border-[#dfe8e4] bg-[#fbfdfc] p-4 text-[13px]">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-bold text-[#183c2f]">{booking.title}</h3>
+                    {booking.subtitle && (
+                      <p className="mt-0.5 text-[12px] text-[#667c74]">{booking.subtitle}</p>
+                    )}
                   </div>
-                </PayPalProvider>
+                  <div className="text-right rtl:text-left">
+                    <span className="text-[11px] uppercase tracking-wider text-[#8a9a94]">
+                      {t("payment.detailLabels.depositDue")}
+                    </span>
+                    <p className="text-[16px] font-extrabold text-[#183c2f]">
+                      {formatCurrency(booking.amount, booking.currency, 2)}
+                    </p>
+                    {booking.currency !== "USD" && (
+                      <p className="text-[11px] text-[#8a9a94]">
+                        ≈ {formatCurrency(booking.amountUsd, "USD", 2)} {t("payment.detailLabels.viaPaypal")}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Stay Dates / Details */}
+                {booking.stayDates && (
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[#edf2ef] pt-2.5 text-[12px] text-[#40544c]">
+                    <span>
+                      <strong>{t("payment.detailLabels.checkIn")}:</strong> {booking.stayDates.checkIn}
+                    </span>
+                    <span>•</span>
+                    <span>
+                      <strong>{t("payment.detailLabels.checkOut")}:</strong> {booking.stayDates.checkOut}
+                    </span>
+                    {typeof booking.guests === "number" && (
+                      <>
+                        <span>•</span>
+                        <span>
+                          <strong>{t("payment.detailLabels.guests")}:</strong> {booking.guests}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {booking.transferDetails && (
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[#edf2ef] pt-2.5 text-[12px] text-[#40544c]">
+                    <span>
+                      <strong>{t("payment.detailLabels.pickupDate")}:</strong>{" "}
+                      {booking.transferDetails.pickupDate} {booking.transferDetails.pickupTime}
+                    </span>
+                    <span>•</span>
+                    <span>
+                      <strong>{t("payment.detailLabels.passengers")}:</strong>{" "}
+                      {booking.transferDetails.passengers}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Payment Gateway or Expired */}
+              {isExpired ? (
+                <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-center">
+                  <div className="mx-auto flex size-10 items-center justify-center rounded-full bg-red-100 text-red-600">
+                    <AlertCircle className="size-5" />
+                  </div>
+                  <h4 className="mt-2 text-[14px] font-bold text-red-800">Reservation Expired</h4>
+                  <p className="mt-1 text-[12px] text-red-600">
+                    The 5-minute temporary hold has elapsed. Please try booking again.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="mt-3 inline-flex items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-[12px] font-bold text-white transition hover:bg-red-700"
+                  >
+                    Close
+                  </button>
+                </div>
               ) : (
-                <PaymobCheckout
-                  bookingId={booking.bookingId}
-                  bookingNumber={booking.bookingNumber}
-                  amount={booking.amount}
-                  currency={booking.currency}
-                  kind={booking.kind}
-                  onError={(err) => console.error("PAYMOB MODAL ERROR:", err)}
-                />
+                <div className="space-y-4">
+                  {/* Payment Gateway Selector */}
+                  <PaymentMethodSelector
+                    selected={paymentMethod}
+                    onSelect={setPaymentMethod}
+                    currency={booking.currency}
+                  />
+
+                  {/* Dynamic Gateway View */}
+                  {paymentMethod === "paypal" ? (
+                    <PayPalProvider currency="USD">
+                      <div className="pt-1">
+                        <PayPalCheckout
+                          bookingId={booking.bookingId}
+                          onSuccess={handleSuccess}
+                          onError={(err) => console.error("PAYPAL MODAL ERROR:", err)}
+                        />
+                      </div>
+                    </PayPalProvider>
+                  ) : (
+                    <PaymobCheckout
+                      bookingId={booking.bookingId}
+                      bookingNumber={booking.bookingNumber}
+                      amount={booking.amount}
+                      currency={booking.currency}
+                      kind={booking.kind}
+                      onError={(err) => console.error("PAYMOB MODAL ERROR:", err)}
+                    />
+                  )}
+                </div>
               )}
-            </div>
+            </>
           )}
 
           {/* Security note */}

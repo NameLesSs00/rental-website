@@ -39,7 +39,9 @@
     "toggleNavigation": "Открыть навигацию",
     "maxCapacity": "Максимальная вместимость",
     "language": "Язык",
-    "currency": "Валюта"
+    "currency": "Валюта",
+    "close": "Закрыть",
+    "done": "Готово"
   },
   "nav": {
     "items": {
@@ -308,7 +310,7 @@
     "emailPlaceholder": "например, ivan@example.com",
     "phonePlaceholder": "например, +20 123 456 7890",
     "rulesAgreement": "Я прочитал(а) и принимаю",
-    "bookPaypal": "Забронировать и оплатить PayPal",
+    "bookPaypal": "Подтвердить бронирование",
     "secure": "Мгновенное подтверждение и безопасная оплата",
     "errors": {
       "contact": "Введите имя, email и номер телефона.",
@@ -404,7 +406,7 @@
       "securePayment": "Безопасная онлайн-оплата"
     },
     "paypal": {
-      "payButton": "Забронировать и оплатить через PayPal",
+      "payButton": "Подтвердить бронирование",
       "securePayment": "Безопасная оплата через PayPal",
       "loading": "Загрузка PayPal...",
       "sdkFailed": "Не удалось загрузить PayPal. Пожалуйста, попробуйте снова.",
@@ -422,6 +424,8 @@
       "bookingType": "Тип бронирования",
       "paymentStatus": "Статус оплаты",
       "amountPaid": "Оплачено",
+      "depositDue": "Депозит 10%",
+      "viaPaypal": "через PayPal (USD)",
       "transactionId": "ID транзакции",
       "property": "Объект",
       "checkIn": "Заезд",

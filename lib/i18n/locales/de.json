@@ -39,7 +39,9 @@
     "toggleNavigation": "Navigation umschalten",
     "maxCapacity": "Maximale Kapazität",
     "language": "Sprache",
-    "currency": "Währung"
+    "currency": "Währung",
+    "close": "Schließen",
+    "done": "Fertig"
   },
   "nav": {
     "items": {
@@ -308,7 +310,7 @@
     "emailPlaceholder": "z. B. max@example.com",
     "phonePlaceholder": "z. B. +20 123 456 7890",
     "rulesAgreement": "Ich habe gelesen und akzeptiere die",
-    "bookPaypal": "Buchen und mit PayPal bezahlen",
+    "bookPaypal": "Buchung bestätigen",
     "secure": "Sofortige Bestätigung und sichere Zahlung",
     "errors": {
       "contact": "Bitte geben Sie Name, E-Mail und Telefonnummer ein.",
@@ -404,7 +406,7 @@
       "securePayment": "Sichere Online-Zahlung"
     },
     "paypal": {
-      "payButton": "Buchen & mit PayPal bezahlen",
+      "payButton": "Buchung bestätigen",
       "securePayment": "Gesichert durch PayPal",
       "loading": "PayPal wird geladen...",
       "sdkFailed": "PayPal konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
@@ -422,6 +424,8 @@
       "bookingType": "Buchungstyp",
       "paymentStatus": "Zahlungsstatus",
       "amountPaid": "Gezahlter Betrag",
+      "depositDue": "10% Anzahlung fällig",
+      "viaPaypal": "über PayPal (USD)",
       "transactionId": "Transaktions-ID",
       "property": "Unterkunft",
       "checkIn": "Anreise",

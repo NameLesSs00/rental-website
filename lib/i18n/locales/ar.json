@@ -39,7 +39,9 @@
     "toggleNavigation": "تبديل التنقل",
     "maxCapacity": "السعة القصوى",
     "language": "اللغة",
-    "currency": "العملة"
+    "currency": "العملة",
+    "close": "إغلاق",
+    "done": "تم"
   },
   "nav": {
     "items": {
@@ -321,7 +323,7 @@
     "emailPlaceholder": "مثال: ahmad@example.com",
     "phonePlaceholder": "مثال: +20 123 456 7890",
     "rulesAgreement": "لقد قرأت وأوافق على",
-    "bookPaypal": "احجز وادفع عبر PayPal",
+    "bookPaypal": "تأكيد الحجز",
     "secure": "تأكيد فوري ودفع آمن",
     "errors": {
       "contact": "يرجى إدخال اسمك وبريدك الإلكتروني ورقم هاتفك.",
@@ -417,7 +419,7 @@
       "securePayment": "دفع إلكتروني آمن"
     },
     "paypal": {
-      "payButton": "احجز وادفع بواسطة PayPal",
+      "payButton": "تأكيد الحجز",
       "securePayment": "دفع آمن بواسطة PayPal",
       "loading": "جاري تحميل PayPal...",
       "sdkFailed": "تعذر تحميل PayPal. يرجى التحقق من اتصالك والمحاولة مجدداً.",
@@ -435,6 +437,8 @@
       "bookingType": "نوع الحجز",
       "paymentStatus": "حالة الدفع",
       "amountPaid": "المبلغ المدفوع",
+      "depositDue": "10% عربون مستحق",
+      "viaPaypal": "عبر PayPal (USD)",
       "transactionId": "رقم المعاملة",
       "property": "العقار",
       "checkIn": "الوصول",

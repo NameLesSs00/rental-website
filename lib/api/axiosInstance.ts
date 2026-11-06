@@ -127,10 +127,14 @@ axiosInstance.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // No refresh token — nothing we can do, go to login
+    // No refresh token — nothing we can do, go to login if on admin route
     if (!refreshToken || !accessToken) {
       clearAuth();
-      if (typeof window !== "undefined" && window.location.pathname !== "/admin/login") {
+      if (
+        typeof window !== "undefined" &&
+        window.location.pathname.startsWith("/admin") &&
+        window.location.pathname !== "/admin/login"
+      ) {
         window.location.href = "/admin/login";
       }
       return Promise.reject(error);
@@ -195,7 +199,11 @@ axiosInstance.interceptors.response.use(
     } catch (refreshError) {
       processQueue(refreshError, null);
       clearAuth();
-      if (typeof window !== "undefined" && window.location.pathname !== "/admin/login") {
+      if (
+        typeof window !== "undefined" &&
+        window.location.pathname.startsWith("/admin") &&
+        window.location.pathname !== "/admin/login"
+      ) {
         window.location.href = "/admin/login";
       }
       return Promise.reject(refreshError);

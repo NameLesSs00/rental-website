@@ -119,7 +119,8 @@ export default function SingleTransferPageContent({ id }: SingleTransferPageCont
       {
         onSuccess: (res) => {
           const bookingId = res.data.bookingId;
-          const transferAmount = (journey?.basePrice ?? 0) * (transferData.tripType === 2 ? 2 : 1);
+          const transferTotalUsd = (journey?.basePrice ?? 0) * (transferData.tripType === 2 ? 2 : 1);
+          const transferDepositAmount = Math.round(transferTotalUsd * 0.1 * 100) / 100;
 
           savePaymentBookingContext({
             kind: "transfer",
@@ -130,7 +131,7 @@ export default function SingleTransferPageContent({ id }: SingleTransferPageCont
             pickupDate: transferData.pickupDate,
             pickupTime: transferData.pickupTime,
             passengers: Number(transferData.passengers),
-            amount: transferAmount,
+            amount: transferDepositAmount,
             currency: "USD",
           });
 
@@ -140,7 +141,8 @@ export default function SingleTransferPageContent({ id }: SingleTransferPageCont
             bookingNumber: res.data.bookingNumber,
             title: journey?.name || t("transfer.title"),
             subtitle: transferData.tripType === 2 ? "Round Trip" : "One Way",
-            amount: transferAmount,
+            amount: transferDepositAmount,
+            amountUsd: transferDepositAmount,
             currency: "USD",
             transferDetails: {
               pickupDate: transferData.pickupDate,
@@ -263,6 +265,22 @@ export default function SingleTransferPageContent({ id }: SingleTransferPageCont
         isOpen={isPaymentModalOpen}
         booking={pendingBooking}
         onClose={() => setIsPaymentModalOpen(false)}
+        onPaymentSuccess={() => {
+          setTransferData({
+            fullName: "",
+            email: "",
+            phone: "",
+            tripType: 1,
+            passengers: "",
+            pickupDate: "",
+            pickupTime: "",
+            returnDate: "",
+            returnTime: "",
+            flightNumber: "",
+            pickupNotes: "",
+            dropOffNotes: "",
+          });
+        }}
       />
     </main>
   );

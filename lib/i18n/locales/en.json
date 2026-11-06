@@ -39,7 +39,9 @@
     "toggleNavigation": "Toggle navigation",
     "maxCapacity": "Max capacity",
     "language": "Language",
-    "currency": "Currency"
+    "currency": "Currency",
+    "close": "Close",
+    "done": "Done"
   },
   "nav": {
     "items": {
@@ -321,7 +323,7 @@
     "emailPlaceholder": "e.g. john@example.com",
     "phonePlaceholder": "e.g. +20 123 456 7890",
     "rulesAgreement": "I have read and agree to the",
-    "bookPaypal": "Book & Pay with PayPal",
+    "bookPaypal": "Confirm Booking",
     "secure": "Instant confirmation & secure payment",
     "errors": {
       "contact": "Please enter your name, email, and phone number.",
@@ -417,7 +419,7 @@
       "securePayment": "Secured Online Payment"
     },
     "paypal": {
-      "payButton": "Book & Pay with PayPal",
+      "payButton": "Confirm Booking",
       "securePayment": "Secured by PayPal",
       "loading": "Loading PayPal...",
       "sdkFailed": "Could not load PayPal. Please check your internet connection or try again.",
@@ -435,6 +437,8 @@
       "bookingType": "Booking Type",
       "paymentStatus": "Payment Status",
       "amountPaid": "Amount Paid",
+      "depositDue": "10% Deposit Due",
+      "viaPaypal": "via PayPal (USD)",
       "transactionId": "Transaction ID",
       "property": "Property",
       "checkIn": "Check-in",

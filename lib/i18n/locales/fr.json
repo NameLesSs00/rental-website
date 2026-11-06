@@ -39,7 +39,9 @@
     "toggleNavigation": "Ouvrir ou fermer la navigation",
     "maxCapacity": "Capacité maximale",
     "language": "Langue",
-    "currency": "Devise"
+    "currency": "Devise",
+    "close": "Fermer",
+    "done": "Terminé"
   },
   "nav": {
     "items": {
@@ -308,7 +310,7 @@
     "emailPlaceholder": "ex. jean@example.com",
     "phonePlaceholder": "ex. +20 123 456 7890",
     "rulesAgreement": "J'ai lu et j'accepte le",
-    "bookPaypal": "Réserver et payer avec PayPal",
+    "bookPaypal": "Confirmer la réservation",
     "secure": "Confirmation instantanée et paiement sécurisé",
     "errors": {
       "contact": "Veuillez saisir votre nom, e-mail et numéro de téléphone.",
@@ -404,7 +406,7 @@
       "securePayment": "Paiement en ligne sécurisé"
     },
     "paypal": {
-      "payButton": "Réserver et payer avec PayPal",
+      "payButton": "Confirmer la réservation",
       "securePayment": "Sécurisé par PayPal",
       "loading": "Chargement de PayPal...",
       "sdkFailed": "Impossible de charger PayPal. Veuillez réessayer.",
@@ -422,6 +424,8 @@
       "bookingType": "Type de réservation",
       "paymentStatus": "Statut du paiement",
       "amountPaid": "Montant payé",
+      "depositDue": "Acompte 10% dû",
+      "viaPaypal": "via PayPal (USD)",
       "transactionId": "ID de transaction",
       "property": "Logement",
       "checkIn": "Arrivée",

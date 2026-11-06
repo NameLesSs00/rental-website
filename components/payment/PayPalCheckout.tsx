@@ -45,6 +45,21 @@ const isWindowClosedError = (err: unknown): boolean => {
   );
 };
 
+/** PayPal card-fields 422 "Invalid card number" in sandbox = card fields not eligible for this merchant */
+const isCardFieldsEligibilityError = (err: unknown): boolean => {
+  if (!err) return false;
+  const msg =
+    typeof err === "object" && "message" in err
+      ? String((err as { message: unknown }).message)
+      : String(err);
+  return (
+    msg.includes("VALIDATION_ERROR") ||
+    msg.includes("Invalid card number") ||
+    msg.includes("confirm-payment-source") ||
+    msg.includes("UNPROCESSABLE_ENTITY")
+  );
+};
+
 function CardSubmitButton({
   isCapturing,
   onStartCapturing,
@@ -118,6 +133,7 @@ export function PayPalCheckout({
   const [isCapturing, setIsCapturing] = useState(false);
   const isCapturingRef = useRef(false);
   const [isCardFieldsEligible, setIsCardFieldsEligible] = useState<boolean | null>(null);
+  const [cardFieldsFailed, setCardFieldsFailed] = useState(false);
 
   useEffect(() => {
     if (isResolved && typeof window !== "undefined") {
@@ -195,6 +211,14 @@ export function PayPalCheckout({
       console.warn("[PayPal] User closed the PayPal window before completion:", err);
       setLocalError(t("payment.paypal.cancelled"));
       onCancel?.();
+      return;
+    }
+    // Card-fields 422 "Invalid card number" = merchant not eligible for hosted card fields.
+    // Silently fall back to the PayPal button flow instead of showing a confusing error.
+    if (isCardFieldsEligibilityError(err)) {
+      console.warn("[PayPal] Card fields not eligible for this merchant, falling back to PayPal button:", err);
+      setCardFieldsFailed(true);
+      setLocalError(null);
       return;
     }
     console.error("PAYPAL SDK ERROR:", err);
@@ -288,7 +312,7 @@ export function PayPalCheckout({
       </div>
 
       {/* 3. Card Option (Custom Fields if eligible, or Standalone Card Button fallback) */}
-      {isCardFieldsEligible === false ? (
+      {isCardFieldsEligible === false || cardFieldsFailed ? (
         <div className="space-y-2">
           <div className="w-full overflow-hidden rounded-xl border border-[#dfe8e4] bg-[#f8faf9] p-1 shadow-xs">
             <PayPalButtons
@@ -366,7 +390,7 @@ export function PayPalCheckout({
                 </span>
               </label>
               <PayPalNumberField
-                placeholder="4032 0000 0000 0001"
+                placeholder="4111 1111 1111 1111"
                 className="h-[46px] w-full"
               />
             </div>

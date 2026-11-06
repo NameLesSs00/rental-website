@@ -5,6 +5,7 @@ import Link from "next/link";
 import * as LucideIcons from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import PropertyImageGallery from "./PropertyImageGallery";
 import PropertyBookingCard from "./PropertyBookingCard";
 import ScrollAnimation from "./ScrollAnimation";
@@ -289,8 +290,10 @@ function PropertyDetailView({
     }
   }, [bookingForm, checkIn, checkOut, hasAcceptedRules, hasRestoredDraft, propertyId]);
 
+  const queryClient = useQueryClient();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [pendingBooking, setPendingBooking] = useState<PendingBookingPayment | null>(null);
+  const [justBookedRanges, setJustBookedRanges] = useState<BookingCalendarItem[]>([]);
 
   const { mutate: createRentBooking, isPending: isCreatingBooking } = useCreateRentBooking();
   const {
@@ -305,7 +308,10 @@ function PropertyDetailView({
   const startDate = todayString;
   const endDate = formatLocalDate(new Date(currentYear, currentMonth + monthsToShow, 0));
   const { data: availabilityData } = usePropertyAvailability(propertyId, startDate, endDate);
-  const bookings = (availabilityData?.bookingCalendar || []) as BookingCalendarItem[];
+  const bookings = useMemo(
+    () => [...((availabilityData?.bookingCalendar || []) as BookingCalendarItem[]), ...justBookedRanges],
+    [availabilityData?.bookingCalendar, justBookedRanges]
+  );
 
   const isDateBooked = (dateString: string) => {
     return bookings.some((booking) => {
@@ -531,8 +537,10 @@ function PropertyDetailView({
             // Ignore
           }
 
-          const bookingAmount = priceCheck?.totalPrice ?? 0;
-          const bookingCurrency = currencyCode || "USD";
+          const bookingTotalUsd = priceCheck?.totalPrice ?? 0;
+          const depositUsd = Math.round(bookingTotalUsd * 0.1 * 100) / 100;
+          const depositInDisplayCurrency = Math.round(bookingTotalUsd * conversionRate * 0.1 * 100) / 100;
+          const depositCurrency = currencyCode || "USD";
 
           savePaymentBookingContext({
             kind: "rent",
@@ -543,8 +551,8 @@ function PropertyDetailView({
             checkIn,
             checkOut,
             guests: bookingForm.person,
-            amount: bookingAmount,
-            currency: bookingCurrency,
+            amount: depositInDisplayCurrency,
+            currency: depositCurrency,
           });
 
           setPendingBooking({
@@ -553,8 +561,9 @@ function PropertyDetailView({
             bookingNumber: res.data.bookingNumber,
             title: propertyName,
             subtitle: [property.address?.city, property.address?.country].filter(Boolean).join(", "),
-            amount: bookingAmount,
-            currency: bookingCurrency,
+            amount: depositInDisplayCurrency,
+            amountUsd: depositUsd,
+            currency: depositCurrency,
             stayDates: { checkIn, checkOut },
             guests: bookingForm.person,
           });
@@ -799,6 +808,37 @@ function PropertyDetailView({
         isOpen={isPaymentModalOpen}
         booking={pendingBooking}
         onClose={() => setIsPaymentModalOpen(false)}
+        onPaymentSuccess={() => {
+          if (pendingBooking?.stayDates) {
+            const { checkIn: bookedFrom, checkOut: bookedTo } = pendingBooking.stayDates;
+            setJustBookedRanges((prev) => [
+              ...prev,
+              {
+                bookingId: pendingBooking.bookingId,
+                from: bookedFrom,
+                to: bookedTo,
+                isBookable: false,
+              },
+            ]);
+          }
+          clearDates();
+          setBookingForm({
+            fullName: "",
+            email: "",
+            phone: "",
+            person: Math.min(1, capacity),
+          });
+          setHasAcceptedRules(false);
+          setFormError("");
+          resetPriceCheck();
+          try {
+            localStorage.removeItem(`rent_booking_draft_${propertyId}`);
+          } catch {
+            // Ignore
+          }
+          queryClient.invalidateQueries({ queryKey: ["properties", "availability", propertyId] });
+          queryClient.invalidateQueries({ queryKey: ["properties", propertyId, "daily-prices"] });
+        }}
       />
     </main>
   );
