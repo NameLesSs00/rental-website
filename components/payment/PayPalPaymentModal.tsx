@@ -10,20 +10,28 @@ import { PaymentMethodSelector, type PaymentGatewayMethod } from "./PaymentMetho
 import type { CapturePaypalResponseData } from "@/lib/hooks/usePayment";
 import { formatCurrency } from "@/lib/utils/currency";
 
+export interface BookingPriceBreakdown {
+  total: number;
+  deposit: number;
+  remaining: number;
+}
+
 export interface PendingBookingPayment {
   kind: "rent" | "transfer";
   bookingId: string;
   bookingNumber: string;
   title: string;
   subtitle?: string;
-  /** Deposit amount in the user's selected display currency (used for Paymob & display) */
-  amount: number;
-  currency: string;
-  /** Deposit amount always in USD (used for PayPal, which only supports USD) */
-  amountUsd: number;
+  usd: BookingPriceBreakdown;
+  egp: BookingPriceBreakdown;
+  /** Legacy fields for backward compatibility */
+  amount?: number;
+  currency?: string;
+  amountUsd?: number;
   stayDates?: {
     checkIn: string;
     checkOut: string;
+    nights?: number;
   };
   guests?: number;
   transferDetails?: {
@@ -132,6 +140,21 @@ export function PayPalPaymentModal({
 
   if (!isOpen || !booking) return null;
 
+  const usdBreakdown: BookingPriceBreakdown = booking.usd || {
+    total: Math.round((booking.amountUsd || booking.amount || 0) * 10 * 100) / 100,
+    deposit: booking.amountUsd || booking.amount || 0,
+    remaining: Math.round((booking.amountUsd || booking.amount || 0) * 9 * 100) / 100,
+  };
+
+  const egpBreakdown: BookingPriceBreakdown = booking.egp || {
+    total: Math.round(usdBreakdown.total * 50 * 100) / 100,
+    deposit: Math.round(usdBreakdown.deposit * 50 * 100) / 100,
+    remaining: Math.round(usdBreakdown.remaining * 50 * 100) / 100,
+  };
+
+  const activeBreakdown = paymentMethod === "paypal" ? usdBreakdown : egpBreakdown;
+  const activeCurrency = paymentMethod === "paypal" ? "USD" : "EGP";
+
   const localizedKind = tArray<string>(`payment.kinds.${booking.kind}`);
   const successCopy =
     localizedKind.length >= 4
@@ -164,7 +187,7 @@ export function PayPalPaymentModal({
       <aside
         className={`fixed inset-y-0 ${
           isRtl ? "left-0" : "right-0"
-        } z-[100] flex w-full max-w-full flex-col bg-white shadow-2xl transition-transform duration-300 ease-out sm:max-w-[490px]`}
+        } z-[100] flex w-full max-w-full flex-col bg-white shadow-2xl transition-transform duration-300 ease-out sm:max-w-[560px] md:max-w-[580px]`}
         dir={isRtl ? "rtl" : "ltr"}
       >
         {/* Fixed Header */}
@@ -250,8 +273,16 @@ export function PayPalPaymentModal({
                     <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#667c74]">
                       {t("payment.detailLabels.amountPaid")}
                     </dt>
+                    <dd className="mt-1 font-bold text-[#2e6f57]">
+                      {formatCurrency(usdBreakdown.deposit, "USD", 2)} (10%)
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-[#667c74]">
+                      {t("payment.detailLabels.remainingBalance")}
+                    </dt>
                     <dd className="mt-1 font-bold text-[#183c2f]">
-                      {formatCurrency(booking.amountUsd, "USD", 2)}
+                      {formatCurrency(usdBreakdown.remaining, "USD", 2)}
                     </dd>
                   </div>
                   <div className="col-span-2">
@@ -327,7 +358,9 @@ export function PayPalPaymentModal({
                   <ShieldCheck className="mt-0.5 size-4 shrink-0 text-[#2e6f57]" />
                   <div className="min-w-0">
                     <h4 className="text-[13px] font-bold text-[#183c2f]">{t("payment.whatsNext")}</h4>
-                    <p className="mt-0.5 text-[12px] leading-relaxed text-[#667c74]">{successCopy.next}</p>
+                    <p className="mt-0.5 text-[12px] leading-relaxed text-[#667c74]">
+                      {t("payment.detailLabels.remainingNotice")}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -342,33 +375,19 @@ export function PayPalPaymentModal({
             </div>
           ) : (
             <>
-              {/* Booking Summary Box */}
-              <div className="rounded-xl border border-[#dfe8e4] bg-[#fbfdfc] p-4 text-[13px]">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="font-bold text-[#183c2f]">{booking.title}</h3>
-                    {booking.subtitle && (
-                      <p className="mt-0.5 text-[12px] text-[#667c74]">{booking.subtitle}</p>
-                    )}
-                  </div>
-                  <div className="text-right rtl:text-left">
-                    <span className="text-[11px] uppercase tracking-wider text-[#8a9a94]">
-                      {t("payment.detailLabels.depositDue")}
-                    </span>
-                    <p className="text-[16px] font-extrabold text-[#183c2f]">
-                      {formatCurrency(booking.amount, booking.currency, 2)}
-                    </p>
-                    {booking.currency !== "USD" && (
-                      <p className="text-[11px] text-[#8a9a94]">
-                        ≈ {formatCurrency(booking.amountUsd, "USD", 2)} {t("payment.detailLabels.viaPaypal")}
-                      </p>
-                    )}
-                  </div>
+              {/* Clean Transparent Price Breakdown Card */}
+              <div className="rounded-2xl border border-[#dfe8e4] bg-[#fbfdfc] p-4 text-[13px] shadow-xs space-y-3.5">
+                {/* Property / Transfer Heading */}
+                <div>
+                  <h3 className="text-[15px] font-bold text-[#183c2f] leading-snug">{booking.title}</h3>
+                  {booking.subtitle && (
+                    <p className="mt-0.5 text-[12px] text-[#667c74]">{booking.subtitle}</p>
+                  )}
                 </div>
 
-                {/* Stay Dates / Details */}
+                {/* Stay Dates / Passenger pill */}
                 {booking.stayDates && (
-                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[#edf2ef] pt-2.5 text-[12px] text-[#40544c]">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-[#f4f7f5] px-3 py-2 text-[12px] text-[#40544c]">
                     <span>
                       <strong>{t("payment.detailLabels.checkIn")}:</strong> {booking.stayDates.checkIn}
                     </span>
@@ -388,7 +407,7 @@ export function PayPalPaymentModal({
                 )}
 
                 {booking.transferDetails && (
-                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[#edf2ef] pt-2.5 text-[12px] text-[#40544c]">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-[#f4f7f5] px-3 py-2 text-[12px] text-[#40544c]">
                     <span>
                       <strong>{t("payment.detailLabels.pickupDate")}:</strong>{" "}
                       {booking.transferDetails.pickupDate} {booking.transferDetails.pickupTime}
@@ -400,6 +419,58 @@ export function PayPalPaymentModal({
                     </span>
                   </div>
                 )}
+
+                {/* Price Breakdown Rows */}
+                <div className="border-t border-[#edf2ef] pt-3 space-y-2.5">
+                  {/* Total Price */}
+                  <div className="flex items-center justify-between text-[#667c74] px-0.5">
+                    <span className="text-[12px] font-medium">{t("payment.detailLabels.totalPrice")}</span>
+                    <span className="text-[13px] font-semibold text-[#183c2f]">
+                      {formatCurrency(activeBreakdown.total, activeCurrency, 2)}
+                    </span>
+                  </div>
+
+                  {/* 10% Deposit (Pay Online Now) Highlight Box */}
+                  <div className="rounded-xl border border-[#2e6f57]/20 bg-[#edf6f2] p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-[13px] font-bold text-[#183c2f]">
+                            {t("payment.detailLabels.depositDueNow")}
+                          </span>
+                          <span className="rounded bg-[#2e6f57] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+                            {t("payment.detailLabels.payOnlineNow")}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 text-[11px] font-medium text-[#2e6f57]">
+                          {paymentMethod === "paypal"
+                            ? t("payment.detailLabels.processedInUsdNotice")
+                            : t("payment.detailLabels.processedInEgpNotice")}
+                        </p>
+                      </div>
+                      <div className="text-right rtl:text-left">
+                        <p className="text-[17px] font-black text-[#2e6f57]">
+                          {formatCurrency(activeBreakdown.deposit, activeCurrency, 2)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Remaining 90% (Due at Check-in) */}
+                  <div className="flex items-center justify-between px-0.5 pt-0.5 text-[#667c74]">
+                    <div>
+                      <span className="text-[12px] font-medium text-[#40544c]">
+                        {t("payment.detailLabels.remainingBalance")}
+                      </span>
+                      <p className="text-[11px] text-[#8a9a94]">
+                        {t("payment.detailLabels.payOnArrival")}
+                      </p>
+                    </div>
+                    <span className="text-[13px] font-semibold text-[#40544c]">
+                      {formatCurrency(activeBreakdown.remaining, activeCurrency, 2)}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Payment Gateway or Expired */}
@@ -426,7 +497,7 @@ export function PayPalPaymentModal({
                   <PaymentMethodSelector
                     selected={paymentMethod}
                     onSelect={setPaymentMethod}
-                    currency={booking.currency}
+                    currency={activeCurrency}
                   />
 
                   {/* Dynamic Gateway View */}
@@ -444,8 +515,8 @@ export function PayPalPaymentModal({
                     <PaymobCheckout
                       bookingId={booking.bookingId}
                       bookingNumber={booking.bookingNumber}
-                      amount={booking.amount}
-                      currency={booking.currency}
+                      amount={egpBreakdown.deposit}
+                      currency="EGP"
                       kind={booking.kind}
                       onError={(err) => console.error("PAYMOB MODAL ERROR:", err)}
                     />

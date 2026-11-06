@@ -248,7 +248,7 @@ function ContactColumn({ shouldReduceMotion }: { shouldReduceMotion: boolean }) 
               className="flex min-w-0 items-center gap-2.5 text-[12px] leading-[1.6] transition hover:text-[#cfb072] lg:text-[16px]"
             >
               <span className="grid size-5 shrink-0 place-items-center lg:size-[22px]">
-                <Image src={item.icon} alt="" width={20} height={20} className="max-h-[18px] w-[18px] object-contain [filter:brightness(0)_invert(1)] lg:max-h-5 lg:w-5" />
+                <Image src={item.icon} alt="" width={20} height={20} className="max-h-[18px] w-[18px] h-auto object-contain [filter:brightness(0)_invert(1)] lg:max-h-5 lg:w-5" />
               </span>
               <span className="min-w-0 break-words" dir={"forceLtr" in item && item.forceLtr ? "ltr" : "auto"}>
                 {item.label}

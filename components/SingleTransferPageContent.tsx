@@ -4,6 +4,7 @@ import { type Dispatch, type SetStateAction, useState } from "react";
 import Image from "next/image";
 import { useJourneyById } from "@/lib/hooks/useJourney";
 import { useCreateTransferBooking } from "@/lib/hooks/useBooking";
+import { useCurrencies } from "@/lib/hooks/useCurrency";
 import PayPalPaymentModal, { type PendingBookingPayment } from "@/components/payment/PayPalPaymentModal";
 import { API_BASE_URL } from "@/lib/api/config";
 import { savePaymentBookingContext } from "@/lib/utils/paymentBookingContext";
@@ -48,6 +49,9 @@ export default function SingleTransferPageContent({ id }: SingleTransferPageCont
   const { t } = useI18n();
   const { data: journey, isLoading, isError } = useJourneyById(id);
   const { mutate: createTransferBooking, isPending: isCreatingBooking } = useCreateTransferBooking();
+  const { data: currencies = [] } = useCurrencies({ isActive: true });
+  const egpCurrency = currencies.find((c) => c.code.toUpperCase() === "EGP");
+  const egpRate = egpCurrency?.exchangeRate || 50;
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [pendingBooking, setPendingBooking] = useState<PendingBookingPayment | null>(null);
   const setPageEntity = useHeaderStore((state) => state.setPageEntity);
@@ -120,7 +124,12 @@ export default function SingleTransferPageContent({ id }: SingleTransferPageCont
         onSuccess: (res) => {
           const bookingId = res.data.bookingId;
           const transferTotalUsd = (journey?.basePrice ?? 0) * (transferData.tripType === 2 ? 2 : 1);
-          const transferDepositAmount = Math.round(transferTotalUsd * 0.1 * 100) / 100;
+          const transferDepositUsd = Math.round(transferTotalUsd * 0.1 * 100) / 100;
+          const transferRemainingUsd = Math.round((transferTotalUsd - transferDepositUsd) * 100) / 100;
+
+          const transferTotalEgp = Math.round(transferTotalUsd * egpRate * 100) / 100;
+          const transferDepositEgp = Math.round(transferTotalEgp * 0.1 * 100) / 100;
+          const transferRemainingEgp = Math.round((transferTotalEgp - transferDepositEgp) * 100) / 100;
 
           savePaymentBookingContext({
             kind: "transfer",
@@ -131,7 +140,7 @@ export default function SingleTransferPageContent({ id }: SingleTransferPageCont
             pickupDate: transferData.pickupDate,
             pickupTime: transferData.pickupTime,
             passengers: Number(transferData.passengers),
-            amount: transferDepositAmount,
+            amount: transferDepositUsd,
             currency: "USD",
           });
 
@@ -141,8 +150,18 @@ export default function SingleTransferPageContent({ id }: SingleTransferPageCont
             bookingNumber: res.data.bookingNumber,
             title: journey?.name || t("transfer.title"),
             subtitle: transferData.tripType === 2 ? "Round Trip" : "One Way",
-            amount: transferDepositAmount,
-            amountUsd: transferDepositAmount,
+            usd: {
+              total: transferTotalUsd,
+              deposit: transferDepositUsd,
+              remaining: transferRemainingUsd,
+            },
+            egp: {
+              total: transferTotalEgp,
+              deposit: transferDepositEgp,
+              remaining: transferRemainingEgp,
+            },
+            amount: transferDepositUsd,
+            amountUsd: transferDepositUsd,
             currency: "USD",
             transferDetails: {
               pickupDate: transferData.pickupDate,

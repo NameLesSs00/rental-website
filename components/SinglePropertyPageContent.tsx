@@ -25,6 +25,7 @@ import type { Property, PropertyCategoryGroup } from "@/lib/types/property";
 import type { PropertyCategory, PropertyCategoryItem } from "@/lib/types/propertyCategory";
 import type { AttributeGroupItem } from "@/lib/types/attributeGroupItem";
 import { useReviews, usePropertyAverageRating, useCreateReview } from "@/lib/hooks/useReview";
+import { useCurrencies } from "@/lib/hooks/useCurrency";
 import { savePaymentBookingContext } from "@/lib/utils/paymentBookingContext";
 import { formatCurrency, formatPriceInfo, getPriceInfoAmount, getPriceInfoCurrency } from "@/lib/utils/currency";
 import { useSelectedCurrency } from "@/lib/hooks/useSelectedCurrency";
@@ -179,6 +180,10 @@ function PropertyDetailView({
   const currencyCode = getPriceInfoCurrency(property.basePriceInfo, selectedCurrency);
   const conversionRate = property.basePriceInfo?.conversionRate ?? 1;
   const capacity = property.capacity || 1;
+
+  const { data: currencies = [] } = useCurrencies({ isActive: true });
+  const egpCurrency = currencies.find((c) => c.code.toUpperCase() === "EGP");
+  const egpRate = egpCurrency?.exchangeRate || (currencyCode === "EGP" ? conversionRate : 50);
 
   // ─── Booking State ───
   const today = new Date();
@@ -539,8 +544,11 @@ function PropertyDetailView({
 
           const bookingTotalUsd = priceCheck?.totalPrice ?? 0;
           const depositUsd = Math.round(bookingTotalUsd * 0.1 * 100) / 100;
-          const depositInDisplayCurrency = Math.round(bookingTotalUsd * conversionRate * 0.1 * 100) / 100;
-          const depositCurrency = currencyCode || "USD";
+          const remainingUsd = Math.round((bookingTotalUsd - depositUsd) * 100) / 100;
+
+          const bookingTotalEgp = Math.round(bookingTotalUsd * egpRate * 100) / 100;
+          const depositEgp = Math.round(bookingTotalEgp * 0.1 * 100) / 100;
+          const remainingEgp = Math.round((bookingTotalEgp - depositEgp) * 100) / 100;
 
           savePaymentBookingContext({
             kind: "rent",
@@ -551,8 +559,8 @@ function PropertyDetailView({
             checkIn,
             checkOut,
             guests: bookingForm.person,
-            amount: depositInDisplayCurrency,
-            currency: depositCurrency,
+            amount: depositUsd,
+            currency: "USD",
           });
 
           setPendingBooking({
@@ -561,10 +569,20 @@ function PropertyDetailView({
             bookingNumber: res.data.bookingNumber,
             title: propertyName,
             subtitle: [property.address?.city, property.address?.country].filter(Boolean).join(", "),
-            amount: depositInDisplayCurrency,
+            usd: {
+              total: bookingTotalUsd,
+              deposit: depositUsd,
+              remaining: remainingUsd,
+            },
+            egp: {
+              total: bookingTotalEgp,
+              deposit: depositEgp,
+              remaining: remainingEgp,
+            },
+            amount: depositUsd,
             amountUsd: depositUsd,
-            currency: depositCurrency,
-            stayDates: { checkIn, checkOut },
+            currency: "USD",
+            stayDates: { checkIn, checkOut, nights },
             guests: bookingForm.person,
           });
           setIsPaymentModalOpen(true);
