@@ -180,7 +180,7 @@
         ],
         [
           "Buchen und entspannen",
-          "Reservieren Sie online mit 10 % Anzahlung, fügen Sie Transfers hinzu und genießen Sie Ihren Aufenthalt."
+          "Reservieren Sie online mit 50 % Anzahlung, fügen Sie Transfers hinzu und genießen Sie Ihren Aufenthalt."
         ]
       ]
     },
@@ -424,19 +424,19 @@
       "bookingType": "Buchungstyp",
       "paymentStatus": "Zahlungsstatus",
       "amountPaid": "Gezahlter Betrag",
-      "depositDue": "10% Anzahlung fällig",
+      "depositDue": "50% Anzahlung fällig",
       "viaPaypal": "über PayPal (USD)",
       "totalPrice": "Gesamtbetrag",
-      "depositDueNow": "10% Anzahlung jetzt fällig",
+      "depositDueNow": "50% Anzahlung jetzt fällig",
       "payOnlineNow": "Jetzt online zahlen",
-      "remainingBalance": "Restbetrag (90%)",
+      "remainingBalance": "Restbetrag (50%)",
       "dueAtCheckIn": "Fällig beim Check-in",
       "payOnArrival": "Zahlbar bei Ankunft",
       "billedInUsd": "In USD abgerechnet",
       "billedInEgp": "In EGP abgerechnet",
       "processedInUsdNotice": "Wird in USD über PayPal abgewickelt",
       "processedInEgpNotice": "Wird in EGP über Paymob abgewickelt",
-      "remainingNotice": "Der Restbetrag von 90% ist beim Check-in in der Unterkunft zu zahlen.",
+      "remainingNotice": "Der Restbetrag von 50% ist beim Check-in in der Unterkunft zu zahlen.",
       "transactionId": "Transaktions-ID",
       "property": "Unterkunft",
       "checkIn": "Anreise",
@@ -491,6 +491,13 @@
       "paymobSubtitle": "Meeza, EGP-Karten, Vodafone Cash, ValU",
       "payWithPaymob": "Weiter zu Paymob",
       "paymobRedirectNotice": "Sie werden sicher zu Paymob weitergeleitet, um die Zahlung abzuschließen."
+    },
+    "hold": {
+      "activeTitle": "Aktive Reservierungsreservierung",
+      "holdingNotice": "Ihre ausgewählten Reisedaten werden vorübergehend freigehalten. Bitte schließen Sie die Zahlung ab, bevor die Frist abläuft.",
+      "resumeButton": "Zahlung fortsetzen",
+      "cancelButton": "Reservierung aufheben",
+      "changeDatesPrompt": "Möchten Sie andere Reisedaten wählen? Reservierung aufheben"
     }
   },
   "contact": {
@@ -562,7 +569,7 @@
       },
       "transparent": {
         "title": "Transparente Buchung",
-        "description": "Klare Preise, genaue Fotos, geprüfte Ausstattung und einfache Online-Anzahlung von 10 %."
+        "description": "Klare Preise, genaue Fotos, geprüfte Ausstattung und einfache Online-Anzahlung von 50 %."
       },
       "hostCare": {
         "title": "Lokale Gastgeberbetreuung",

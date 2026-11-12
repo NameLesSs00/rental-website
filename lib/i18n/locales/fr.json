@@ -180,7 +180,7 @@
         ],
         [
           "Réserver et se détendre",
-          "Réservez vos dates en ligne avec un acompte de 10 %, ajoutez un transfert aéroport et profitez de votre séjour à Hurghada."
+          "Réservez vos dates en ligne avec un acompte de 50 %, ajoutez un transfert aéroport et profitez de votre séjour à Hurghada."
         ]
       ]
     },
@@ -424,19 +424,19 @@
       "bookingType": "Type de réservation",
       "paymentStatus": "Statut du paiement",
       "amountPaid": "Montant payé",
-      "depositDue": "Acompte 10% dû",
+      "depositDue": "Acompte 50% dû",
       "viaPaypal": "via PayPal (USD)",
       "totalPrice": "Prix total",
-      "depositDueNow": "Acompte de 10% dû maintenant",
+      "depositDueNow": "Acompte de 50% dû maintenant",
       "payOnlineNow": "Payer en ligne maintenant",
-      "remainingBalance": "Solde restant (90%)",
+      "remainingBalance": "Solde restant (50%)",
       "dueAtCheckIn": "Dû à l'arrivée",
       "payOnArrival": "Payable à l'arrivée",
       "billedInUsd": "Facturé en USD",
       "billedInEgp": "Facturé en EGP",
       "processedInUsdNotice": "Traité en USD via PayPal",
       "processedInEgpNotice": "Traité en EGP via Paymob",
-      "remainingNotice": "Le solde restant de 90% est payable lors de l'enregistrement sur place.",
+      "remainingNotice": "Le solde restant de 50% est payable lors de l'enregistrement sur place.",
       "transactionId": "ID de transaction",
       "property": "Logement",
       "checkIn": "Arrivée",
@@ -491,6 +491,13 @@
       "paymobSubtitle": "Meeza, cartes EGP, Vodafone Cash, ValU",
       "payWithPaymob": "Continuer vers Paymob",
       "paymobRedirectNotice": "Vous serez redirigé en toute sécurité vers Paymob pour finaliser votre paiement."
+    },
+    "hold": {
+      "activeTitle": "Réservation temporaire active",
+      "holdingNotice": "Vos dates sont temporairement bloquées pour vous. Veuillez finaliser votre paiement avant l'expiration du délai.",
+      "resumeButton": "Reprendre le paiement",
+      "cancelButton": "Annuler la réservation temporaire",
+      "changeDatesPrompt": "Vous souhaitez choisir d'autres dates ? Annuler la réservation"
     }
   },
   "contact": {
@@ -562,7 +569,7 @@
       },
       "transparent": {
         "title": "Réservation transparente",
-        "description": "Prix clairs par nuit, photos fidèles, équipements vérifiés et acompte en ligne simple de 10 %."
+        "description": "Prix clairs par nuit, photos fidèles, équipements vérifiés et acompte en ligne simple de 50 %."
       },
       "hostCare": {
         "title": "Accompagnement local",

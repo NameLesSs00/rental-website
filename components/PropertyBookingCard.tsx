@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { Clock, CreditCard } from "lucide-react";
 import { formatCurrency } from "@/lib/utils/currency";
 import { useI18n } from "./I18nProvider";
+import type { PendingBookingPayment } from "@/components/payment/PayPalPaymentModal";
 
 interface PropertyBookingCardProps {
   idPrefix?: string;
@@ -44,6 +46,9 @@ interface PropertyBookingCardProps {
   missingDates: string[];
   onSubmitBooking: (e: React.FormEvent<HTMLFormElement>) => void;
   onScrollToCalendar?: () => void;
+  activeHold?: PendingBookingPayment | null;
+  onResumeHold?: () => void;
+  onCancelHold?: () => void;
 }
 
 export default function PropertyBookingCard({
@@ -72,6 +77,9 @@ export default function PropertyBookingCard({
   missingDates,
   onSubmitBooking,
   onScrollToCalendar,
+  activeHold,
+  onResumeHold,
+  onCancelHold,
 }: PropertyBookingCardProps) {
   const { t, href } = useI18n();
   const isFormValid =
@@ -114,6 +122,48 @@ export default function PropertyBookingCard({
           </span>
         )}
       </div>
+
+      {/* ─── Active Hold Notice Banner ─── */}
+      {activeHold && (
+        <div className="mt-3.5 rounded-xl border border-amber-300 bg-[#fef9ec] p-3.5 text-amber-900 shadow-xs">
+          <div className="flex items-start gap-2.5">
+            <Clock className="mt-0.5 size-4 shrink-0 text-[#cfb072] animate-pulse" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-1">
+                <p className="text-[12.5px] font-bold text-[#183c2f]">
+                  {t("payment.hold.activeTitle") || "Active Reservation Hold"}
+                </p>
+                <span className="font-mono text-[11px] font-bold text-[#2e6f57]">
+                  #{activeHold.bookingNumber}
+                </span>
+              </div>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-[#667c74]">
+                {t("payment.hold.holdingNotice") ||
+                  "Your selected dates are temporarily held. Complete payment before the hold expires."}
+              </p>
+              <div className="mt-2.5 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onResumeHold}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#2e6f57] px-3 py-1.5 text-[11.5px] font-bold text-white shadow-xs transition hover:bg-[#255f49]"
+                >
+                  <CreditCard className="size-3.5" />
+                  <span>{t("payment.hold.resumeButton") || "Resume Payment"}</span>
+                </button>
+                {onCancelHold && (
+                  <button
+                    type="button"
+                    onClick={onCancelHold}
+                    className="rounded-lg border border-[#dfe8e4] bg-white px-2.5 py-1.5 text-[11px] font-medium text-[#667c74] transition hover:bg-[#edf2ef] hover:text-red-600"
+                  >
+                    {t("payment.hold.cancelButton") || "Cancel Hold"}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={onSubmitBooking} className="mt-3.5 space-y-3.5">
         {/* ─── Date Picker Box ─── */}
@@ -282,6 +332,25 @@ export default function PropertyBookingCard({
                   : formatCurrency(estimatedTotal, currencyCode)}
               </span>
             </div>
+            {checkIn && checkOut && !isCheckingPrice && estimatedTotal > 0 ? (
+              <div className="mt-2 rounded-lg border border-[#2e6f57]/20 bg-[#edf6f2] px-3 py-2 text-[12px]">
+                <div className="flex items-center justify-between font-semibold text-[#183c2f]">
+                  <span>{t("payment.detailLabels.depositDueNow")}</span>
+                  <span className="font-bold text-[#2e6f57]">
+                    {formatCurrency(Math.round(estimatedTotal * 0.5 * 100) / 100, currencyCode)}
+                  </span>
+                </div>
+                <div className="mt-1 flex items-center justify-between text-[11px] text-[#667c74]">
+                  <span>{t("payment.detailLabels.remainingBalance")}</span>
+                  <span className="font-medium text-[#40544c]">
+                    {formatCurrency(
+                      Math.round((estimatedTotal - Math.round(estimatedTotal * 0.5 * 100) / 100) * 100) / 100,
+                      currencyCode
+                    )}
+                  </span>
+                </div>
+              </div>
+            ) : null}
           </dl>
           {!checkIn || !checkOut ? (
             <p className="mt-2 text-[11px] text-[#8a9a94]">
@@ -325,36 +394,69 @@ export default function PropertyBookingCard({
           </span>
         </label>
 
-        {/* Submit CTA Button */}
-        <button
-          type="submit"
-          disabled={!isFormValid}
-          className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#2e6f57] text-[15px] font-semibold text-white shadow-md transition-all hover:bg-[#255f49] hover:shadow-lg active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isPending ? (
-            <>
-              <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              <span>{t("common.processing")}</span>
-            </>
-          ) : (
-            <>
-              <span>{t("payment.paypal.payButton") || t("common.bookNow")}</span>
+        {/* Submit / Resume CTA Button */}
+        {activeHold && onResumeHold ? (
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={onResumeHold}
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#2e6f57] text-[15px] font-semibold text-white shadow-md transition-all hover:bg-[#255f49] hover:shadow-lg active:scale-[0.99]"
+            >
+              <CreditCard className="size-4.5" />
+              <span>{t("payment.hold.resumeButton") || "Resume Payment"}</span>
               <svg
-                className="size-4"
+                className="size-4 rtl:rotate-180"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
                 strokeWidth="2"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M14 5l7 7m0 0l-7 7m7-7H3"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
-            </>
-          )}
-        </button>
+            </button>
+            {onCancelHold && (
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={onCancelHold}
+                  className="text-[11.5px] font-medium text-[#667c74] underline transition hover:text-red-600"
+                >
+                  {t("payment.hold.changeDatesPrompt") || "Want to select different dates? Cancel hold"}
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <button
+            type="submit"
+            disabled={!isFormValid}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#2e6f57] text-[15px] font-semibold text-white shadow-md transition-all hover:bg-[#255f49] hover:shadow-lg active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isPending ? (
+              <>
+                <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                <span>{t("common.processing")}</span>
+              </>
+            ) : (
+              <>
+                <span>{t("payment.paypal.payButton") || t("common.bookNow")}</span>
+                <svg
+                  className="size-4 rtl:rotate-180"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M14 5l7 7m0 0l-7 7m7-7H3"
+                  />
+                </svg>
+              </>
+            )}
+          </button>
+        )}
 
         {/* Trust Badges */}
         <div className="space-y-2 border-t border-[#edf2ef] pt-3.5 text-[12px] text-[#667c74]">

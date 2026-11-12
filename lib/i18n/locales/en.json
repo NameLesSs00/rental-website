@@ -180,7 +180,7 @@
         ],
         [
           "Book & Relax",
-          "Reserve your dates online with a 10% deposit, add airport transfers, and enjoy your holiday stay in Hurghada."
+          "Reserve your dates online with a 50% deposit, add airport transfers, and enjoy your holiday stay in Hurghada."
         ]
       ]
     },
@@ -437,19 +437,19 @@
       "bookingType": "Booking Type",
       "paymentStatus": "Payment Status",
       "amountPaid": "Amount Paid",
-      "depositDue": "10% Deposit Due",
+      "depositDue": "50% Deposit Due",
       "viaPaypal": "via PayPal (USD)",
       "totalPrice": "Total Price",
-      "depositDueNow": "10% Deposit Due Now",
+      "depositDueNow": "50% Deposit Due Now",
       "payOnlineNow": "Pay Online Now",
-      "remainingBalance": "Remaining Balance (90%)",
+      "remainingBalance": "Remaining Balance (50%)",
       "dueAtCheckIn": "Due at Check-in",
       "payOnArrival": "Payable upon arrival",
       "billedInUsd": "Billed in USD",
       "billedInEgp": "Billed in EGP",
       "processedInUsdNotice": "Processed in USD via PayPal",
       "processedInEgpNotice": "Processed in EGP via Paymob",
-      "remainingNotice": "The remaining 90% is payable upon check-in at the property.",
+      "remainingNotice": "The remaining 50% is payable upon check-in at the property.",
       "transactionId": "Transaction ID",
       "property": "Property",
       "checkIn": "Check-in",
@@ -504,6 +504,13 @@
       "paymobSubtitle": "Meeza, EGP Cards, Vodafone Cash, ValU",
       "payWithPaymob": "Continue to Paymob",
       "paymobRedirectNotice": "You will be securely redirected to Paymob to complete your payment with local Egyptian cards or wallets."
+    },
+    "hold": {
+      "activeTitle": "Active Reservation Hold",
+      "holdingNotice": "Your selected dates are temporarily held. Complete payment before the hold expires.",
+      "resumeButton": "Resume Payment",
+      "cancelButton": "Cancel Hold",
+      "changeDatesPrompt": "Want to select different dates? Cancel hold"
     }
   },
   "contact": {
@@ -575,7 +582,7 @@
       },
       "transparent": {
         "title": "Transparent Booking",
-        "description": "Clear nightly pricing, accurate photos, verified amenities, and a simple 10% online deposit."
+        "description": "Clear nightly pricing, accurate photos, verified amenities, and a simple 50% online deposit."
       },
       "hostCare": {
         "title": "Local Host Care",

@@ -10,6 +10,8 @@ import { PaymentMethodSelector, type PaymentGatewayMethod } from "./PaymentMetho
 import type { CapturePaypalResponseData } from "@/lib/hooks/usePayment";
 import { formatCurrency } from "@/lib/utils/currency";
 
+import { clearActiveHold } from "@/lib/utils/paymentBookingContext";
+
 export interface BookingPriceBreakdown {
   total: number;
   deposit: number;
@@ -22,8 +24,12 @@ export interface PendingBookingPayment {
   bookingNumber: string;
   title: string;
   subtitle?: string;
+  propertyId?: string;
+  journeyId?: string;
   usd: BookingPriceBreakdown;
   egp: BookingPriceBreakdown;
+  /** Unix timestamp in ms when the 5-minute hold expires */
+  expiresAt?: number;
   /** Legacy fields for backward compatibility */
   amount?: number;
   currency?: string;
@@ -50,22 +56,41 @@ interface PayPalPaymentModalProps {
 
 const FIVE_MINUTES_IN_SECONDS = 5 * 60;
 
-function ExpiryBar({ onExpire }: { onExpire: () => void }) {
+function ExpiryBar({
+  expiresAt,
+  onExpire,
+}: {
+  expiresAt?: number;
+  onExpire: () => void;
+}) {
   const { t } = useI18n();
-  const [secondsRemaining, setSecondsRemaining] = useState(FIVE_MINUTES_IN_SECONDS);
+
+  const getRemaining = React.useCallback(() => {
+    if (!expiresAt) return FIVE_MINUTES_IN_SECONDS;
+    return Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+  }, [expiresAt]);
+
+  const [secondsRemaining, setSecondsRemaining] = useState<number>(getRemaining);
 
   useEffect(() => {
-    if (secondsRemaining <= 0) {
+    const currentRemaining = getRemaining();
+    setSecondsRemaining(currentRemaining);
+    if (currentRemaining <= 0) {
       onExpire();
       return;
     }
 
     const interval = setInterval(() => {
-      setSecondsRemaining((prev) => Math.max(0, prev - 1));
+      const remaining = getRemaining();
+      setSecondsRemaining(remaining);
+      if (remaining <= 0) {
+        clearInterval(interval);
+        onExpire();
+      }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [secondsRemaining, onExpire]);
+  }, [getRemaining, onExpire]);
 
   const minutes = Math.floor(secondsRemaining / 60);
   const seconds = secondsRemaining % 60;
@@ -125,12 +150,16 @@ export function PayPalPaymentModal({
 
   const handleExpire = React.useCallback(() => {
     setIsExpired(true);
-  }, []);
+    if (booking?.kind) {
+      clearActiveHold(booking.kind, booking.propertyId || booking.journeyId);
+    }
+  }, [booking]);
 
   const handleSuccess = React.useCallback(
     (captureData: CapturePaypalResponseData) => {
       if (!booking) return;
       console.log("[PayPal] Payment captured successfully:", captureData);
+      clearActiveHold(booking.kind, booking.propertyId || booking.journeyId);
       setIsSuccess(true);
       setCaptureResult(captureData);
       onPaymentSuccess?.(captureData);
@@ -141,9 +170,9 @@ export function PayPalPaymentModal({
   if (!isOpen || !booking) return null;
 
   const usdBreakdown: BookingPriceBreakdown = booking.usd || {
-    total: Math.round((booking.amountUsd || booking.amount || 0) * 10 * 100) / 100,
+    total: Math.round((booking.amountUsd || booking.amount || 0) * 2 * 100) / 100,
     deposit: booking.amountUsd || booking.amount || 0,
-    remaining: Math.round((booking.amountUsd || booking.amount || 0) * 9 * 100) / 100,
+    remaining: Math.round((booking.amountUsd || booking.amount || 0) * 1 * 100) / 100,
   };
 
   const egpBreakdown: BookingPriceBreakdown = booking.egp || {
@@ -216,7 +245,12 @@ export function PayPalPaymentModal({
         </div>
 
         {/* Fixed Expiry Bar (hidden once paid) */}
-        {!isSuccess && <ExpiryBar onExpire={handleExpire} />}
+        {!isSuccess && (
+          <ExpiryBar
+            expiresAt={booking.expiresAt}
+            onExpire={handleExpire}
+          />
+        )}
 
         {/* Scrollable Content Body */}
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 overscroll-contain">
@@ -274,7 +308,7 @@ export function PayPalPaymentModal({
                       {t("payment.detailLabels.amountPaid")}
                     </dt>
                     <dd className="mt-1 font-bold text-[#2e6f57]">
-                      {formatCurrency(usdBreakdown.deposit, "USD", 2)} (10%)
+                      {formatCurrency(usdBreakdown.deposit, "USD", 2)} (50%)
                     </dd>
                   </div>
                   <div>
@@ -430,7 +464,7 @@ export function PayPalPaymentModal({
                     </span>
                   </div>
 
-                  {/* 10% Deposit (Pay Online Now) Highlight Box */}
+                  {/* 50% Deposit (Pay Online Now) Highlight Box */}
                   <div className="rounded-xl border border-[#2e6f57]/20 bg-[#edf6f2] p-3">
                     <div className="flex items-start justify-between gap-2">
                       <div>
@@ -456,7 +490,7 @@ export function PayPalPaymentModal({
                     </div>
                   </div>
 
-                  {/* Remaining 90% (Due at Check-in) */}
+                  {/* Remaining 50% (Due at Check-in) */}
                   <div className="flex items-center justify-between px-0.5 pt-0.5 text-[#667c74]">
                     <div>
                       <span className="text-[12px] font-medium text-[#40544c]">

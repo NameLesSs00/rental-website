@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import * as LucideIcons from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import PropertyImageGallery from "./PropertyImageGallery";
@@ -26,7 +26,12 @@ import type { PropertyCategory, PropertyCategoryItem } from "@/lib/types/propert
 import type { AttributeGroupItem } from "@/lib/types/attributeGroupItem";
 import { useReviews, usePropertyAverageRating, useCreateReview } from "@/lib/hooks/useReview";
 import { useCurrencies } from "@/lib/hooks/useCurrency";
-import { savePaymentBookingContext } from "@/lib/utils/paymentBookingContext";
+import {
+  savePaymentBookingContext,
+  saveActiveHold,
+  readActiveHold,
+  clearActiveHold,
+} from "@/lib/utils/paymentBookingContext";
 import { formatCurrency, formatPriceInfo, getPriceInfoAmount, getPriceInfoCurrency } from "@/lib/utils/currency";
 import { useSelectedCurrency } from "@/lib/hooks/useSelectedCurrency";
 import { DEFAULT_LANDMARK_ICON } from "@/lib/constants/landmarks";
@@ -299,6 +304,55 @@ function PropertyDetailView({
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [pendingBooking, setPendingBooking] = useState<PendingBookingPayment | null>(null);
   const [justBookedRanges, setJustBookedRanges] = useState<BookingCalendarItem[]>([]);
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
+
+  // Re-hydrate any active unexpired 5-minute hold on mount
+  useEffect(() => {
+    const existingHold = readActiveHold("rent", propertyId) as PendingBookingPayment | null;
+    if (existingHold && existingHold.expiresAt && existingHold.expiresAt > Date.now()) {
+      setPendingBooking(existingHold);
+      if (existingHold.stayDates?.checkIn && existingHold.stayDates?.checkOut) {
+        setCheckIn(existingHold.stayDates.checkIn);
+        setCheckOut(existingHold.stayDates.checkOut);
+      }
+      if (typeof existingHold.guests === "number") {
+        setBookingForm((prev) => ({ ...prev, person: existingHold.guests! }));
+      }
+    }
+  }, [propertyId]);
+
+  // Keep countdown timer synced with wall-clock and auto-clear when hold expires
+  useEffect(() => {
+    if (!pendingBooking?.expiresAt) return;
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setCurrentTime(now);
+      if (pendingBooking.expiresAt && now >= pendingBooking.expiresAt) {
+        clearActiveHold("rent", propertyId);
+        setPendingBooking(null);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [pendingBooking?.expiresAt, propertyId]);
+
+  const hasActiveHold = Boolean(
+    pendingBooking &&
+    pendingBooking.expiresAt &&
+    pendingBooking.expiresAt > currentTime
+  );
+
+  const remainingSeconds = pendingBooking?.expiresAt
+    ? Math.max(0, Math.floor((pendingBooking.expiresAt - currentTime) / 1000))
+    : 0;
+  const remainingMinutes = Math.floor(remainingSeconds / 60);
+  const remainingSecs = remainingSeconds % 60;
+  const formattedCountdown = `${remainingMinutes.toString().padStart(2, "0")}:${remainingSecs.toString().padStart(2, "0")}`;
+
+  const handleCancelHold = useCallback(() => {
+    clearActiveHold("rent", propertyId);
+    setPendingBooking(null);
+    setIsPaymentModalOpen(false);
+  }, [propertyId]);
 
   const { mutate: createRentBooking, isPending: isCreatingBooking } = useCreateRentBooking();
   const {
@@ -543,12 +597,14 @@ function PropertyDetailView({
           }
 
           const bookingTotalUsd = priceCheck?.totalPrice ?? 0;
-          const depositUsd = Math.round(bookingTotalUsd * 0.1 * 100) / 100;
+          const depositUsd = Math.round(bookingTotalUsd * 0.5 * 100) / 100;
           const remainingUsd = Math.round((bookingTotalUsd - depositUsd) * 100) / 100;
 
           const bookingTotalEgp = Math.round(bookingTotalUsd * egpRate * 100) / 100;
-          const depositEgp = Math.round(bookingTotalEgp * 0.1 * 100) / 100;
+          const depositEgp = Math.round(bookingTotalEgp * 0.5 * 100) / 100;
           const remainingEgp = Math.round((bookingTotalEgp - depositEgp) * 100) / 100;
+
+          const expiresAt = Date.now() + 5 * 60 * 1000;
 
           savePaymentBookingContext({
             kind: "rent",
@@ -561,12 +617,14 @@ function PropertyDetailView({
             guests: bookingForm.person,
             amount: depositUsd,
             currency: "USD",
+            expiresAt,
           });
 
-          setPendingBooking({
+          const newPending: PendingBookingPayment = {
             kind: "rent",
             bookingId: res.data.bookingId,
             bookingNumber: res.data.bookingNumber,
+            propertyId,
             title: propertyName,
             subtitle: [property.address?.city, property.address?.country].filter(Boolean).join(", "),
             usd: {
@@ -584,7 +642,11 @@ function PropertyDetailView({
             currency: "USD",
             stayDates: { checkIn, checkOut, nights },
             guests: bookingForm.person,
-          });
+            expiresAt,
+          };
+
+          saveActiveHold(newPending);
+          setPendingBooking(newPending);
           setIsPaymentModalOpen(true);
         },
         onError: (error) => {
@@ -651,6 +713,59 @@ function PropertyDetailView({
     <main className="bg-white pb-24 font-[var(--font-poppins)] text-[#183c2f] lg:pb-12">
       <section className="px-4 pb-12 pt-5 sm:px-6 lg:px-16 lg:pb-8 lg:pt-10">
         <div className="mx-auto w-full max-w-[1282px]">
+          {/* ─── Top Active Hold Alert Banner (Highly Visible) ─── */}
+          {hasActiveHold && pendingBooking && (
+            <div className="mb-6 rounded-2xl border-2 border-[#2e6f57]/30 bg-[#f4f9f6] p-4 shadow-sm sm:p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3.5">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#2e6f57] text-white shadow-xs">
+                    <LucideIcons.Clock className="size-5 animate-pulse" />
+                  </div>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-[15px] font-bold text-[#183c2f]">
+                        {t("payment.hold.activeTitle") || "Active Reservation Hold"}
+                      </h2>
+                      <span className="rounded-md bg-[#2e6f57]/15 px-2 py-0.5 font-mono text-[11px] font-bold text-[#2e6f57]">
+                        #{pendingBooking.bookingNumber}
+                      </span>
+                      <span className="rounded-md bg-amber-100 px-2 py-0.5 font-mono text-[11px] font-bold text-amber-900">
+                         {formattedCountdown}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[13px] text-[#40544c]">
+                      {pendingBooking.stayDates?.checkIn && pendingBooking.stayDates?.checkOut ? (
+                        <>
+                          Dates: <strong>{pendingBooking.stayDates.checkIn}</strong> → <strong>{pendingBooking.stayDates.checkOut}</strong> ({pendingBooking.stayDates.nights} nights)
+                        </>
+                      ) : (
+                        t("payment.hold.holdingNotice")
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 shrink-0 sm:self-center">
+                  <button
+                    type="button"
+                    onClick={() => setIsPaymentModalOpen(true)}
+                    className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#2e6f57] px-5 text-[13px] font-bold text-white shadow-md transition hover:bg-[#255f49] hover:shadow-lg active:scale-95"
+                  >
+                    <LucideIcons.CreditCard className="size-4" />
+                    <span>{t("payment.hold.resumeButton") || "Resume Payment"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelHold}
+                    className="flex h-11 items-center justify-center rounded-xl border border-[#dfe8e4] bg-white px-3.5 text-[12px] font-medium text-[#667c74] transition hover:bg-[#edf2ef] hover:text-red-600"
+                  >
+                    {t("payment.hold.cancelButton") || "Cancel Hold"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ─── Top Breadcrumbs & Header ─── */}
           <ScrollAnimation delay={0}>
             <PropertyHeader property={property} />
@@ -737,6 +852,9 @@ function PropertyDetailView({
                   missingDates={missingDates}
                   onSubmitBooking={submitBooking}
                   onScrollToCalendar={scrollToCalendar}
+                  activeHold={hasActiveHold ? pendingBooking : null}
+                  onResumeHold={() => setIsPaymentModalOpen(true)}
+                  onCancelHold={handleCancelHold}
                 />
               </div>
 
@@ -773,6 +891,9 @@ function PropertyDetailView({
                 missingDates={missingDates}
                 onSubmitBooking={submitBooking}
                 onScrollToCalendar={scrollToCalendar}
+                activeHold={hasActiveHold ? pendingBooking : null}
+                onResumeHold={() => setIsPaymentModalOpen(true)}
+                onCancelHold={handleCancelHold}
               />
             </aside>
           </div>
@@ -810,6 +931,10 @@ function PropertyDetailView({
           <button
             type="button"
             onClick={() => {
+              if (hasActiveHold) {
+                setIsPaymentModalOpen(true);
+                return;
+              }
               const el = document.getElementById("booking-card-mobile") || document.getElementById("booking-card");
               if (el) {
                 el.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -817,7 +942,7 @@ function PropertyDetailView({
             }}
             className="inline-flex h-11 items-center justify-center rounded-full bg-[#2e6f57] px-6 text-[14px] font-semibold text-white shadow-md transition hover:bg-[#255f49] active:scale-95"
           >
-            {t("common.bookNow")}
+            {hasActiveHold ? (t("payment.hold.resumeButton") || "Resume Payment") : t("common.bookNow")}
           </button>
         </div>
       </div>
@@ -827,6 +952,7 @@ function PropertyDetailView({
         booking={pendingBooking}
         onClose={() => setIsPaymentModalOpen(false)}
         onPaymentSuccess={() => {
+          clearActiveHold("rent", propertyId);
           if (pendingBooking?.stayDates) {
             const { checkIn: bookedFrom, checkOut: bookedTo } = pendingBooking.stayDates;
             setJustBookedRanges((prev) => [
@@ -849,6 +975,7 @@ function PropertyDetailView({
           setHasAcceptedRules(false);
           setFormError("");
           resetPriceCheck();
+          setPendingBooking(null);
           try {
             localStorage.removeItem(`rent_booking_draft_${propertyId}`);
           } catch {
@@ -858,6 +985,47 @@ function PropertyDetailView({
           queryClient.invalidateQueries({ queryKey: ["properties", propertyId, "daily-prices"] });
         }}
       />
+      {/* ─── Floating Sticky Resume Widget (Always Visible Anywhere on the Page) ─── */}
+      {hasActiveHold && pendingBooking && !isPaymentModalOpen && (
+        <aside
+          aria-label="Pending reservation recovery"
+          className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-[90] flex items-center gap-3 rounded-2xl border border-[#2e6f57]/30 bg-white/95 p-3 sm:p-3.5 shadow-2xl backdrop-blur-md transition-all animate-in fade-in slide-in-from-bottom-4 rtl:right-auto rtl:left-5 sm:rtl:left-6"
+        >
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#2e6f57] text-white shadow-xs">
+            <LucideIcons.Clock className="size-4.5 animate-pulse" />
+          </div>
+          <div className="hidden sm:block min-w-0 pr-1 rtl:pr-0 rtl:pl-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[12px] font-bold text-[#183c2f]">
+                {t("payment.hold.activeTitle") || "Active Hold"}
+              </span>
+              <span className="font-mono text-[11px] font-bold text-[#2e6f57]">
+                {formattedCountdown}
+              </span>
+            </div>
+            <p className="text-[11px] text-[#667c74] truncate max-w-[200px]">
+              #{pendingBooking.bookingNumber} • {pendingBooking.title}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsPaymentModalOpen(true)}
+            className="flex h-10 items-center gap-1.5 rounded-xl bg-[#2e6f57] px-4 text-[13px] font-bold text-white shadow-md transition hover:bg-[#255f49] active:scale-95"
+          >
+            <LucideIcons.CreditCard className="size-3.5" />
+            <span>{t("payment.hold.resumeButton") || "Resume Payment"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleCancelHold}
+            aria-label="Cancel Hold"
+            title="Cancel hold"
+            className="flex size-8 items-center justify-center rounded-lg text-[#8a9a94] transition hover:bg-[#dfe8e4]/60 hover:text-red-600"
+          >
+            <LucideIcons.X className="size-4" />
+          </button>
+        </aside>
+      )}
     </main>
   );
 }

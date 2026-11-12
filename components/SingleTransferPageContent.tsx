@@ -1,18 +1,23 @@
 "use client";
 
-import { type Dispatch, type SetStateAction, useState } from "react";
+import { type Dispatch, type SetStateAction, useState, useEffect } from "react";
 import Image from "next/image";
+import { Clock, CreditCard, X } from "lucide-react";
 import { useJourneyById } from "@/lib/hooks/useJourney";
 import { useCreateTransferBooking } from "@/lib/hooks/useBooking";
 import { useCurrencies } from "@/lib/hooks/useCurrency";
 import PayPalPaymentModal, { type PendingBookingPayment } from "@/components/payment/PayPalPaymentModal";
 import { API_BASE_URL } from "@/lib/api/config";
-import { savePaymentBookingContext } from "@/lib/utils/paymentBookingContext";
+import {
+  savePaymentBookingContext,
+  saveActiveHold,
+  readActiveHold,
+  clearActiveHold,
+} from "@/lib/utils/paymentBookingContext";
 import { formatUsd } from "@/lib/utils/currency";
 import { toast } from "sonner";
 import { useI18n } from "./I18nProvider";
 import { useHeaderStore } from "@/lib/headerStore";
-import { useEffect } from "react";
 
 function resolveImageUrl(url: string): string {
   if (!url || url.trim() === "") return "";
@@ -54,12 +59,62 @@ export default function SingleTransferPageContent({ id }: SingleTransferPageCont
   const egpRate = egpCurrency?.exchangeRate || 50;
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [pendingBooking, setPendingBooking] = useState<PendingBookingPayment | null>(null);
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
   const setPageEntity = useHeaderStore((state) => state.setPageEntity);
 
   useEffect(() => {
     setPageEntity(id, "transfer");
     return () => setPageEntity(null, null);
   }, [id, setPageEntity]);
+
+  // Re-hydrate any active unexpired 5-minute hold on mount
+  useEffect(() => {
+    const existingHold = readActiveHold("transfer", id) as PendingBookingPayment | null;
+    if (existingHold && existingHold.expiresAt && existingHold.expiresAt > Date.now()) {
+      setPendingBooking(existingHold);
+      if (existingHold.transferDetails) {
+        setTransferData((prev) => ({
+          ...prev,
+          pickupDate: existingHold.transferDetails?.pickupDate || prev.pickupDate,
+          pickupTime: existingHold.transferDetails?.pickupTime || prev.pickupTime,
+          passengers: String(existingHold.transferDetails?.passengers || prev.passengers),
+        }));
+      }
+    }
+  }, [id]);
+
+  // Keep countdown timer synced with wall-clock and auto-clear when hold expires
+  useEffect(() => {
+    if (!pendingBooking?.expiresAt) return;
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setCurrentTime(now);
+      if (pendingBooking.expiresAt && now >= pendingBooking.expiresAt) {
+        clearActiveHold("transfer", id);
+        setPendingBooking(null);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [pendingBooking?.expiresAt, id]);
+
+  const hasActiveHold = Boolean(
+    pendingBooking &&
+    pendingBooking.expiresAt &&
+    pendingBooking.expiresAt > currentTime
+  );
+
+  const remainingSeconds = pendingBooking?.expiresAt
+    ? Math.max(0, Math.floor((pendingBooking.expiresAt - currentTime) / 1000))
+    : 0;
+  const remainingMinutes = Math.floor(remainingSeconds / 60);
+  const remainingSecs = remainingSeconds % 60;
+  const formattedCountdown = `${remainingMinutes.toString().padStart(2, "0")}:${remainingSecs.toString().padStart(2, "0")}`;
+
+  const handleCancelHold = () => {
+    clearActiveHold("transfer", id);
+    setPendingBooking(null);
+    setIsPaymentModalOpen(false);
+  };
 
   const isPending = isCreatingBooking;
 
@@ -124,12 +179,14 @@ export default function SingleTransferPageContent({ id }: SingleTransferPageCont
         onSuccess: (res) => {
           const bookingId = res.data.bookingId;
           const transferTotalUsd = (journey?.basePrice ?? 0) * (transferData.tripType === 2 ? 2 : 1);
-          const transferDepositUsd = Math.round(transferTotalUsd * 0.1 * 100) / 100;
+          const transferDepositUsd = Math.round(transferTotalUsd * 0.5 * 100) / 100;
           const transferRemainingUsd = Math.round((transferTotalUsd - transferDepositUsd) * 100) / 100;
 
           const transferTotalEgp = Math.round(transferTotalUsd * egpRate * 100) / 100;
-          const transferDepositEgp = Math.round(transferTotalEgp * 0.1 * 100) / 100;
+          const transferDepositEgp = Math.round(transferTotalEgp * 0.5 * 100) / 100;
           const transferRemainingEgp = Math.round((transferTotalEgp - transferDepositEgp) * 100) / 100;
+
+          const expiresAt = Date.now() + 5 * 60 * 1000;
 
           savePaymentBookingContext({
             kind: "transfer",
@@ -142,12 +199,14 @@ export default function SingleTransferPageContent({ id }: SingleTransferPageCont
             passengers: Number(transferData.passengers),
             amount: transferDepositUsd,
             currency: "USD",
+            expiresAt,
           });
 
-          setPendingBooking({
+          const newPending: PendingBookingPayment = {
             kind: "transfer",
             bookingId,
             bookingNumber: res.data.bookingNumber,
+            journeyId: id,
             title: journey?.name || t("transfer.title"),
             subtitle: transferData.tripType === 2 ? "Round Trip" : "One Way",
             usd: {
@@ -163,12 +222,16 @@ export default function SingleTransferPageContent({ id }: SingleTransferPageCont
             amount: transferDepositUsd,
             amountUsd: transferDepositUsd,
             currency: "USD",
+            expiresAt,
             transferDetails: {
               pickupDate: transferData.pickupDate,
               pickupTime: transferData.pickupTime,
               passengers: Number(transferData.passengers),
             },
-          });
+          };
+
+          saveActiveHold(newPending);
+          setPendingBooking(newPending);
           setIsPaymentModalOpen(true);
         },
         onError: (err) => {
@@ -188,6 +251,58 @@ export default function SingleTransferPageContent({ id }: SingleTransferPageCont
     <main className="bg-[#f8f9fa] font-[var(--font-poppins)] text-[#0f172a]">
       <section className="px-5 pb-12 pt-[30px] lg:px-0 lg:pb-20 lg:pt-14">
         <div className="mx-auto max-w-[335px] lg:max-w-[1277px]">
+          {/* ─── Top Active Hold Alert Banner (Highly Visible) ─── */}
+          {hasActiveHold && pendingBooking && (
+            <div className="mb-6 rounded-2xl border-2 border-[#2e6f57]/30 bg-[#f4f9f6] p-4 shadow-sm sm:p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3.5">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#2e6f57] text-white shadow-xs">
+                    <Clock className="size-5 animate-pulse" />
+                  </div>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-[15px] font-bold text-[#183c2f]">
+                        {t("payment.hold.activeTitle") || "Active Reservation Hold"}
+                      </h2>
+                      <span className="rounded-md bg-[#2e6f57]/15 px-2 py-0.5 font-mono text-[11px] font-bold text-[#2e6f57]">
+                        #{pendingBooking.bookingNumber}
+                      </span>
+                      <span className="rounded-md bg-amber-100 px-2 py-0.5 font-mono text-[11px] font-bold text-amber-900">
+                         {formattedCountdown}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[13px] text-[#40544c]">
+                      {pendingBooking.transferDetails ? (
+                        <>
+                          Pickup: <strong>{pendingBooking.transferDetails.pickupDate} {pendingBooking.transferDetails.pickupTime}</strong> ({pendingBooking.transferDetails.passengers} passengers)
+                        </>
+                      ) : (
+                        t("payment.hold.holdingNotice")
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 shrink-0 sm:self-center">
+                  <button
+                    type="button"
+                    onClick={() => setIsPaymentModalOpen(true)}
+                    className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#2e6f57] px-5 text-[13px] font-bold text-white shadow-md transition hover:bg-[#255f49] hover:shadow-lg active:scale-95"
+                  >
+                    <CreditCard className="size-4" />
+                    <span>{t("payment.hold.resumeButton") || "Resume Payment"}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelHold}
+                    className="flex h-11 items-center justify-center rounded-xl border border-[#dfe8e4] bg-white px-3.5 text-[12px] font-medium text-[#667c74] transition hover:bg-[#edf2ef] hover:text-red-600"
+                  >
+                    {t("payment.hold.cancelButton") || "Cancel Hold"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           
           <header className="hidden h-[76px] flex-col items-start gap-2 pt-2 lg:flex">
             <h1 className="text-[30px] font-medium leading-9 text-[#0f172a]">{t("transfer.bookTitle", { name: journey.name })}</h1>
@@ -267,13 +382,32 @@ export default function SingleTransferPageContent({ id }: SingleTransferPageCont
                   </label>
                 </div>
                 
-                <button
-                  onClick={handleTransferSubmit}
-                  disabled={isPending}
-                  className="mt-[24px] flex h-12 w-full items-center justify-center gap-2 rounded-[48px] bg-[#2e6f57] text-[16px] font-medium leading-6 text-white transition hover:bg-[#255f49] lg:h-14 lg:font-bold disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  {isPending ? t("common.processing") : t("transfer.payConfirm")}
-                </button>
+                {hasActiveHold ? (
+                  <div className="mt-[24px] space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsPaymentModalOpen(true)}
+                      className="flex h-12 w-full items-center justify-center gap-2 rounded-[48px] bg-[#2e6f57] text-[16px] font-medium leading-6 text-white transition hover:bg-[#255f49] lg:h-14 lg:font-bold"
+                    >
+                      {t("payment.hold.resumeButton") || "Resume Payment"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCancelHold}
+                      className="w-full text-center text-[12px] text-[#667c74] underline transition hover:text-red-600"
+                    >
+                      {t("payment.hold.cancelButton") || "Cancel Hold"}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleTransferSubmit}
+                    disabled={isPending}
+                    className="mt-[24px] flex h-12 w-full items-center justify-center gap-2 rounded-[48px] bg-[#2e6f57] text-[16px] font-medium leading-6 text-white transition hover:bg-[#255f49] lg:h-14 lg:font-bold disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {isPending ? t("common.processing") : t("transfer.payConfirm")}
+                  </button>
+                )}
               </SectionCard>
             </aside>
           </div>
@@ -285,6 +419,8 @@ export default function SingleTransferPageContent({ id }: SingleTransferPageCont
         booking={pendingBooking}
         onClose={() => setIsPaymentModalOpen(false)}
         onPaymentSuccess={() => {
+          clearActiveHold("transfer", id);
+          setPendingBooking(null);
           setTransferData({
             fullName: "",
             email: "",
@@ -301,6 +437,47 @@ export default function SingleTransferPageContent({ id }: SingleTransferPageCont
           });
         }}
       />
+      {/* ─── Floating Sticky Resume Widget (Always Visible Anywhere on the Page) ─── */}
+      {hasActiveHold && pendingBooking && !isPaymentModalOpen && (
+        <aside
+          aria-label="Pending transfer recovery"
+          className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-[90] flex items-center gap-3 rounded-2xl border border-[#2e6f57]/30 bg-white/95 p-3 sm:p-3.5 shadow-2xl backdrop-blur-md transition-all animate-in fade-in slide-in-from-bottom-4 rtl:right-auto rtl:left-5 sm:rtl:left-6"
+        >
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#2e6f57] text-white shadow-xs">
+            <Clock className="size-4.5 animate-pulse" />
+          </div>
+          <div className="hidden sm:block min-w-0 pr-1 rtl:pr-0 rtl:pl-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[12px] font-bold text-[#183c2f]">
+                {t("payment.hold.activeTitle") || "Active Hold"}
+              </span>
+              <span className="font-mono text-[11px] font-bold text-[#2e6f57]">
+                {formattedCountdown}
+              </span>
+            </div>
+            <p className="text-[11px] text-[#667c74] truncate max-w-[200px]">
+              #{pendingBooking.bookingNumber} • {pendingBooking.title}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsPaymentModalOpen(true)}
+            className="flex h-10 items-center gap-1.5 rounded-xl bg-[#2e6f57] px-4 text-[13px] font-bold text-white shadow-md transition hover:bg-[#255f49] active:scale-95"
+          >
+            <CreditCard className="size-3.5" />
+            <span>{t("payment.hold.resumeButton") || "Resume Payment"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleCancelHold}
+            aria-label="Cancel Hold"
+            title="Cancel hold"
+            className="flex size-8 items-center justify-center rounded-lg text-[#8a9a94] transition hover:bg-[#dfe8e4]/60 hover:text-red-600"
+          >
+            <X className="size-4" />
+          </button>
+        </aside>
+      )}
     </main>
   );
 }
