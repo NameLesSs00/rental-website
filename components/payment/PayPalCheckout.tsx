@@ -19,6 +19,7 @@ import {
 } from "@/lib/hooks/usePayment";
 import { useI18n } from "@/components/I18nProvider";
 import { Lock, CreditCard } from "lucide-react";
+import { toast } from "sonner";
 
 export interface PayPalCheckoutProps {
   bookingId: string;
@@ -82,7 +83,9 @@ function CardSubmitButton({
       const state = await cardFieldsForm.getState();
       if (!state.isFormValid) {
         setIsSubmitting(false);
-        onError("Please fill in all card details correctly.");
+        const msg = "Please fill in all card details correctly.";
+        toast.error(msg, { id: msg });
+        onError(msg);
         return;
       }
 
@@ -93,7 +96,10 @@ function CardSubmitButton({
     } catch (err: unknown) {
       setIsSubmitting(false);
       const msg = err instanceof Error ? err.message : "Card submission failed.";
-      onError(msg);
+      if (!msg.toLowerCase().includes("expected an order id")) {
+        toast.error(msg, { id: msg });
+        onError(msg);
+      }
     }
   };
 
@@ -156,21 +162,24 @@ export function PayPalCheckout({
   const { mutateAsync: initializePaypal } = useInitializePaypalPayment();
   const { mutateAsync: capturePaypal } = useCapturePaypalPayment();
 
-  const handleCreateOrder = async () => {
+  const handleCreateOrder = async (): Promise<string> => {
     setLocalError(null);
     try {
       console.log("[PayPal] Initializing payment for booking:", bookingId);
       const res = await initializePaypal({ bookingId });
       console.log("[PayPal] Initialized order response:", res);
-      if (!res.orderId) {
-        throw new Error("No PayPal Order ID was returned by the server.");
+      if (!res || !res.orderId) {
+        const message = t("booking.errors.paymentStartFailed");
+        setLocalError(message);
+        return "";
       }
       return res.orderId;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t("booking.errors.paymentStartFailed");
       setLocalError(message);
+      toast.error(message, { id: message });
       onError?.(err instanceof Error ? err : new Error(message));
-      throw err;
+      return "";
     }
   };
 
@@ -195,6 +204,7 @@ export function PayPalCheckout({
       console.error("[PayPal] Capture request failed:", err);
       const message = err instanceof Error ? err.message : t("payment.paypal.captureFailed");
       setLocalError(message);
+      toast.error(message, { id: message });
       onError?.(err instanceof Error ? err : new Error(message));
     }
   };
@@ -221,12 +231,23 @@ export function PayPalCheckout({
       setLocalError(null);
       return;
     }
-    console.error("PAYPAL SDK ERROR:", err);
-    const message =
+
+    const rawMessage =
       err && typeof err === "object" && "message" in err
         ? String((err as { message: unknown }).message)
-        : t("payment.paypal.captureFailed");
+        : "";
+
+    // Ignore secondary cascade if PayPal SDK is just reporting that no orderId was returned
+    // (the real root cause has already been shown to the user via Sonner toast)
+    if (rawMessage.toLowerCase().includes("expected an order id")) {
+      console.warn("[PayPal] Order creation was aborted or failed earlier:", rawMessage);
+      return;
+    }
+
+    console.warn("[PayPal] SDK error:", err);
+    const message = rawMessage || t("payment.paypal.captureFailed");
     setLocalError(message);
+    toast.error(message, { id: message });
     onError?.(new Error(message));
   };
 

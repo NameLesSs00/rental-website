@@ -1,6 +1,6 @@
 export const PAYPAL_CLIENT_ID =
   process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID ||
-  "BAA_04G_yenONEdqxX80a21UzTFFYAceuY1JHDjh5nZDB4K8qAhoUrvPZR1iUwZvyPJ-dhtl4FCVXDcsj8";
+  "BAAPv2Q1jTlhM_svxPXJS885oPS8pRMGzwV65gwaPDP2euuJ98LSKIAn5fVHrEbycBVVhcVueSGwpplupM";
 
 export const PAYPAL_CURRENCY =
   process.env.NEXT_PUBLIC_PAYPAL_CURRENCY || "USD";

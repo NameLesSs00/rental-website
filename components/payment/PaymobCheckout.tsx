@@ -6,6 +6,7 @@ import { savePaymentBookingContext, type PaymentBookingKind } from "@/lib/utils/
 import { useI18n } from "@/components/I18nProvider";
 import { formatCurrency } from "@/lib/utils/currency";
 import { ExternalLink, ShieldCheck, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 export interface PaymobCheckoutProps {
   bookingId: string;
@@ -59,6 +60,7 @@ export function PaymobCheckout({
       setIsLoading(false);
       const msg = err instanceof Error ? err.message : "Failed to initialize Paymob payment.";
       setLocalError(msg);
+      toast.error(msg, { id: msg });
       onError?.(err instanceof Error ? err : new Error(msg));
     }
   };

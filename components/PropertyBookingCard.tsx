@@ -1,10 +1,12 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Clock, CreditCard } from "lucide-react";
+import { Clock, CreditCard, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatCurrency } from "@/lib/utils/currency";
 import { useI18n } from "./I18nProvider";
 import type { PendingBookingPayment } from "@/components/payment/PayPalPaymentModal";
+import type { CalendarDay } from "./SinglePropertyPageContent";
 
 interface PropertyBookingCardProps {
   idPrefix?: string;
@@ -22,6 +24,8 @@ interface PropertyBookingCardProps {
   onCheckInChange: (date: string) => void;
   onCheckOutChange: (date: string) => void;
   onClearDates: () => void;
+  isDateBooked?: (dateString: string) => boolean;
+  onSelectDate?: (day: CalendarDay) => void;
   bookingForm: {
     fullName: string;
     email: string;
@@ -65,6 +69,8 @@ export default function PropertyBookingCard({
   onCheckInChange,
   onCheckOutChange,
   onClearDates,
+  isDateBooked,
+  onSelectDate,
   bookingForm,
   setBookingForm,
   hasAcceptedRules,
@@ -81,7 +87,7 @@ export default function PropertyBookingCard({
   onResumeHold,
   onCancelHold,
 }: PropertyBookingCardProps) {
-  const { t, href } = useI18n();
+  const { t, href, locale } = useI18n();
   const isFormValid =
     !isPending &&
     !isPriceUnavailable &&
@@ -93,6 +99,97 @@ export default function PropertyBookingCard({
     checkOut > checkIn &&
     bookingForm.person <= capacity &&
     hasAcceptedRules;
+
+  // Custom calendar popover state
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const calendarContainerRef = useRef<HTMLDivElement>(null);
+
+  // Initial month view from checkIn or todayString
+  const [viewYear, setViewYear] = useState(() => {
+    if (checkIn && checkIn.length >= 10) return parseInt(checkIn.slice(0, 4), 10);
+    return parseInt(todayString.slice(0, 4), 10);
+  });
+  const [viewMonth, setViewMonth] = useState(() => {
+    if (checkIn && checkIn.length >= 10) return parseInt(checkIn.slice(5, 7), 10) - 1;
+    return parseInt(todayString.slice(5, 7), 10) - 1;
+  });
+
+  // When checkIn changes externally, sync view
+  useEffect(() => {
+    if (checkIn && checkIn.length >= 10 && isCalendarOpen) {
+      setViewYear(parseInt(checkIn.slice(0, 4), 10));
+      setViewMonth(parseInt(checkIn.slice(5, 7), 10) - 1);
+    }
+  }, [checkIn, isCalendarOpen]);
+
+  // Click outside to close calendar
+  useEffect(() => {
+    if (!isCalendarOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        calendarContainerRef.current &&
+        !calendarContainerRef.current.contains(e.target as Node)
+      ) {
+        setIsCalendarOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isCalendarOpen]);
+
+  // Month navigation
+  const todayYear = parseInt(todayString.slice(0, 4), 10);
+  const todayMonth = parseInt(todayString.slice(5, 7), 10) - 1;
+  const canGoPrev = viewYear > todayYear || (viewYear === todayYear && viewMonth > todayMonth);
+
+  const handlePrevMonth = () => {
+    if (!canGoPrev) return;
+    if (viewMonth === 0) {
+      setViewYear((prev) => prev - 1);
+      setViewMonth(11);
+    } else {
+      setViewMonth((prev) => prev - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (viewMonth === 11) {
+      setViewYear((prev) => prev + 1);
+      setViewMonth(0);
+    } else {
+      setViewMonth((prev) => prev + 1);
+    }
+  };
+
+  const daysInViewMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const startOffset = new Date(viewYear, viewMonth, 1).getDay();
+  const monthDate = new Date(viewYear, viewMonth, 1);
+  const monthTitle = monthDate.toLocaleString(locale, { month: "long", year: "numeric" });
+
+  const handleDayClick = (dayDate: string, dayNum: number) => {
+    const isPast = dayDate < todayString;
+    const isBooked = isDateBooked ? isDateBooked(dayDate) : false;
+    if (isPast || isBooked) return;
+
+    if (onSelectDate) {
+      onSelectDate({
+        day: dayNum,
+        date: dayDate,
+        status: "available",
+      });
+      if (checkIn && !checkOut && dayDate > checkIn) {
+        setIsCalendarOpen(false);
+      }
+    } else {
+      if (!checkIn || checkOut || dayDate <= checkIn) {
+        onCheckInChange(dayDate);
+        onCheckOutChange("");
+      } else {
+        onCheckOutChange(dayDate);
+        setIsCalendarOpen(false);
+      }
+    }
+  };
 
   return (
     <div
@@ -166,67 +263,217 @@ export default function PropertyBookingCard({
       )}
 
       <form onSubmit={onSubmitBooking} className="mt-3.5 space-y-3.5">
-        {/* ─── Date Picker Box ─── */}
-        <div className="rounded-xl border border-[#dfe8e4] bg-[#fbfdfc] p-3 transition focus-within:border-[#2e6f57]">
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-[#667c74]">
-                {t("booking.checkIn")}
-              </label>
-              <input
-                type="date"
-                min={todayString}
-                value={checkIn}
-                onChange={(e) => onCheckInChange(e.target.value)}
-                className="mt-1 w-full bg-transparent text-[13px] font-semibold text-[#183c2f] outline-none cursor-pointer"
-              />
+        {/* ─── Date Picker Trigger & Custom Availability Calendar Popover ─── */}
+        <div ref={calendarContainerRef} className="relative">
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => setIsCalendarOpen((prev) => !prev)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setIsCalendarOpen((prev) => !prev);
+              }
+            }}
+            className={`cursor-pointer rounded-xl border bg-[#fbfdfc] p-3 transition ${
+              isCalendarOpen
+                ? "border-[#2e6f57] ring-2 ring-[#2e6f57]/15"
+                : "border-[#dfe8e4] hover:border-[#2e6f57]"
+            }`}
+          >
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-[#667c74]">
+                  {t("booking.checkIn")}
+                </span>
+                <div className="mt-1 flex items-center justify-between">
+                  <span className={`text-[13px] font-semibold ${checkIn ? "text-[#183c2f]" : "text-[#8a9a94]"}`}>
+                    {checkIn || t("booking.selectDates")}
+                  </span>
+                  <Calendar className="size-4 text-[#2e6f57]" />
+                </div>
+              </div>
+              <div className="border-l border-[#dfe8e4] pl-2.5">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-[#667c74]">
+                  {t("booking.checkout")}
+                </span>
+                <div className="mt-1 flex items-center justify-between">
+                  <span className={`text-[13px] font-semibold ${checkOut ? "text-[#183c2f]" : "text-[#8a9a94]"}`}>
+                    {checkOut || t("booking.selectDates")}
+                  </span>
+                  <Calendar className="size-4 text-[#2e6f57]" />
+                </div>
+              </div>
             </div>
-            <div className="border-l border-[#dfe8e4] pl-2.5">
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-[#667c74]">
-                {t("booking.checkout")}
-              </label>
-              <input
-                type="date"
-                min={checkIn || todayString}
-                value={checkOut}
-                onChange={(e) => onCheckOutChange(e.target.value)}
-                className="mt-1 w-full bg-transparent text-[13px] font-semibold text-[#183c2f] outline-none cursor-pointer"
-              />
+
+            <div className="mt-2.5 flex items-center justify-between border-t border-[#edf2ef] pt-2 text-[11px]">
+              <span className="text-[#667c74]">
+                {checkIn && checkOut
+                  ? t("booking.selectedRange", {
+                      count: nights,
+                      label: nights === 1 ? t("common.night") : t("common.nights"),
+                    })
+                  : checkIn
+                  ? t("booking.selectCheckout")
+                  : t("booking.selectDates")}
+              </span>
+              <div className="flex items-center gap-2">
+                {onScrollToCalendar && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsCalendarOpen(false);
+                      onScrollToCalendar();
+                    }}
+                    className="font-medium text-[#2e6f57] hover:underline"
+                  >
+                    {t("property.viewCalendar")}
+                  </button>
+                )}
+                {(checkIn || checkOut) && (
+                  <>
+                    <span className="text-[#d0ded8]">•</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onClearDates();
+                      }}
+                      className="font-medium text-[#cfb072] hover:underline"
+                    >
+                      {t("common.clear")}
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="mt-2.5 flex items-center justify-between border-t border-[#edf2ef] pt-2 text-[11px]">
-            <span className="text-[#667c74]">
-              {checkIn && checkOut
-                ? t("booking.selectedRange", { count: nights, label: nights === 1 ? t("common.night") : t("common.nights") })
-                : checkIn
-                  ? t("booking.selectCheckout")
-                  : t("booking.selectDates")}
-            </span>
-            <div className="flex items-center gap-2">
-              {onScrollToCalendar && (
+          {/* ─── Interactive Popover Calendar (Only available dates selectable) ─── */}
+          {isCalendarOpen && (
+            <div className="absolute left-0 right-0 top-full z-50 mt-2 rounded-2xl border border-[#dfe8e4] bg-white p-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+              {/* Header Navigation */}
+              <div className="flex items-center justify-between pb-3 border-b border-[#edf2ef]">
                 <button
                   type="button"
-                  onClick={onScrollToCalendar}
-                  className="font-medium text-[#2e6f57] hover:underline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePrevMonth();
+                  }}
+                  disabled={!canGoPrev}
+                  className="flex size-8 items-center justify-center rounded-lg text-[#667c74] transition hover:bg-[#edf2ef] disabled:opacity-30 disabled:cursor-not-allowed"
+                  aria-label="Previous Month"
                 >
-                  {t("property.viewCalendar")}
+                  <ChevronLeft className="size-4 rtl:rotate-180" />
                 </button>
-              )}
-              {(checkIn || checkOut) && (
-                <>
-                  <span className="text-[#d0ded8]">•</span>
-                  <button
-                    type="button"
-                    onClick={onClearDates}
-                    className="font-medium text-[#cfb072] hover:underline"
-                  >
-                    {t("common.clear")}
-                  </button>
-                </>
-              )}
+                <span className="text-[13px] font-bold text-[#183c2f] capitalize">
+                  {monthTitle}
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleNextMonth();
+                  }}
+                  className="flex size-8 items-center justify-center rounded-lg text-[#667c74] transition hover:bg-[#edf2ef]"
+                  aria-label="Next Month"
+                >
+                  <ChevronRight className="size-4 rtl:rotate-180" />
+                </button>
+              </div>
+
+              {/* Status Hint */}
+              <div className="py-2 text-center text-[11px] font-medium text-[#2e6f57]">
+                {!checkIn
+                  ? t("booking.selectDates") || "Select check-in date"
+                  : !checkOut
+                  ? t("booking.selectCheckout") || "Select check-out date"
+                  : t("booking.selectedRange", {
+                      count: nights,
+                      label: nights === 1 ? t("common.night") : t("common.nights"),
+                    })}
+              </div>
+
+              {/* Weekdays */}
+              <div className="grid grid-cols-7 gap-1 text-center text-[10.5px] font-semibold text-[#8a9a94]">
+                {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((dayName) => (
+                  <span key={dayName} className="py-1">
+                    {dayName}
+                  </span>
+                ))}
+              </div>
+
+              {/* Days grid */}
+              <div className="mt-1 grid grid-cols-7 gap-1">
+                {Array.from({ length: startOffset }).map((_, i) => (
+                  <span key={`blank-${i}`} className="h-8" />
+                ))}
+
+                {Array.from({ length: daysInViewMonth }).map((_, i) => {
+                  const dayNum = i + 1;
+                  const dayDate = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(dayNum).padStart(2, "0")}`;
+                  const isPast = dayDate < todayString;
+                  const isBooked = isDateBooked ? isDateBooked(dayDate) : false;
+                  const isDisabled = isPast || isBooked;
+                  const isStart = dayDate === checkIn;
+                  const isEnd = dayDate === checkOut;
+                  const isRangeEdge = isStart || isEnd;
+                  const isInRange = Boolean(checkIn && checkOut && dayDate > checkIn && dayDate < checkOut);
+
+                  return (
+                    <button
+                      key={dayDate}
+                      type="button"
+                      disabled={isDisabled}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDayClick(dayDate, dayNum);
+                      }}
+                      className={`flex h-8 items-center justify-center rounded-lg text-[11.5px] transition ${
+                        isRangeEdge
+                          ? "bg-[#2e6f57] font-bold text-white shadow-xs"
+                          : isInRange
+                          ? "bg-[#2e6f57]/15 font-semibold text-[#183c2f]"
+                          : isBooked
+                          ? "bg-[#e9eef3] text-[#94a3b8] line-through opacity-60 cursor-not-allowed select-none"
+                          : isPast
+                          ? "text-[#cbd5e1] cursor-not-allowed opacity-40 select-none"
+                          : "bg-[#f5f7f6] text-[#2e6f57] font-bold border border-[#2e6f57]/20 hover:bg-[#2e6f57] hover:text-white"
+                      }`}
+                      title={isBooked ? t("property.booked") || "Booked" : dayDate}
+                    >
+                      {dayNum}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Legend & Close Footer */}
+              <div className="mt-3 flex items-center justify-between border-t border-[#edf2ef] pt-2.5 text-[11px] text-[#667c74]">
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1">
+                    <span className="size-2 rounded-full bg-[#2e6f57]" />
+                    {t("property.available") || "Available"}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="size-2 rounded-full bg-[#94a3b8]" />
+                    {t("property.booked") || "Booked"}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsCalendarOpen(false);
+                  }}
+                  className="rounded-lg bg-[#edf2ef] px-2.5 py-1 text-[11px] font-semibold text-[#183c2f] transition hover:bg-[#dfe8e4]"
+                >
+                  {t("common.close") || "Close"}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* ─── Guests Selector ─── */}

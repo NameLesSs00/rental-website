@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "@/lib/api/axiosInstance";
+import { toast } from "sonner";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -163,23 +164,34 @@ function extractApiError(err: unknown, fallback: string): string {
  */
 export function useInitializePaypalPayment() {
   return useMutation({
-    mutationFn: async (payload: InitializePaypalRequest): Promise<InitializePaypalResponseData> => {
+    mutationFn: async (
+      payload: InitializePaypalRequest
+    ): Promise<InitializePaypalResponseData | null> => {
       try {
         const res = await axiosInstance.post<
           InitializePaypalResponseData | PaymentApiResponse<InitializePaypalResponseData>
         >("/api/payments/paypal/initialize", payload);
         const data = res.data;
-        if (!data) throw new Error("No response from payment server.");
+        if (!data) {
+          const errorMsg = "No response from payment server.";
+          toast.error(errorMsg, { id: errorMsg });
+          return null;
+        }
 
         if ("isSuccess" in data) {
           if (!data.isSuccess || !data.data) {
-            throw new Error(data.errors?.[0] || data.message || "Failed to initialize PayPal payment.");
+            const errorMsg =
+              data.errors?.[0] || data.message || "Failed to initialize PayPal payment.";
+            toast.error(errorMsg, { id: errorMsg });
+            return null;
           }
           return data.data;
         }
         return data as InitializePaypalResponseData;
       } catch (err) {
-        throw new Error(extractApiError(err, "Failed to initialize PayPal payment."));
+        const errorMsg = extractApiError(err, "Failed to initialize PayPal payment.");
+        toast.error(errorMsg, { id: errorMsg });
+        return null;
       }
     },
   });
@@ -218,7 +230,9 @@ export function useCapturePaypalPayment() {
           bookingNumber: raw.bookingNumber || "",
         };
       } catch (err) {
-        throw new Error(extractApiError(err, "Failed to capture PayPal payment."));
+        const errorMsg = extractApiError(err, "Failed to capture PayPal payment.");
+        toast.error(errorMsg, { id: errorMsg });
+        throw new Error(errorMsg);
       }
     },
   });
@@ -232,14 +246,20 @@ export function useCapturePaypalPayment() {
 export function useInitializePaymobPayment() {
   return useMutation({
     mutationFn: async (payload: InitializePaymobRequest) => {
-      const { data } = await axiosInstance.post<PaymentApiResponse<InitializePaymobResponseData>>(
-        "/api/payments/initialize",
-        payload
-      );
-      if (!data.isSuccess || !data.data) {
-        throw new Error(data.errors?.[0] || data.message || "Could not initialize payment.");
+      try {
+        const { data } = await axiosInstance.post<PaymentApiResponse<InitializePaymobResponseData>>(
+          "/api/payments/initialize",
+          payload
+        );
+        if (!data.isSuccess || !data.data) {
+          throw new Error(data.errors?.[0] || data.message || "Could not initialize payment.");
+        }
+        return data.data;
+      } catch (err) {
+        const errorMsg = extractApiError(err, "Could not initialize payment.");
+        toast.error(errorMsg, { id: errorMsg });
+        throw new Error(errorMsg);
       }
-      return data.data;
     },
   });
 }

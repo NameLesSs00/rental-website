@@ -41,7 +41,7 @@ import { toast } from "sonner";
 
 const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-type CalendarDay = {
+export type CalendarDay = {
   day: number;
   date: string;
   price?: string;
@@ -840,6 +840,8 @@ function PropertyDetailView({
                   onCheckInChange={handleCheckInChange}
                   onCheckOutChange={handleCheckOutChange}
                   onClearDates={clearDates}
+                  isDateBooked={isDateBooked}
+                  onSelectDate={selectDate}
                   bookingForm={bookingForm}
                   setBookingForm={setBookingForm}
                   hasAcceptedRules={hasAcceptedRules}
@@ -879,6 +881,8 @@ function PropertyDetailView({
                 onCheckInChange={handleCheckInChange}
                 onCheckOutChange={handleCheckOutChange}
                 onClearDates={clearDates}
+                isDateBooked={isDateBooked}
+                onSelectDate={selectDate}
                 bookingForm={bookingForm}
                 setBookingForm={setBookingForm}
                 hasAcceptedRules={hasAcceptedRules}

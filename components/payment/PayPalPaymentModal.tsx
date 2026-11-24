@@ -9,6 +9,7 @@ import { PaymobCheckout } from "./PaymobCheckout";
 import { PaymentMethodSelector, type PaymentGatewayMethod } from "./PaymentMethodSelector";
 import type { CapturePaypalResponseData } from "@/lib/hooks/usePayment";
 import { formatCurrency } from "@/lib/utils/currency";
+import { toast } from "sonner";
 
 import { clearActiveHold } from "@/lib/utils/paymentBookingContext";
 
@@ -541,7 +542,9 @@ export function PayPalPaymentModal({
                         <PayPalCheckout
                           bookingId={booking.bookingId}
                           onSuccess={handleSuccess}
-                          onError={(err) => console.error("PAYPAL MODAL ERROR:", err)}
+                          onError={(err) => {
+                            console.warn("[PayPal Modal] Checkout error:", err?.message);
+                          }}
                         />
                       </div>
                     </PayPalProvider>
@@ -552,7 +555,9 @@ export function PayPalPaymentModal({
                       amount={egpBreakdown.deposit}
                       currency="EGP"
                       kind={booking.kind}
-                      onError={(err) => console.error("PAYMOB MODAL ERROR:", err)}
+                      onError={(err) => {
+                        console.warn("[Paymob Modal] Checkout error:", err?.message);
+                      }}
                     />
                   )}
                 </div>
